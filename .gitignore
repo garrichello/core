@@ -1,0 +1,5 @@
+.remote
+*.pyc
+__pycache__
+*.json
+remote_debug.py

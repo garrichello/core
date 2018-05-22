@@ -2,6 +2,8 @@
     MainApp
 """
 
+import xmltodict
+
 class MainApp:
     """Main application class. It does everythiong the application does."""  
 
@@ -26,6 +28,9 @@ class MainApp:
     def read_task(self):
         """Reads the task file and creates all necessary structures"""
         print("(MainApp::read_task) Read the task file")
+        
+        with open(self.task_file_name) as fd:
+            self.task = xmltodict.parse(fd.read())
 
     def process(self):
         """Runs and controls modules"""

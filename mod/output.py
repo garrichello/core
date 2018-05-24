@@ -1,10 +1,8 @@
 """Class for output"""
 
 class cvcOutput:
-    def __init__(self, inputs, outputs, metadb_info):
-        self.inputs = inputs
-        self.outputs = outputs
-        self.metadb = metadb_info
+    def __init__(self, data_helper):
+        self._data_helper = data_helper
         
     def run(self):
         print("(cvcOutput::run) Started!")

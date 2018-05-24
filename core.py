@@ -11,7 +11,7 @@ __author__ = "Igor Okladnikov"
 
 import argparse
 
-import base
+from base import MainApp
 
 def main(args):
     """Main function.
@@ -19,7 +19,7 @@ def main(args):
     It creates an instance of the MainApp class and runs the application."""
     print(__prog__ + " v. " + __version__)
 
-    app = base.MainApp(args)
+    app = MainApp(args)
 
     try:
         app.run()

@@ -1,1 +1,1 @@
-from .cvccalctimean import cvcCalcTiMean
+from .calctimean import cvcCalcTiMean

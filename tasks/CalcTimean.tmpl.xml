@@ -26,6 +26,8 @@
 		<time uid='Input_1' template='YYYYMMDDHH'>
 	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
 	    	<segment name='Seg1' beginning='1961010100' ending='1961123118'/>
+	    	<segment name='Seg2' beginning='1962010100' ending='1962123118'/>
+	    	<segment name='Seg3' beginning='1963010100' ending='1963123118'/>
 		</time>
     </data>
     

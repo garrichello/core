@@ -21,11 +21,11 @@ def main(args):
 
     app = MainApp(args)
 
-    try:
-        app.run()
-        print("SUCCESS!")
-    except:
-        print("ERROR!")
+#    try:
+    app.run()
+    print("SUCCESS!")
+#    except:
+#        print("ERROR!")
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = "Computing and Visualizing Core")

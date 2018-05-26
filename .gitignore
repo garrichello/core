@@ -3,6 +3,5 @@
 __pycache__
 *.json
 remote_debug.py
-debug.sh
 .vscode/.ropeproject/config.py
 .vscode/.ropeproject/objectdb

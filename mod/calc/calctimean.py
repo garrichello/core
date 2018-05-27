@@ -9,7 +9,7 @@ class cvcCalcTiMean():
     def run(self):
         print("(cvcCalcTiMean::run) Started!")
 
-        input_uids = self._data_helper.get_uids()
+        input_uids = self._data_helper.input_uids()
 
         time_segments = self._data_helper.get_segments(input_uids[0])
 

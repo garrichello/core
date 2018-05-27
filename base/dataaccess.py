@@ -1,5 +1,5 @@
-"""Class-helper for accessing data.
-Provides access to data through unified API for processing modules.
+"""Provides classes:
+    DataAccess
 """
 
 from sqlalchemy import create_engine, Table, MetaData
@@ -8,18 +8,25 @@ from sqlalchemy.orm import sessionmaker
 from base.common import load_module
 
 class DataAccess():
+    """Class-helper for accessing data.
+    Provides access to data through unified API for processing modules.
+    """    
     def __init__(self, inputs, outputs, metadb_info):
-        """Initialize class's attributes.
+        """Initializes class's attributes. Reads metadata database. 
+        Instantiate classes-readers and classes-writers for input and output arguments of a processing module correspondingly.
         
         Arguments:
-            inputs -- list of dictionaries describing input arguments of the processing module
-            outputs -- list of dictionaries describing output arguments of the processing module
+            inputs -- list of dictionaries describing input arguments of a processing module
+            outputs -- list of dictionaries describing output arguments of a processing module
             metadb_info -- dictionary describing metadata database (location and user credentials)
         """
 
-        self._input_uids = []
-        self._data_classes = {}
+        self._input_uids = [] # UIDs of input data sources.
+        self._output_uids = [] # UID of output data destinations.
+        self._data_readers = {} # Instanses of classes-readers of data.
+        self._data_writers = {}  # Instances of classes-writers of data.
 
+        # Process input arguments: None - no inputs; get metadata for each data source (if any) and instantiate corresponding classes.
         self._inputs = inputs
         if inputs is None:
             self._input_uids = None
@@ -30,17 +37,24 @@ class DataAccess():
                 uid = input_['@uid']
                 self._input_uids.append(uid)
                 input_info = self._get_metadata(metadb_info, input_) # Get additional info about an input from the metadata database
-                data_class_name = "data" + input_info["filetype"].capitalize() #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
-                self._data_classes[uid]["class"] = load_module("mod", data_class_name) # Try to instantiate data processing class
-                self._data_classes[uid]["info"] = input_info # Add metadata to the class
+                data_class_name = "Data" + input_info["data_type"].capitalize() #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
+                input_class = load_module("mod", data_class_name)
+                self._data_readers[uid] = input_class(input_info)  # Try to instantiate data reading class
                 
+        # Process ouput argumetns: None - no outputs; get metadata for each data destination (if any) and instantiate corresponding classes.
         self._outputs = outputs
         if outputs is None:
             self._output_uids = None
         else:
             if not isinstance(outputs, list):
                 self._outputs = [outputs]
-            self._output_uids = [output_['@uid'] for output_ in self._outputs]
+            for output_ in self._outputs:
+                uid = output_['@uid']
+                self._output_uids.append(uid)
+                output_info = self._get_metadata(metadb_info, output_) # Get additional info about an output from the metadata database
+                data_class_name = "Data" + output_info["data_type"].capitalize() #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
+                output_class = load_module("mod", data_class_name)
+                self._data_writers[uid] = output_class(output_info)  # Try to instantiate data writing class
 
         self._metadb = metadb_info
         
@@ -51,44 +65,54 @@ class DataAccess():
             metadb_info -- dictionary containing information about metadata database.
             argument -- dictionary containing description of the processing module's argument
 
-        Returns: dictionary containing metadata for the 'argument;
+        Returns: dictionary containing metadata for the 'argument':
+            ["data_type"] -- file type for a dataset (e.g., netcdf), data type otherwise (e.g.: parameter, array).
+
         """
+        info = {} # Argument's information
+
+        # We don't need to do much if it is not a dataset
+        if argument["data"]["@type"] != "dataset":
+            info["data_type"] = argument["data"]["@type"]
+            info["data"] = argument["data"]
+            return info
+
+        # If it is a dataset there is much to do
         db_url = "mysql://{0}@{1}/{2}".format(metadb_info['@user'], metadb_info['@host'], metadb_info['@name']) # metadata database URL
         engine = create_engine(db_url)
         meta = MetaData(bind = engine, reflect = True)
+        Session = sessionmaker(bind=engine)
+        session = Session()
         
+        # Tables in a metadata database
         collection = meta.tables["collection"]
         scenario = meta.tables["scenario"] 
         resolution = meta.tables["res"]
         time_step = meta.tables["tstep"]
-
-        Session = sessionmaker(bind=engine)
-        session = Session()
+        dataset = meta.tables["ds"]
+        file_type = meta.tables["filetype"]
         
-        # Get collection id
+        # Values for SQL-conditions
         dataset_name = argument["data"]["dataset"]["@name"]
-        collection_id = session.query(collection.columns["id"]).filter(
-                collection.columns["name"] == dataset_name).all()[0]
-
-        # Get scenario id and subpath
         scenario_name = argument["data"]["dataset"]["@scenario"]
-        scenario_id, subpath0 = session.query(scenario.columns["id"], scenario.columns["subpath0"]).filter(
-                scenario.columns["name"] == scenario_name).all()[0]
-
-        # Get horizontal resolution id and subpath
         resolution_name = argument["data"]["dataset"]["@resolution"]
-        resolution_id, subpath1 = session.query(resolution.columns["id"], resolution.columns["subpath1"]).filter(
-                resolution.columns["name"] == resolution_name).all()[0]
-
-        # Get time step id and subpath
         time_step_name = argument["data"]["dataset"]["@time_step"]
-        time_step_id, subpath2 = session.query(time_step.columns["id"], time_step.columns["subpath2"]).filter(
-                time_step.columns["name"] == time_step_name).all()[0]
 
-        # 
+        # Get some info
+        dataset_id, file_type_name = session.query(dataset.columns["id"], file_type.columns["name"]).join(
+                collection).join(scenario).join(resolution).join(time_step).join(file_type).filter(
+                    collection.columns["name"] == dataset_name).filter(
+                        scenario.columns["name"] == scenario_name).filter(
+                            resolution.columns["name"] == resolution_name).filter(
+                                time_step.columns["name"] == time_step_name).one()
+
+        info["data_type"] = file_type_name
+
         levels_num = len(argument["data"]["levels"]["@values"].split(';')) # Number of vertical levels (separated by semicolon)
 
+
         print("(DataAccess::_get_metadata) Finished!")
+        return info
     
     def get(self, uid, segments=None, levels=None):
         """Reads data and metadata from an input data source (dataset, parameter, array).
@@ -98,9 +122,10 @@ class DataAccess():
             segments -- list of time segments (read all if omitted)
             levels - list of vertical level (read all if omitted)
         """
-        pass
+        result = self._data_readers[uid].read(segments, levels)
+        return result
 
-    def get_uids(self):
+    def input_uids(self):
         """Returns a list of UIDs of processing module inputs (as in a task file)"""
         
         return self._input_uids

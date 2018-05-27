@@ -15,6 +15,8 @@ def load_module(module_name, class_name):
             class_ = getattr(module_, class_name)
         except AttributeError:
             print("(MainApp::load_module) Class " + class_name + " does not exist")
+            raise
     except ImportError:
         print("(MainApp::load_module) Module " + module_name + " does not exist")
-    return class_ or None
+        raise
+    return class_

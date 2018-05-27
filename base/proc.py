@@ -1,11 +1,14 @@
-"""Class Proc. 
-Loads a processing module and runs it providing a corresponding data access API and error handling
+"""Provides classes:
+    Proc
 """
 
 from base.dataaccess import DataAccess
 from base.common import load_module
 
 class Proc:
+    """Class Proc. 
+    Loads a processing module and runs it providing a corresponding data access API and error handling
+    """    
     def __init__(self, inputs, outputs, metadb_info):
         """Creates an instance of a class-helper that provides the data access API for modules
         
@@ -22,11 +25,11 @@ class Proc:
         Arguments:
             class_name -- name of the processing class
         """
-        # let's try to create an instance of the processing class
+        # Let's try to create an instance of the processing class.
         proc_class = load_module("mod", proc_class_name)
         processor = proc_class(self._data_helper)
 
-        # and here we run the module
+        # And here we run the module.
         try:
             processor.run()
         except AttributeError:

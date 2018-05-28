@@ -14,7 +14,7 @@
     <data uid='Data_1' type='dataset'> <!-- type: dataset, array -->
     	<description title='Collection long name' name='Temperature' units='K'/>
 		<dataset name='ERA40' resolution='2.5x2.5' time_step='6h' scenario='-'/>  <!-- ERAINT -->
-    	<variable name='2T' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
+    	<variable name='2t' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
 		<region units='degrees'>
 	    <!-- <point lon=[/LU_LON/] lat=[/LU_LAT/]/> -->
             <point lon='-180' lat='88'/>

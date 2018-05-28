@@ -27,6 +27,7 @@ class DataAccess():
         self._data_writers = {}  # Instances of classes-writers of data.
 
         # Process input arguments: None - no inputs; get metadata for each data source (if any) and instantiate corresponding classes.
+        print("(DataAccess::__init__) Prepare inputs...")
         self._inputs = inputs
         if inputs is None:
             self._input_uids = None
@@ -37,11 +38,12 @@ class DataAccess():
                 uid = input_['@uid']
                 self._input_uids.append(uid)
                 input_info = self._get_metadata(metadb_info, input_) # Get additional info about an input from the metadata database
-                data_class_name = "Data" + input_info["data_type"].capitalize() #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
+                data_class_name = "Data" + input_info["@data_type"].capitalize() #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
                 input_class = load_module("mod", data_class_name)
                 self._data_readers[uid] = input_class(input_info)  # Try to instantiate data reading class
                 
         # Process ouput argumetns: None - no outputs; get metadata for each data destination (if any) and instantiate corresponding classes.
+        print("(DataAccess::__init__) Prepare outputs...")
         self._outputs = outputs
         if outputs is None:
             self._output_uids = None
@@ -52,7 +54,7 @@ class DataAccess():
                 uid = output_['@uid']
                 self._output_uids.append(uid)
                 output_info = self._get_metadata(metadb_info, output_) # Get additional info about an output from the metadata database
-                data_class_name = "Data" + output_info["data_type"].capitalize() #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
+                data_class_name = "Data" + output_info["@data_type"].capitalize() #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
                 output_class = load_module("mod", data_class_name)
                 self._data_writers[uid] = output_class(output_info)  # Try to instantiate data writing class
 
@@ -73,7 +75,7 @@ class DataAccess():
 
         # We don't need to do much if it is not a dataset
         if argument["data"]["@type"] != "dataset":
-            info["data_type"] = argument["data"]["@type"]
+            info["@data_type"] = argument["data"]["@type"]
             info["data"] = argument["data"]
             return info
 
@@ -85,33 +87,74 @@ class DataAccess():
         session = Session()
         
         # Tables in a metadata database
-        collection = meta.tables["collection"]
-        scenario = meta.tables["scenario"] 
-        resolution = meta.tables["res"]
-        time_step = meta.tables["tstep"]
-        dataset = meta.tables["ds"]
-        file_type = meta.tables["filetype"]
-        
+        collection_tbl = meta.tables["collection"]
+        scenario_tbl = meta.tables["scenario"] 
+        resolution_tbl = meta.tables["res"]
+        time_step_tbl = meta.tables["tstep"]
+        dataset_tbl = meta.tables["ds"]
+        file_type_tbl = meta.tables["filetype"]
+        data_tbl = meta.tables["data"]
+        file_tbl = meta.tables["file"]
+        variable_tbl = meta.tables["var"]
+        levels_tbl = meta.tables["lvs"]
+        levels_variable_tbl = meta.tables["lvs_var"]
+        dataset_root_tbl = meta.tables["dsroot"]
+        time_span_tbl = meta.tables["timespan"]
+
         # Values for SQL-conditions
         dataset_name = argument["data"]["dataset"]["@name"]
         scenario_name = argument["data"]["dataset"]["@scenario"]
         resolution_name = argument["data"]["dataset"]["@resolution"]
         time_step_name = argument["data"]["dataset"]["@time_step"]
+        variable_name = argument["data"]["variable"]["@name"]
+        levels_names = [level_name.strip() for level_name in argument["data"]["levels"]["@values"].split(';')]
+ 
+        # Get some info about the dataset.
+        dataset_tbl_info = session.query(dataset_tbl.columns["id"],
+                file_type_tbl.columns["name"].label("file_type_name"), 
+                scenario_tbl.columns["subpath0"], 
+                resolution_tbl.columns["subpath1"], 
+                time_step_tbl.columns["subpath2"],
+                time_span_tbl.columns["name"].label("file_time_span"),
+                dataset_root_tbl.columns["rootpath"]).join(
+                    collection_tbl).join(scenario_tbl).join(resolution_tbl).join(
+                    time_step_tbl).join(file_type_tbl).join(dataset_root_tbl).join(time_span_tbl).filter(
+                        collection_tbl.columns["name"] == dataset_name).filter(
+                        scenario_tbl.columns["name"] == scenario_name).filter(
+                        resolution_tbl.columns["name"] == resolution_name).filter(
+                        time_step_tbl.columns["name"] == time_step_name).one()
 
-        # Get some info
-        dataset_id, file_type_name = session.query(dataset.columns["id"], file_type.columns["name"]).join(
-                collection).join(scenario).join(resolution).join(time_step).join(file_type).filter(
-                    collection.columns["name"] == dataset_name).filter(
-                        scenario.columns["name"] == scenario_name).filter(
-                            resolution.columns["name"] == resolution_name).filter(
-                                time_step.columns["name"] == time_step_name).one()
+        info["@data_type"] = dataset_tbl_info.file_type_name
+        info["@file_time_span"] = dataset_tbl_info.file_time_span
 
-        info["data_type"] = file_type_name
+        # Each vertical level is processed separately because corresponding arrays can be stored in different files
+        info["levels"] = {}
+        for level_name in levels_names:
+            info["levels"][level_name] = {}
 
-        levels_num = len(argument["data"]["levels"]["@values"].split(';')) # Number of vertical levels (separated by semicolon)
+            level_name_pattern = '%:{0}:%'.format(level_name) # Pattern for LIKE in the following SQL-request
+            # Get some info about the data array and file names template
+            data_tbl_info = session.query(data_tbl.columns["scale"], 
+                    data_tbl.columns["offset"], 
+                    file_tbl.columns["name"].label("file_name_template"), 
+                    file_tbl.columns["timestart"],
+                    file_tbl.columns["timeend"],
+                    levels_variable_tbl.columns["name"].label("level_variable_name")).join(dataset_tbl).join(
+                        variable_tbl).join(levels_tbl).join(file_tbl).join(levels_variable_tbl).filter(
+                            dataset_tbl.columns["id"] == dataset_tbl_info.id).filter(
+                            variable_tbl.columns["name"] == variable_name).filter(
+                            levels_tbl.columns["name"].like(level_name_pattern)).one()
 
+            info["levels"][level_name]["@scale"] = data_tbl_info.scale
+            info["levels"][level_name]["@offset"] = data_tbl_info.offset
+            file_name_template = "{0}{1}{2}{3}{4}".format(dataset_tbl_info.rootpath, dataset_tbl_info.subpath0, 
+                    dataset_tbl_info.subpath1, dataset_tbl_info.subpath2, data_tbl_info.file_name_template)
+            info["levels"][level_name]["@file_name_template"] = file_name_template
+            info["levels"][level_name]["@time_start"] = data_tbl_info.timestart
+            info["levels"][level_name]["@time_end"] = data_tbl_info.timeend
+            info["levels"][level_name]["@level_variable_name"] = data_tbl_info.level_variable_name
 
-        print("(DataAccess::_get_metadata) Finished!")
+        print("(DataAccess::_get_metadata) Done!")
         return info
     
     def get(self, uid, segments=None, levels=None):

@@ -4,6 +4,7 @@
 
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 
 from base.common import load_module
 
@@ -110,19 +111,25 @@ class DataAccess():
         levels_names = [level_name.strip() for level_name in argument["data"]["levels"]["@values"].split(';')]
  
         # Get some info about the dataset.
-        dataset_tbl_info = session.query(dataset_tbl.columns["id"],
-                file_type_tbl.columns["name"].label("file_type_name"), 
-                scenario_tbl.columns["subpath0"], 
-                resolution_tbl.columns["subpath1"], 
-                time_step_tbl.columns["subpath2"],
-                time_span_tbl.columns["name"].label("file_time_span"),
-                dataset_root_tbl.columns["rootpath"]).join(
-                    collection_tbl).join(scenario_tbl).join(resolution_tbl).join(
-                    time_step_tbl).join(file_type_tbl).join(dataset_root_tbl).join(time_span_tbl).filter(
-                        collection_tbl.columns["name"] == dataset_name).filter(
-                        scenario_tbl.columns["name"] == scenario_name).filter(
-                        resolution_tbl.columns["name"] == resolution_name).filter(
-                        time_step_tbl.columns["name"] == time_step_name).one()
+        try:
+            dataset_tbl_info = session.query(dataset_tbl.columns["id"],
+                    file_type_tbl.columns["name"].label("file_type_name"), 
+                    scenario_tbl.columns["subpath0"], 
+                    resolution_tbl.columns["subpath1"], 
+                    time_step_tbl.columns["subpath2"],
+                    time_span_tbl.columns["name"].label("file_time_span"),
+                    dataset_root_tbl.columns["rootpath"]).join(
+                        collection_tbl).join(scenario_tbl).join(resolution_tbl).join(
+                        time_step_tbl).join(file_type_tbl).join(dataset_root_tbl).join(time_span_tbl).filter(
+                            collection_tbl.columns["name"] == dataset_name).filter(
+                            scenario_tbl.columns["name"] == scenario_name).filter(
+                            resolution_tbl.columns["name"] == resolution_name).filter(
+                            time_step_tbl.columns["name"] == time_step_name).one()
+        except NoResultFound:
+            print("{} collection: {}, scenario: {}, resolution: {}, time step: {}".format(
+                "(DataAccess::_get_metadata) No records found in MDDB for", dataset_name, scenario_name,
+                resolution_name, time_step_name))
+            raise
 
         info["@data_type"] = dataset_tbl_info.file_type_name
         info["@file_time_span"] = dataset_tbl_info.file_time_span
@@ -134,16 +141,22 @@ class DataAccess():
 
             level_name_pattern = '%:{0}:%'.format(level_name) # Pattern for LIKE in the following SQL-request
             # Get some info about the data array and file names template
-            data_tbl_info = session.query(data_tbl.columns["scale"], 
-                    data_tbl.columns["offset"], 
-                    file_tbl.columns["name"].label("file_name_template"), 
-                    file_tbl.columns["timestart"],
-                    file_tbl.columns["timeend"],
-                    levels_variable_tbl.columns["name"].label("level_variable_name")).join(dataset_tbl).join(
-                        variable_tbl).join(levels_tbl).join(file_tbl).join(levels_variable_tbl).filter(
-                            dataset_tbl.columns["id"] == dataset_tbl_info.id).filter(
-                            variable_tbl.columns["name"] == variable_name).filter(
-                            levels_tbl.columns["name"].like(level_name_pattern)).one()
+            try:
+                data_tbl_info = session.query(data_tbl.columns["scale"], 
+                        data_tbl.columns["offset"], 
+                        file_tbl.columns["name"].label("file_name_template"), 
+                        file_tbl.columns["timestart"],
+                        file_tbl.columns["timeend"],
+                        levels_variable_tbl.columns["name"].label("level_variable_name")).join(dataset_tbl).join(
+                            variable_tbl).join(levels_tbl).join(file_tbl).join(levels_variable_tbl).filter(
+                                dataset_tbl.columns["id"] == dataset_tbl_info.id).filter(
+                                variable_tbl.columns["name"] == variable_name).filter(
+                                levels_tbl.columns["name"].like(level_name_pattern)).one()
+            except NoResultFound:
+                print("{} collection: {}, scenario: {}, resolution: {}, time step: {}, variable: {}, level: {}".format(
+                    "(DataAccess::_get_metadata) No records found in MDDB for", dataset_name, scenario_name,
+                    resolution_name, time_step_name, variable_name, level_name))
+                raise
 
             info["levels"][level_name]["@scale"] = data_tbl_info.scale
             info["levels"][level_name]["@offset"] = data_tbl_info.offset

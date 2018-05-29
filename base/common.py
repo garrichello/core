@@ -20,3 +20,20 @@ def load_module(module_name, class_name):
         print("(MainApp::load_module) Module " + module_name + " does not exist")
         raise
     return class_
+
+def listify(obj):
+    """Makes a list from an object if it is not already a list.
+    None is unchanged.
+
+    Arguments:
+        obj -- object of any type except list.
+
+    Returns:
+        result -- obj if is a list, [obj] otherwise.
+    """
+    result = obj
+    if result is not None:
+        if not isinstance(obj, list):
+            result = [obj]
+    
+    return result

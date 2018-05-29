@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
-from base.common import load_module
+from base.common import load_module, listify
 
 class DataAccess():
     """Class-helper for accessing data.
@@ -29,12 +29,10 @@ class DataAccess():
 
         # Process input arguments: None - no inputs; get metadata for each data source (if any) and instantiate corresponding classes.
         print("(DataAccess::__init__) Prepare inputs...")
-        self._inputs = inputs
-        if inputs is None:
+        self._inputs = listify(inputs)
+        if self._inputs is None:
             self._input_uids = None
         else:
-            if not isinstance(inputs, list):
-                self._inputs = [inputs]
             for input_ in self._inputs:
                 uid = input_['@uid']
                 self._input_uids.append(uid)
@@ -45,12 +43,10 @@ class DataAccess():
                 
         # Process ouput argumetns: None - no outputs; get metadata for each data destination (if any) and instantiate corresponding classes.
         print("(DataAccess::__init__) Prepare outputs...")
-        self._outputs = outputs
+        self._outputs = listify(outputs)
         if outputs is None:
             self._output_uids = None
         else:
-            if not isinstance(outputs, list):
-                self._outputs = [outputs]
             for output_ in self._outputs:
                 uid = output_['@uid']
                 self._output_uids.append(uid)
@@ -133,6 +129,7 @@ class DataAccess():
 
         info["@data_type"] = dataset_tbl_info.file_type_name
         info["@file_time_span"] = dataset_tbl_info.file_time_span
+        info["@convert_K_to_C"] = argument["data"]["variable"]["@tempk2c"]
 
         # Each vertical level is processed separately because corresponding arrays can be stored in different files
         info["levels"] = {}
@@ -167,7 +164,6 @@ class DataAccess():
             info["levels"][level_name]["@time_end"] = data_tbl_info.timeend
             info["levels"][level_name]["@level_variable_name"] = data_tbl_info.level_variable_name
 
-        print("(DataAccess::_get_metadata) Done!")
         return info
     
     def get(self, uid, segments=None, levels=None):
@@ -215,7 +211,7 @@ class DataAccess():
             except ValueError:
                 print("(DataAccess::get_segments) No such input UID: " + uid)
                 raise
-            levels = self._inputs[input_idx]['data']['levels']['@values']
+            levels = [level_name.strip() for level_name in self._inputs[input_idx]["data"]["levels"]["@values"].split(';')]
         else:
             levels = None
         return levels

@@ -44,7 +44,7 @@ class DataNetcdf:
             file_name_template = self._data_info["levels"][level_name]["@file_name_template"]
             percent_template = PercentTemplate(file_name_template)
             file_name_wildcard = percent_template.substitute({"year" : "????"})
-            netcdf_root = MFDataset("file_name_wildcard")
+            netcdf_root = MFDataset(file_name_wildcard)
             # Process each time segment separately.
             for segment in self.segments:
             

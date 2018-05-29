@@ -15,8 +15,8 @@ class cvcCalcTiMean():
 
         vertical_levels = self._data_helper.get_levels(input_uids[0])
 
-        for segment in time_segments:
-            result = self._data_helper.get(input_uids[0], segment, vertical_levels)
+#        for segment in time_segments:
+        result = self._data_helper.get(input_uids[0], time_segments, vertical_levels)
 
         print("(cvcCalcTiMean::run) Finished!")
         

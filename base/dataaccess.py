@@ -65,7 +65,7 @@ class DataAccess():
             argument -- dictionary containing description of the processing module's argument
 
         Returns: dictionary containing metadata for the 'argument':
-            ["data_type"] -- file type for a dataset (e.g., netcdf), data type otherwise (e.g.: parameter, array).
+            ["@data_type"] -- file type for a dataset (e.g., netcdf), data type otherwise (e.g.: parameter, array).
 
         """
         info = {} # Argument's information
@@ -77,6 +77,7 @@ class DataAccess():
             return info
 
         # If it is a dataset there is much to do
+        info["data"] = argument["data"] # All the information about the dataset is passed to the data-accessing modules
         db_url = "mysql://{0}@{1}/{2}".format(metadb_info['@user'], metadb_info['@host'], metadb_info['@name']) # metadata database URL
         engine = create_engine(db_url)
         meta = MetaData(bind = engine, reflect = True)
@@ -129,7 +130,6 @@ class DataAccess():
 
         info["@data_type"] = dataset_tbl_info.file_type_name
         info["@file_time_span"] = dataset_tbl_info.file_time_span
-        info["@convert_K_to_C"] = argument["data"]["variable"]["@tempk2c"]
 
         # Each vertical level is processed separately because corresponding arrays can be stored in different files
         info["levels"] = {}

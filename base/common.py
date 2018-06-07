@@ -37,3 +37,24 @@ def listify(obj):
             result = [obj]
     
     return result
+
+def unlistify(list_):
+    """Extracts an object from a list if it is a list. 
+    None is unchanged.
+
+    Arguments:
+        list_ -- object of type list
+
+    Returns: list_[0]. None if list_ is empty. Raises ValueError if more than one element is in list_.
+    """
+    if list_ is not None:
+        if isinstance(list_, list):
+            if len(list_) == 0:
+                result = None
+            elif len(list_) == 1:
+                result = list_[0]
+            else:
+                raise ValueError
+    else:
+        result = None
+    return result

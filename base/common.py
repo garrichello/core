@@ -1,6 +1,9 @@
 """Common functions and classes"""
 
 import importlib
+import datetime
+# Python 3 only
+import builtins
 
 def load_module(module_name, class_name):
     """Loads module by its name and returns class to instantiate
@@ -58,3 +61,15 @@ def unlistify(list_):
     else:
         result = None
     return result
+
+def print(*args, **kwargs):
+    """Prints out to a standard output a string prefixed with current date and time
+
+    Arguments:
+        string_ -- string to print
+
+    """
+    now = datetime.datetime.now()
+    date_time = "({0:02}/{1:02}/{2:04} {3:02}:{4:02}:{5:02}) ".format(now.day, now.month, now.year, now.hour, now.minute, now.second)
+    builtins.print(date_time, end='')
+    return builtins.print(*args, **kwargs)

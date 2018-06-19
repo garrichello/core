@@ -7,6 +7,7 @@ from netCDF4 import MFDataset, date2index, num2date
 from string import Template
 import re
 import numpy as np
+from matplotlib.path import Path
 
 from base.common import listify, unlistify
 
@@ -107,6 +108,15 @@ class DataNetcdf:
                 print ("(DataNetcdf::read) Error! Longitude and latitude grids are not match! Aborting.")
                 raise
 
+            # Create ROI mask
+            x, y = np.meshgrid(longitude_grid, latitude_grid)
+            x, y = x.flatten(), y.flatten()
+            points = np.vstack((x, y)).T
+
+            path = Path(self._ROI)
+            ROI_mask = path.contains_points(points)
+            ROI_mask = ROI_mask.reshape((longitude_grid.size, latitude_grid.size))
+
             # Determine index of the current vertical level to read data variable.
             if level_variable_name != NO_LEVEL_NAME:
                 try:
@@ -144,7 +154,7 @@ class DataNetcdf:
 
                 # Here we actually read the data array from the file.
                 data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]], variable_indices[dd[2]], variable_indices[dd[3]]]
-
+           
                 # Remove level variable name from the list of data dimensions if it is present
                 if level_variable_name != NO_LEVEL_NAME:
                     data_dim_names = [name for name in dd if name != level_variable_name]

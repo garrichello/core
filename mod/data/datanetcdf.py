@@ -106,7 +106,7 @@ class DataNetcdf:
                 grid_type = lon_grid_type
             else:
                 print ("(DataNetcdf::read) Error! Longitude and latitude grids are not match! Aborting.")
-                raise
+                raise ValueError
 
             # Create ROI mask
             x, y = np.meshgrid(longitude_grid, latitude_grid)

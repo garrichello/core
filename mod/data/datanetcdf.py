@@ -7,6 +7,7 @@ from netCDF4 import MFDataset, date2index, num2date
 from string import Template
 import re
 import numpy as np
+import numpy.ma as ma
 from matplotlib.path import Path
 
 from base.common import listify, unlistify, print
@@ -108,14 +109,14 @@ class DataNetcdf:
                 print ("(DataNetcdf::read) Error! Longitude and latitude grids are not match! Aborting.")
                 raise ValueError
 
-            # Create ROI mask
-            x, y = np.meshgrid(longitude_grid, latitude_grid)
+            # Create ROI mask.
+            x, y = np.meshgrid(lons, lats)
             x, y = x.flatten(), y.flatten()
             points = np.vstack((x, y)).T
 
             path = Path(self._ROI)
-            ROI_mask = path.contains_points(points)
-            ROI_mask = ROI_mask.reshape((longitude_grid.size, latitude_grid.size))
+            ROI_mask = path.contains_points(points) # True is for the points inside the ROI
+            ROI_mask = ~ROI_mask.reshape((lons.size, lats.size)) # True is masked so we need to inverse the mask
 
             # Determine index of the current vertical level to read data variable.
             if level_variable_name != NO_LEVEL_NAME:
@@ -152,19 +153,21 @@ class DataNetcdf:
                 
                 dd = data_variable.dimensions # Names of dimensions of the data variable.
 
-                # Here we actually read the data array from the file.
-                data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]], variable_indices[dd[2]], variable_indices[dd[3]]]
-           
+                # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
+                data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]], :, :]
+                
+                # Mask all points outside the ROI mask for all times.
+                ROI_mask_time = np.tile(ROI_mask.T, (time_grid.size, 1, 1)) # Propagate ROI mask along the time dimension.
+                masked_data_slice = ma.MaskedArray(data_slice, mask=ROI_mask_time, fill_value=data_variable._FillValue) # Create masked array using ROI mask.
+
                 # Remove level variable name from the list of data dimensions if it is present
                 if level_variable_name != NO_LEVEL_NAME:
                     data_dim_names = [name for name in dd if name != level_variable_name]
                 
                 data_by_segment[segment["@name"]] = {}
-                data_by_segment[segment["@name"]]["@values"] = data_slice
+                data_by_segment[segment["@name"]]["@values"] = masked_data_slice
                 data_by_segment[segment["@name"]]["@units"] = data_variable.units
                 data_by_segment[segment["@name"]]["@dimensions"] = data_dim_names
-                data_by_segment[segment["@name"]]["@_FillValue"] = data_variable._FillValue
-                data_by_segment[segment["@name"]]["@missing_value"] = data_variable._FillValue               
                 data_by_segment[segment["@name"]]["@time_grid"] = time_grid
                 data_by_segment[segment["@name"]]["segment"] = segment
             

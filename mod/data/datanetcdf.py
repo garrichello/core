@@ -9,7 +9,7 @@ import re
 import numpy as np
 from matplotlib.path import Path
 
-from base.common import listify, unlistify
+from base.common import listify, unlistify, print
 
 LONGITUDE_UNITS =  {"degrees_east", "degree_east", "degrees_E", "degree_E", "degreesE", "degreeE", "lon"}
 LATITUDE_UNITS = {"degrees_north", "degree_north", "degrees_N", "degree_N", "degreesN", "degreeN", "lat"}

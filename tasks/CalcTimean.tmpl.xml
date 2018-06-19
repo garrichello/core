@@ -17,10 +17,10 @@
     	<variable name='t' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
 		<region units='degrees'>
 	    <!-- <point lon=[/LU_LON/] lat=[/LU_LAT/]/> -->
-            <point lon='-180' lat='88'/>
-            <point lon='180' lat='88'/>
-            <point lon='180' lat='-88'/>
-            <point lon='-180' lat='-88'/>
+            <point lon='-100' lat='48'/>
+            <point lon='100' lat='48'/>
+            <point lon='100' lat='-48'/>
+            <point lon='-100' lat='-48'/>
     	</region>
 		<levels values='1000;925;850'/>
 		<time uid='Input_1' template='YYYYMMDDHH'>

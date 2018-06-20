@@ -110,9 +110,9 @@ class DataNetcdf:
                 raise ValueError
 
             # Create ROI mask.
-            x, y = np.meshgrid(lons, lats)
-            x, y = x.flatten(), y.flatten()
-            points = np.vstack((x, y)).T
+            lon2d, lat2d = np.meshgrid(lons, lats)
+            lon_coords, lat_coords = lon2d.flatten(), lat2d.flatten()
+            points = np.vstack((lon_coords, lat_coords)).T
 
             path = Path(self._ROI)
             ROI_mask = path.contains_points(points) # True is for the points inside the ROI

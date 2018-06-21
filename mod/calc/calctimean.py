@@ -15,8 +15,17 @@ class cvcCalcTiMean():
 
         vertical_levels = self._data_helper.get_levels(input_uids[0])
 
-#        for segment in time_segments:
+        # Get data for all time segments and levels at once
         result = self._data_helper.get(input_uids[0], time_segments, vertical_levels)
+
+        output_uids = self._data_helper.output_uids()
+
+        for level in vertical_levels:
+            for segment in time_segments:
+                # Let's calulate time averaged values
+                timean = result["data"][level][segment["@name"]]["@values"].mean(axis=0)
+                self._data_helper.put(output_uids[0], values = timean, level = level, segment = segment,
+                    longitudes = result["@longitude_grid"], latitudes = result["@latitude_grid"])
 
         print("(cvcCalcTiMean::run) Finished!")
         

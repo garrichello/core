@@ -216,11 +216,16 @@ class DataAccess():
             levels = None
         return levels
 
-    def put(self):
+    def put(self, uid, values, level = None, segment = None, times = None, longitudes = None, latitudes = None):
         """Writes data and metadata to an output data storage (array).
 
         Arguments:
 
         """
         pass
+
+    def output_uids(self):
+        """Returns a list of UIDs of processing module outputs (as in a task file)"""
+        
+        return self._output_uids
 

@@ -154,9 +154,12 @@ class DataNetcdf:
                 dd = data_variable.dimensions # Names of dimensions of the data variable.
 
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
+                # TODO: Support for different number of dimensions of data variable is needed.
+                # TODO: Are we sure that the last two dimensions are lat and lon correspondingly?
                 data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]], :, :]
                 
                 # Mask all points outside the ROI mask for all times.
+                # TODO: Tuple (time_grid.size, 1, 1) must correspond to number of dimensions of data variable
                 ROI_mask_time = np.tile(ROI_mask.T, (time_grid.size, 1, 1)) # Propagate ROI mask along the time dimension.
                 masked_data_slice = ma.MaskedArray(data_slice, mask=ROI_mask_time, fill_value=data_variable._FillValue) # Create masked array using ROI mask.
 

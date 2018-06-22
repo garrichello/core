@@ -188,7 +188,7 @@ class DataAccess():
         Arguments:
             uid -- UID of a processing module's input (as in a task file)
         """
-        if type(self._input_uids) is not None:
+        if self._input_uids is not None:
             try:
                 input_idx = self._input_uids.index(uid)
             except ValueError:
@@ -205,7 +205,7 @@ class DataAccess():
         Arguments:
             uid -- UID of a processing module's input  (as in a task file)
         """
-        if type(self._input_uids) is not None:
+        if self._input_uids is not None:
             try:
                 input_idx = self._input_uids.index(uid)
             except ValueError:
@@ -229,7 +229,6 @@ class DataAccess():
         """
 
         self._data_writers[uid].write(values, level, segment, times, longitudes, latitudes)
-        pass
 
     def output_uids(self):
         """Returns a list of UIDs of processing module outputs (as in a task file)"""

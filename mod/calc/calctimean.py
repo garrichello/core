@@ -26,6 +26,5 @@ class cvcCalcTiMean():
                 timean = result["data"][level][segment["@name"]]["@values"].mean(axis=0)
                 self._data_helper.put(output_uids[0], values = timean, level = level, segment = segment,
                     longitudes = result["@longitude_grid"], latitudes = result["@latitude_grid"])
-
-        print("(cvcCalcTiMean::run) Finished!")
         
+        print("(cvcCalcTiMean::run) Finished!")

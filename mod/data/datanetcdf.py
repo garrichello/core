@@ -18,6 +18,9 @@ TIME_UNITS = {"since", "time"}
 NO_LEVEL_NAME = "none"
 
 class PercentTemplate(Template):
+    """ Custom template for the string substitute method.
+        It changes the template delimiter to %<template>%
+    """
     delimiter = '%'
     pattern = r'''
     \%(?:
@@ -29,6 +32,8 @@ class PercentTemplate(Template):
     '''
 
 class DataNetcdf:
+    """ Provides methods for reading and writing archives of netCDF files.
+    """
     def __init__(self, data_info):
         self._data_info = data_info
         ROI_lats_string = [p["@lat"] for p in self._data_info["data"]["region"]["point"]]

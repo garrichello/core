@@ -186,7 +186,7 @@ class DataAccess():
         """Returns time segments list
         
         Arguments:
-            uid -- processing module input's UID (as in a task file)
+            uid -- UID of a processing module's input (as in a task file)
         """
         if type(self._input_uids) is not None:
             try:
@@ -203,7 +203,7 @@ class DataAccess():
         """Returns vertical levels list
         
         Arguments:
-            uid -- processing module input's UID (as in a task file)
+            uid -- UID of a processing module's input  (as in a task file)
         """
         if type(self._input_uids) is not None:
             try:
@@ -220,8 +220,15 @@ class DataAccess():
         """Writes data and metadata to an output data storage (array).
 
         Arguments:
-
+            uid -- UID of a processing module's output (as in a task file)
+            values -- processing result's values as a masked array/array/list
+            level -- vertical level name segment -- time segment description (as in input time segments taken from a task file)
+            times -- time grid as a list of datatime values
+            longitudes -- longitude grid (1-D or 2-D) as an array/list
+            latitudes -- latitude grid (1-D or 2-D) as an array/list
         """
+
+        self._data_writers[uid].write(values, level, segment, times, longitudes, latitudes)
         pass
 
     def output_uids(self):

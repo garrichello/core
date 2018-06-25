@@ -44,19 +44,18 @@ class MainApp:
             proc -- current processing dictionary (used in generating an error message)
             proc_args -- input or output arguments dictionary
         """
-        data_uid_list = [data['@uid'] for data in task['data']] # List of all data UIDs.
-        destination_uid_list = [destination['@uid'] for destination in task['destination']] # List of all destination UIDS.
+
         # If there is only one input or output item, create a list with this item, so the following 'for' can work normally.
         if isinstance(proc_args, collections.OrderedDict):
             proc_args = [proc_args]
         for arg in proc_args:
             argument_uid = arg['@data'] # UID of the data/destination argument.
             try: 
-                data_idx = data_uid_list.index(argument_uid) # Search for a 'data' element.
+                data_idx = self._data_uid_list.index(argument_uid) # Search for a 'data' element.
                 arg['data'] = task['data'][data_idx] # Add a new dictionary item with a description.
             except ValueError:
                 try:
-                    data_idx = destination_uid_list.index(argument_uid) # Search for a 'destination' element.
+                    data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
                     arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.
                 except ValueError: # Print error message and abort if nothing found
                     print("(MainApp::process) Can't find data or destination UID: '" 
@@ -71,7 +70,9 @@ class MainApp:
         for task_name in self._task:
             task = self._task[task_name]
             metadb_info = task['metadb'] # Location of the metadata database and user credentials to access it.
-
+            self._data_uid_list = [data['@uid'] for data in task['data']] # List of all data UIDs.
+            self._destination_uid_list = [destination['@uid'] for destination in task['destination']] # List of all destination UIDS.
+            
             # Run processings one by one as specified in a task file.
             for proc in task['processing']:
                 proc_class_name = proc['@class'] # The name of a processing class.

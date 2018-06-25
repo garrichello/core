@@ -24,9 +24,8 @@ class DataAccess():
 
         self._input_uids = [] # UIDs of input data sources.
         self._output_uids = [] # UID of output data destinations.
-        self._data_readers = {} # Instanses of classes-readers of data.
-        self._data_writers = {}  # Instances of classes-writers of data.
-
+        self._data_objects = {} # Instanses of data access classes.
+    
         # Process input arguments: None - no inputs; get metadata for each data source (if any) and instantiate corresponding classes.
         print("(DataAccess::__init__) Prepare inputs...")
         self._inputs = listify(inputs)
@@ -38,8 +37,10 @@ class DataAccess():
                 self._input_uids.append(uid)
                 input_info = self._get_metadata(metadb_info, input_) # Get additional info about an input from the metadata database
                 data_class_name = "Data" + input_info["@data_type"].capitalize() #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
-                input_class = load_module("mod", data_class_name)
-                self._data_readers[uid] = input_class(input_info)  # Try to instantiate data reading class
+                data_class = load_module("mod", data_class_name)
+                if input_["data"].get("@object") is None:
+                    input_["data"]["@object"] = data_class(input_info)  # Try to instantiate data reading class
+                self._data_objects[uid] = input_["data"]["@object"]
                 
         # Process ouput argumetns: None - no outputs; get metadata for each data destination (if any) and instantiate corresponding classes.
         print("(DataAccess::__init__) Prepare outputs...")
@@ -52,8 +53,10 @@ class DataAccess():
                 self._output_uids.append(uid)
                 output_info = self._get_metadata(metadb_info, output_) # Get additional info about an output from the metadata database
                 data_class_name = "Data" + output_info["@data_type"].capitalize() #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
-                output_class = load_module("mod", data_class_name)
-                self._data_writers[uid] = output_class(output_info)  # Try to instantiate data writing class
+                data_class = load_module("mod", data_class_name)
+                if output_["data"].get("@object") is None:
+                    output_["data"]["@object"] = data_class(output_info)  # Try to instantiate data writing class
+                self._data_objects[uid] = output_["data"]["@object"]
 
         self._metadb = metadb_info
         
@@ -174,7 +177,7 @@ class DataAccess():
             segments -- list of time segments (read all if omitted)
             levels - list of vertical level (read all if omitted)
         """
-        result = self._data_readers[uid].read(segments, levels)
+        result = self._data_objects[uid].read(segments, levels)
         return result
 
     def input_uids(self):
@@ -211,7 +214,10 @@ class DataAccess():
             except ValueError:
                 print("(DataAccess::get_segments) No such input UID: " + uid)
                 raise
-            levels = [level_name.strip() for level_name in self._inputs[input_idx]["data"]["levels"]["@values"].split(';')]
+            if isinstance(self._inputs[input_idx]["data"]["levels"]["@values"], set):
+                levels = list(self._inputs[input_idx]["data"]["levels"]["@values"])
+            else:
+                levels = [level_name.strip() for level_name in self._inputs[input_idx]["data"]["levels"]["@values"].split(';')]
         else:
             levels = None
         return levels
@@ -228,7 +234,7 @@ class DataAccess():
             latitudes -- latitude grid (1-D or 2-D) as an array/list
         """
 
-        self._data_writers[uid].write(values, level, segment, times, longitudes, latitudes)
+        self._data_objects[uid].write(values, level, segment, times, longitudes, latitudes)
 
     def output_uids(self):
         """Returns a list of UIDs of processing module outputs (as in a task file)"""

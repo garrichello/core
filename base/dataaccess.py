@@ -222,7 +222,7 @@ class DataAccess():
             levels = None
         return levels
 
-    def put(self, uid, values, level = None, segment = None, times = None, longitudes = None, latitudes = None):
+    def put(self, uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None):
         """Writes data and metadata to an output data storage (array).
 
         Arguments:

@@ -3,6 +3,10 @@
 from base.dataaccess import DataAccess
 
 class cvcCalcTiMean():
+    """ Performs calculation of time averaged values.
+
+    """
+    
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
     

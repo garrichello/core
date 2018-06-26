@@ -3,6 +3,10 @@
 from base.dataaccess import DataAccess
 
 class cvcOutput:
+    """ Provides redirection of input data arrays to corresponding plotting/writing modules
+    
+    """
+
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
         

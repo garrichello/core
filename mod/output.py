@@ -1,7 +1,9 @@
 """Class for output"""
 
+from base.dataaccess import DataAccess
+
 class cvcOutput:
-    def __init__(self, data_helper):
+    def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
         
     def run(self):
@@ -18,4 +20,9 @@ class cvcOutput:
 
         output_uids = self._data_helper.output_uids()
 
-        pass
+        for level_name in vertical_levels:
+            for segment in time_segments:
+                self._data_helper.put(output_uids[0], result["data"][level_name][segment["@name"]]["@values"], level=level_name, 
+                        segment=segment, longitudes=result["@longitude_grid"], latitudes=result["@longitude_grid"])
+
+        print("(cvcOutput::run) Finished!")

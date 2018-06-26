@@ -73,7 +73,6 @@ class DataNetcdf:
         result = {} # Contains data arrays, grids and some additional information.
         result["data"] = {} # Contains data arrays being read from netCDF files at each vertical level.
 
-
         # Process each vertical level separately.
         for level_name in self._data_info["levels"]:
             print ("(DataNetcdf::read) Reading level: '{0}'".format(level_name))

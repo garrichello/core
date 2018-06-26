@@ -1,6 +1,7 @@
 """Provides classes
     DataArray
 """
+from base.common import listify, print
 
 class DataArray:
     """ Provides methods for reading and writing arrays in memory.
@@ -18,7 +19,43 @@ class DataArray:
         self._data_info["data"]["time"]["segment"] = []
 
     def read(self, segments, levels):
-        pass
+        """Reads an array.
+
+        Arguments:
+            segments -- time segments
+            levels -- vertical levels
+
+        Returns:
+            result["array"] -- data array
+        """
+
+        # Segments must be a list or None.
+        self._segments = listify(segments)
+        self._levels = listify(levels)
+        
+        result = {} # Contains data arrays, grids and some additional information.
+        result["data"] = {} # Contains data arrays being read from netCDF files at each vertical level.
+
+        # Process each vertical level separately.
+        for level_name in self._levels:
+            print ("(DataArray::read) Reading level: '{0}'".format(level_name))
+
+            # Process each time segment separately.
+            data_by_segment = {} # Contains data array for each time segment.
+            for segment in self._segments:
+                print ("(DataArray::read) Reading time segment '{0}'".format(segment["@name"]))
+
+                data_by_segment[segment["@name"]] = {}
+                data_by_segment[segment["@name"]]["@values"] = self._data_info["data"][level_name][segment["@name"]]["@values"]
+                data_by_segment[segment["@name"]]["@units"] = self._data_info["data"]["description"]["@units"]
+                data_by_segment[segment["@name"]]["@time_grid"] = self._data_info["data"]["time"].get("@grid")
+                data_by_segment[segment["@name"]]["segment"] = segment
+            
+            result["data"][level_name] = data_by_segment
+            result["@longitude_grid"] = self._data_info["data"]["@longitudes"]
+            result["@latitude_grid"] = self._data_info["data"]["@latitudes"]
+        
+        return result
 
     def write(self, values, level, segment, times, longitudes, latitudes):
         """ Stores values and metadata in data_info dictionary

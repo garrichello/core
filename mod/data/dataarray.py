@@ -11,85 +11,99 @@ class DataArray:
         self._data_info = data_info
 
         # Create a new levels element in the data info discarding anything specified in the task file.
-        self._data_info["data"]["levels"] = {}
-        self._data_info["data"]["levels"]["@values"] = set()
+        self._data_info['data']['levels'] = {}
+        self._data_info['data']['levels']['@values'] = set()
 
         # Create a new time segment element in data info discarding anything specified in the task file.
-        self._data_info["data"]["time"] = {}
-        self._data_info["data"]["time"]["segment"] = []
+        self._data_info['data']['time'] = {}
+        self._data_info['data']['time']['segment'] = []
 
-    def read(self, segments, levels):
+    def read(self, options):
         """Reads an array.
 
         Arguments:
-            segments -- time segments
-            levels -- vertical levels
+            options -- dictionary of read options:
+                ['segments'] -- time segments
+                ['levels'] -- vertical levels
 
         Returns:
-            result["array"] -- data array
+            result['array'] -- data array
         """
 
         # Segments must be a list or None.
-        self._segments = listify(segments)
-        self._levels = listify(levels)
+        self._segments = listify(options['segments'])
+        self._levels = listify(options['levels'])
         
         result = {} # Contains data arrays, grids and some additional information.
-        result["data"] = {} # Contains data arrays being read from netCDF files at each vertical level.
+        result['data'] = {} # Contains data arrays being read from netCDF files at each vertical level.
 
         # Process each vertical level separately.
         for level_name in self._levels:
-            print ("(DataArray::read) Reading level: '{0}'".format(level_name))
+            print ('(DataArray::read) Reading level: \'{0}\''.format(level_name))
 
             # Process each time segment separately.
             data_by_segment = {} # Contains data array for each time segment.
             for segment in self._segments:
-                print ("(DataArray::read) Reading time segment '{0}'".format(segment["@name"]))
+                print ('(DataArray::read) Reading time segment \'{0}\''.format(segment['@name']))
 
-                data_by_segment[segment["@name"]] = {}
-                data_by_segment[segment["@name"]]["@values"] = self._data_info["data"][level_name][segment["@name"]]["@values"]
-                data_by_segment[segment["@name"]]["@units"] = self._data_info["data"]["description"]["@units"]
-                data_by_segment[segment["@name"]]["@time_grid"] = self._data_info["data"]["time"].get("@grid")
-                data_by_segment[segment["@name"]]["segment"] = segment
+                data_by_segment[segment['@name']] = {}
+                data_by_segment[segment['@name']]['@values'] = self._data_info['data'][level_name][segment['@name']]['@values']
+                data_by_segment[segment['@name']]['@units'] = self._data_info['data']['description']['@units']
+                data_by_segment[segment['@name']]['@time_grid'] = self._data_info['data']['time'].get('@grid')
+                data_by_segment[segment['@name']]['segment'] = segment
             
-            result["data"][level_name] = data_by_segment
-            result["@longitude_grid"] = self._data_info["data"]["@longitudes"]
-            result["@latitude_grid"] = self._data_info["data"]["@latitudes"]
+            result['data'][level_name] = data_by_segment
+            result['@longitude_grid'] = self._data_info['data']['@longitudes']
+            result['@latitude_grid'] = self._data_info['data']['@latitudes']
         
         return result
 
-    def write(self, values, level, segment, times, longitudes, latitudes):
+    def write(self, values, options):
         """ Stores values and metadata in data_info dictionary
             describing 'array' data element.
-        """
+                
+        Arguments:
+            values -- processing result's values as a masked array/array/list.
+            options -- dictionary of write options:
+                ['level'] -- vertical level name 
+                ['segment'] -- time segment description (as in input time segments taken from a task file)
+                ['times'] -- time grid as a list of datatime values
+                ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
+                ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
+        """ 
+
+        level = options['level']
+        segment = options['segment']
+        times = options['times']
+        longitudes = options['longitudes']
+        latitudes = options['latitudes']
 
         if level is not None:
             # Append a new level name.
-            self._data_info["data"]["levels"]["@values"].add(level)
+            self._data_info['data']['levels']['@values'].add(level)
 
         if segment is not None:
             # Append a new time segment.
             try:
-                self._data_info["data"]["time"]["segment"].index(segment)
+                self._data_info['data']['time']['segment'].index(segment)
             except ValueError:
-                self._data_info["data"]["time"]["segment"].append(segment)
+                self._data_info['data']['time']['segment'].append(segment)
 
         if times is not None:
             # Append a time grid
-            self._data_info["data"]["time"]["@grid"] = times
+            self._data_info['data']['time']['@grid'] = times
 
-        self._data_info["data"]["@longitudes"] = longitudes
-        self._data_info["data"]["@latitudes"] = latitudes
+        self._data_info['data']['@longitudes'] = longitudes
+        self._data_info['data']['@latitudes'] = latitudes
 
         if level is not None:
-            if self._data_info["data"].get(level) is None:
-                self._data_info["data"][level] = {}
+            if self._data_info['data'].get(level) is None:
+                self._data_info['data'][level] = {}
             if segment is not None:
-                if self._data_info["data"][level].get(segment["@name"]) is None:
-                    self._data_info["data"][level][segment["@name"]] = {}
-                self._data_info["data"][level][segment["@name"]]["@values"] = values
+                if self._data_info['data'][level].get(segment['@name']) is None:
+                    self._data_info['data'][level][segment['@name']] = {}
+                self._data_info['data'][level][segment['@name']]['@values'] = values
             else:
-                self._data_info["data"][level]["@values"] = values
+                self._data_info['data'][level]['@values'] = values
         else:
-           self._data_info["data"]["@values"] = values
-       
-        pass
+           self._data_info['data']['@values'] = values

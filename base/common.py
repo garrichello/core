@@ -17,10 +17,10 @@ def load_module(module_name, class_name):
         try:
             class_ = getattr(module_, class_name)
         except AttributeError:
-            print("(MainApp::load_module) Class " + class_name + " does not exist")
+            print('(MainApp::load_module) Class ' + class_name + ' does not exist')
             raise
     except ImportError:
-        print("(MainApp::load_module) Module " + module_name + " does not exist")
+        print('(MainApp::load_module) Module ' + module_name + ' does not exist')
         raise
     return class_
 
@@ -70,6 +70,6 @@ def print(*args, **kwargs):
 
     """
     now = datetime.datetime.now()
-    date_time = "({0:02}/{1:02}/{2:04} {3:02}:{4:02}:{5:02}) ".format(now.day, now.month, now.year, now.hour, now.minute, now.second)
+    date_time = '({0:02}/{1:02}/{2:04} {3:02}:{4:02}:{5:02}) '.format(now.day, now.month, now.year, now.hour, now.minute, now.second)
     builtins.print(date_time, end='')
     return builtins.print(*args, **kwargs)

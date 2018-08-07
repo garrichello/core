@@ -5,9 +5,9 @@ It handles command line arguments and creates an instance of the MainApp class.
 """
 
 
-__prog__ = "Core"
-__version__ = "0.1"
-__author__ = "Igor Okladnikov"
+__prog__ = 'Core'
+__version__ = '0.1'
+__author__ = 'Igor Okladnikov'
 
 import argparse
 
@@ -17,19 +17,19 @@ def main(args):
     """Main function.
 
     It creates an instance of the MainApp class and runs the application."""
-    print(__prog__ + " v. " + __version__)
+    print(__prog__ + ' v. ' + __version__)
 
     app = MainApp(args)
 
 #    try:
     app.run()
-    print("SUCCESS!")
+    print('SUCCESS!')
 #    except:
 #        print("ERROR!")
     
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description = "Computing and Visualizing Core")
-    parser.add_argument("task_file_name", help = "name of an XML task file")
+    parser = argparse.ArgumentParser(description = 'Computing and Visualizing Core')
+    parser.add_argument('task_file_name', help = 'name of an XML task file')
     args = parser.parse_args()
     
     main(args)

@@ -19,7 +19,7 @@ class MainApp:
     
     def run(self):
         """Run this function to run the Core."""
-        print("(MainApp::run) Let's do it!")
+        print('(MainApp::run) Let\'s do it!')
 
         self._read_task()
         self._process()
@@ -32,7 +32,7 @@ class MainApp:
             with open(self._task_file_name) as fd:
                 self._task = xmltodict.parse(fd.read())
         except FileNotFoundError:
-            print("(MainApp::_read_task) Task file not found: " + self._task_file_name)
+            print('(MainApp::_read_task) Task file not found: ' + self._task_file_name)
             raise
 
     def _prepare_proc_arguments(self, task, proc, proc_args):
@@ -58,20 +58,20 @@ class MainApp:
                     data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
                     arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.
                 except ValueError: # Print error message and abort if nothing found
-                    print("(MainApp::process) Can't find data or destination UID: '" 
-                            + argument_uid + "' in processing '" + proc['@uid'] 
-                            + "' input '" + arg['@uid'] + "'")
+                    print('(MainApp::process) Can\'t find data or destination UID: \'' 
+                            + argument_uid + '\' in processing \'' + proc['@uid'] 
+                            + '\' input \'' + arg['@uid'] + '\'')
                     raise
 
     def _process(self):
         """Runs modules in an order specified in a task file."""
-        print("(MainApp::process) Run the processing.")
+        print('(MainApp::process) Run the processing.')
 
         for task_name in self._task:
             task = self._task[task_name]
             metadb_info = task['metadb'] # Location of the metadata database and user credentials to access it.
             self._data_uid_list = [data['@uid'] for data in task['data']] # List of all data UIDs.
-            self._destination_uid_list = [destination['@uid'] for destination in task['destination']] # List of all destination UIDS.
+            self._destination_uid_list = [destination['@uid'] for destination in task['destination']] # List of all destination UIDs.
             
             # Run processings one by one as specified in a task file.
             for proc in task['processing']:
@@ -88,7 +88,7 @@ class MainApp:
                     self._prepare_proc_arguments(task, proc, proc_output)
 
                 # Initiate the computing processor (class that runs and controls processing modules).
-                processor = Proc(proc_input, proc_output, metadb_info)
+                processor = Proc(proc_class_name, proc_input, proc_output, metadb_info)
 
                 # Run the processor which in turn should run the processing module.
-                processor.run(proc_class_name)
+                processor.run()

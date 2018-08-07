@@ -11,7 +11,7 @@ class cvcOutput:
         self._data_helper = data_helper
         
     def run(self):
-        print("(cvcOutput::run) Started!")
+        print('(cvcOutput::run) Started!')
 
         input_uids = self._data_helper.input_uids()
 
@@ -26,7 +26,7 @@ class cvcOutput:
 
         for level_name in vertical_levels:
             for segment in time_segments:
-                self._data_helper.put(output_uids[0], result["data"][level_name][segment["@name"]]["@values"], level=level_name, 
-                        segment=segment, longitudes=result["@longitude_grid"], latitudes=result["@longitude_grid"])
+                self._data_helper.put(output_uids[0], result['data'][level_name][segment['@name']]['@values'], level=level_name, 
+                        segment=segment, longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'])
 
-        print("(cvcOutput::run) Finished!")
+        print('(cvcOutput::run) Finished!')

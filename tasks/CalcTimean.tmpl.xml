@@ -26,8 +26,8 @@
 		<time uid='Input_1' template='YYYYMMDDHH'>
 	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
 	    	<segment name='Seg1' beginning='1961010100' ending='1961123118'/>
-	    	<segment name='Seg2' beginning='1962010100' ending='1962123118'/>
-	    	<segment name='Seg3' beginning='1963010100' ending='1963123118'/>
+	    <!--	<segment name='Seg2' beginning='1962010100' ending='1962123118'/>
+	    	<segment name='Seg3' beginning='1963010100' ending='1963123118'/> -->
 		</time>
     </data>
     
@@ -38,10 +38,10 @@
 	    	<p0lat units='degrees'>0</p0lat>
 	    	<rot units='degrees'>0</rot>
 	    	<limits units='degrees'>
-			<limit role='left'>-180</limit>
-			<limit role='right'>180</limit>
-			<limit role='top'>90</limit>
-			<limit role='bottom'>-90</limit>
+				<limit role='left'>-180</limit>
+				<limit role='right'>180</limit>
+				<limit role='top'>90</limit>
+				<limit role='bottom'>-90</limit>
 	    	</limits>
 		</projection>
 		<graphics title='' kind='shaded'> <!-- kind: 'shaded', 'vector' (replaces 'contour', 'station', and 'vector'); 'tile', 'multiline', 'regress2d' -->
@@ -59,7 +59,7 @@
 	    	<colortable>RAINBOW</colortable>  <!-- only for graphics kind=='shaded', e.g.: RAINBOW --> 
 	    	<colorscale>linear</colorscale> <!-- only for graphics kind=='shaded', linear/log -->
 	    	<blackbg>no</blackbg> <!-- black background -->
-    	    	<smoothing>yes</smoothing> <!-- only for graphics kind=='shaded': yes/no -->
+    	    <smoothing>yes</smoothing> <!-- only for graphics kind=='shaded': yes/no -->
 	    	<steps>30</steps> <!-- only for graphics kind == 'contour' or for file type == 'shape' -->
 		</graphics>
     </destination>    

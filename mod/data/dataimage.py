@@ -2,9 +2,12 @@
     DataImage, ImageGeotiff
 """
 from osgeo import gdal
+from osgeo import osr
+import os.path
+import numpy as np
 
 from base.common import load_module
-import numpy as np
+from base import SLDLegend
 
 class DataImage:
     """ Provides reading/writing data from/to graphical files.
@@ -16,6 +19,7 @@ class DataImage:
         image_class_name = 'Image' + data_info['data']['file']['@type'].capitalize()
         image_class = load_module('mod', image_class_name)
         self._image = image_class(data_info)
+        self._data_info = data_info
 
     def read(self, options):
         """Reads image-file into an array.
@@ -40,7 +44,17 @@ class DataImage:
 
         """    
 
+        # Write image file
         self._image.write(values, options)
+
+        # Write legend into an SLD-file
+        if (self._data_info['data']['graphics']['legend']['@kind'] == 'file'
+                and self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
+            legend_options = self._data_info['data']['graphics']['legend']
+            colormap = self._data_info['data']['graphics']['colortable'].lower()
+            legend_options['@data_kind'] = 'station' if values.ndim == 1 else 'raster'
+            legend = SLDLegend(legend_options, colormap, values.min(), values.max(), values.fill_value)
+            legend.write()
 
         
 class ImageGeotiff:
@@ -71,13 +85,55 @@ class ImageGeotiff:
                 ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """    
+        
+        # Prepare data array with masked values replaced with a fill value.
+        data = np.ma.filled(values, fill_value=values.fill_value)
+        longitudes = options['longitudes']
+        latitudes = options['latitudes']
+
+        # Check if we have a (0..180,-180..0) grid and swap parts if its true. Negative should be on the left and increasing.
+        if longitudes[0] > longitudes[-1]: 
+            first_negative_latitude_idx = np.where(longitudes < 0)[0][0] # It's a border between pos and neg longitudes.
+            longitudes = np.concatenate((longitudes[first_negative_latitude_idx:], longitudes[:first_negative_latitude_idx]))
+            left_part = data[:,first_negative_latitude_idx:]
+            right_part = data[:,:first_negative_latitude_idx]
+            data = np.hstack((left_part, right_part))
+
+        # Prepare GeoTIFF driver.
         fmt = 'GTiff'
         drv = gdal.GetDriverByName(fmt)
         metadata = drv.GetMetadata()
-        if metadata.has_key(gdal.DCAP_CREATE) and metadata[gdal.DCAP_CREATE] == 'YES':
-            pass
-        else:
+        
+        # Check if driver supports Create() method.
+        if (gdal.DCAP_CREATE not in metadata) or (metadata[gdal.DCAP_CREATE] != 'YES'):
             print('(ImageGeotiff::write) Error! Driver {} does not support Create() method. Unable to write GeoTIFF.'.format(fmt))
             raise AssertionError
-        dt = gdal.GDT_Float32
+
+        # Write image.
+        dims = data.shape
+        (file_root, file_ext) = os.path.splitext(self._data_info['data']['file']['@name'])
+        filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], 
+            options['segment']['@beginning'], options['segment']['@ending'], file_ext)
+        dataset = drv.Create(filename, dims[1], dims[0], 1, gdal.GDT_Float32)
+        dataset.GetRasterBand(1).WriteArray(data)
+
+        # Prepare geokeys.
+        gtype = 'EPSG:4326'
+        cs = osr.GetWellKnownGeogCSAsWKT(gtype)
+        dataset.SetProjection(cs)
+
+        gt = [0, 1, 0, 0, 0, 1] # Default value.
+
+        # Pixel scale.
+        limits = {limit['@role']:int(limit['#text']) for limit in self._data_info['data']['projection']['limits']['limit']}
+        gt[1] = longitudes[1] - longitudes[0]
+        gt[5] = latitudes[1] - latitudes[0]
+
+        # Top left pixel position.
+        gt[0] = longitudes[0]
+        gt[3] = latitudes[0]
+
+        dataset.SetGeoTransform(gt)
+
+        dataset = None
 

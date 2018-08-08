@@ -2,6 +2,8 @@
 
 from base.dataaccess import DataAccess
 
+from base.common import listify
+
 class cvcCalcTiMean():
     """ Performs calculation of time averaged values.
 
@@ -15,9 +17,9 @@ class cvcCalcTiMean():
 
         input_uids = self._data_helper.input_uids()
 
-        time_segments = self._data_helper.get_segments(input_uids[0])
+        time_segments = listify(self._data_helper.get_segments(input_uids[0]))
 
-        vertical_levels = self._data_helper.get_levels(input_uids[0])
+        vertical_levels = listify(self._data_helper.get_levels(input_uids[0]))
 
         # Get data for all time segments and levels at once
         result = self._data_helper.get(input_uids[0], time_segments, vertical_levels)
@@ -29,6 +31,7 @@ class cvcCalcTiMean():
                 # Let's calulate time averaged values
                 timean = result['data'][level][segment['@name']]['@values'].mean(axis=0)
                 self._data_helper.put(output_uids[0], values=timean, level=level, segment=segment,
-                    longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'])
+                    longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'], 
+                    fill_value = result['data'][level][segment['@name']]['@values'].fill_value)
         
         print('(cvcCalcTiMean::run) Finished!')

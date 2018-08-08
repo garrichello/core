@@ -32,5 +32,5 @@ class Proc:
         try:
             processor.run()
         except AttributeError:
-            print('(Proc::run) No method \'run\' in the class ' + self.proc_class_name)
+            print('(Proc::run) No method \'run\' in the class ' + self._proc_class_name)
             raise

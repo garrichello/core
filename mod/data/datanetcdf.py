@@ -121,7 +121,7 @@ class DataNetcdf:
 
             path = Path(self._ROI)
             ROI_mask = path.contains_points(points) # True is for the points inside the ROI
-            ROI_mask = ~ROI_mask.reshape((lons.size, lats.size)) # True is masked so we need to inverse the mask
+            ROI_mask = ~ROI_mask.reshape((lats.size, lons.size)) # True is masked so we need to inverse the mask
 
             # Determine index of the current vertical level to read data variable.
             if level_variable_name != NO_LEVEL_NAME:
@@ -165,7 +165,7 @@ class DataNetcdf:
                 
                 # Mask all points outside the ROI mask for all times.
                 # TODO: Tuple (time_grid.size, 1, 1) must correspond to number of dimensions of data variable
-                ROI_mask_time = np.tile(ROI_mask.T, (time_grid.size, 1, 1)) # Propagate ROI mask along the time dimension.
+                ROI_mask_time = np.tile(ROI_mask, (time_grid.size, 1, 1)) # Propagate ROI mask along the time dimension.
                 masked_data_slice = ma.MaskedArray(data_slice, mask=ROI_mask_time, fill_value=data_variable._FillValue) # Create masked array using ROI mask.
 
                 # Remove level variable name from the list of data dimensions if it is present

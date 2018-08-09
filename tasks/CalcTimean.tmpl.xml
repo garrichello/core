@@ -65,7 +65,7 @@
     </destination>    
 
     <destination uid="File_1" type="raw"><!-- uid to be generated, then used in processing -->
-      	<file name='output.nc' type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
+      	<file name='output/output.nc' type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
     </destination>
     
     <data uid='Result_1' type='array'>

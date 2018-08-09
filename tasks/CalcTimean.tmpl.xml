@@ -32,7 +32,7 @@
     </data>
     
     <destination uid='Image_1' type='image'> <!-- type: 'image', 'raw' -->
-		<file name='output.tiff' type='geotiff'/> <!-- if graphics.kind=='shaded', then file.type='eps' OR 'geotiff'; graphics.kind=='vector': file.type='shape'; graphics.kind=='multiline': file.type='eps'; for kind=='tile' : 'geotiff24' -->
+		<file name='output/output.tiff' type='geotiff'/> <!-- if graphics.kind=='shaded', then file.type='eps' OR 'geotiff'; graphics.kind=='vector': file.type='shape'; graphics.kind=='multiline': file.type='eps'; for kind=='tile' : 'geotiff24' -->
 		<projection name='cylindrical'> <!-- 'azimuthal equidistant, 'cylindrical',... -->
 	    	<p0lon units='degrees'>0</p0lon>
 	    	<p0lat units='degrees'>0</p0lat>
@@ -54,7 +54,7 @@
 				<limited>no</limited> <!-- fixed legend limits: yes/no -->
 				<minimum>-15.0</minimum> <!-- ignored if limited == no -->
 				<maximum>15.0</maximum> <!-- ignored if limited == no -->
-				<file name='output.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
+				<file name='output/output.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
 	    	</legend>
 	    	<colortable>RAINBOW</colortable>  <!-- only for graphics kind=='shaded', e.g.: RAINBOW --> 
 	    	<colorscale>linear</colorscale> <!-- only for graphics kind=='shaded', linear/log -->

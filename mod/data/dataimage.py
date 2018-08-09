@@ -50,12 +50,9 @@ class DataImage:
         # Write legend into an SLD-file
         if (self._data_info['data']['graphics']['legend']['@kind'] == 'file'
                 and self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
-            legend_options = self._data_info['data']['graphics']['legend']
-            colormap = self._data_info['data']['graphics']['colortable'].lower()
-            legend_options['@data_kind'] = 'station' if values.ndim == 1 else 'raster'
-            legend = SLDLegend(legend_options, colormap, values.min(), values.max(), values.fill_value)
-            legend.write()
-
+            self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if values.ndim == 1 else 'raster'
+            legend = SLDLegend(self._data_info)
+            legend.write(values, options)
         
 class ImageGeotiff:
     """ Provides reading/writing data from/to Geotiff files.

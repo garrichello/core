@@ -48,7 +48,7 @@ class DataArray:
 
                 data_by_segment[segment['@name']] = {}
                 data_by_segment[segment['@name']]['@values'] = self._data_info['data'][level_name][segment['@name']]['@values']
-                data_by_segment[segment['@name']]['@units'] = self._data_info['data']['description']['@units']
+                data_by_segment[segment['@name']]['description'] = self._data_info['data']['description']
                 data_by_segment[segment['@name']]['@time_grid'] = self._data_info['data']['time'].get('@grid')
                 data_by_segment[segment['@name']]['segment'] = segment
             

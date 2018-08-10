@@ -225,7 +225,7 @@ class DataAccess():
             levels = None
         return levels
 
-    def put(self, uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None, fill_value=-999):
+    def put(self, uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None, fill_value=None):
         """Writes data and metadata to an output data storage (array).
 
         Arguments:
@@ -242,7 +242,8 @@ class DataAccess():
         options['times'] = times
         options['longitudes'] = longitudes
         options['latitudes'] = latitudes
-        values.fill_value = fill_value
+        if fill_value is not None:
+            values.fill_value = fill_value
         self._data_objects[uid].write(values, options)
 
     def output_uids(self):

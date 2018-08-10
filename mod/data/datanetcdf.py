@@ -36,6 +36,10 @@ class DataNetcdf:
     """
     def __init__(self, data_info):
         self._data_info = data_info
+        if self._data_info['data']['@type'] == 'dataset':
+            self._set_ROI()
+
+    def _set_ROI(self):
         ROI_lats_string = [p['@lat'] for p in self._data_info['data']['region']['point']]
         try:
             ROI_lats = [float(lat_string) for lat_string in ROI_lats_string]
@@ -185,3 +189,22 @@ class DataNetcdf:
             result['@grid_type'] = grid_type
 
         return result
+
+    def write(self, values, options):
+        """Writes data array into a netCDF file.
+
+        Arguments:
+            values -- processing result's values as a masked array/array/list.
+            options -- dictionary of write options:
+                ['level'] -- vertical level name 
+                ['segment'] -- time segment description (as in input time segments taken from a task file)
+                ['times'] -- time grid as a list of datatime values
+                ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
+                ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
+        """    
+        
+        # Prepare data array with masked values replaced with a fill value.
+        data = ma.filled(values, fill_value=values.fill_value)
+        longitudes = options['longitudes']
+        latitudes = options['latitudes']
+

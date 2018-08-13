@@ -98,20 +98,20 @@ class DataNetcdf:
                 lons = longitude_variable[:]
                 if lons.max() > 180:
                     lons = ((lons + 180.0) % 360.0) - 180.0 # Switch from 0-360 to -180-180 grid
-                longitude_indices = np.nonzero([ge and le for ge, le in 
-                        zip(lons >= self._ROI_limits['min_lon'], lons <= self._ROI_limits['max_lon'])])[0]
-            variable_indices[longitude_variable.name] = longitude_indices
-            longitude_grid = lons[longitude_indices]
+#                longitude_indices = np.nonzero([ge and le for ge, le in 
+#                        zip(lons >= self._ROI_limits['min_lon'], lons <= self._ROI_limits['max_lon'])])[0]
+            variable_indices[longitude_variable.name] = np.arange(lons.size) # longitude_indices
+#            longitude_grid = lons[longitude_indices]
 
             # Determine indices of latitudes.
             latitude_variable = unlistify(netcdf_root.get_variables_by_attributes(units=lambda v: v in LATITUDE_UNITS))
             if longitude_variable.ndim == 1:
                 lat_grid_type = 'regular'
                 lats = latitude_variable[:]
-                latitude_indices = np.nonzero([ge and le for ge, le in 
-                        zip(lats >= self._ROI_limits['min_lat'], lats <= self._ROI_limits['max_lat'])])[0]
-            variable_indices[latitude_variable.name] = latitude_indices
-            latitude_grid = lats[latitude_indices]
+#                latitude_indices = np.nonzero([ge and le for ge, le in 
+#                        zip(lats >= self._ROI_limits['min_lat'], lats <= self._ROI_limits['max_lat'])])[0]
+            variable_indices[latitude_variable.name] = np.arange(lats.size) # latitude_indices
+#            latitude_grid = lats[latitude_indices]
             
             if lon_grid_type == lat_grid_type:
                 grid_type = lon_grid_type
@@ -164,18 +164,29 @@ class DataNetcdf:
                 dd = data_variable.dimensions # Names of dimensions of the data variable.
 
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
-                # TODO: Support for different number of dimensions of data variable is needed.
+                # And mask all points outside the ROI mask for all times.
+                print ('(DataNetcdf::read) Actually reading...')
+                if data_variable.ndim == 4:
+                    data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]], 
+                        variable_indices[dd[2]], variable_indices[dd[3]]]
+                if data_variable.ndim == 3:
+                    data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]], 
+                        variable_indices[dd[2]]]
+                if data_variable.ndim == 2:
+                    data_slice = data_variable[:, :]
+                print ('(DataNetcdf::read) Done!')
+
                 # TODO: Are we sure that the last two dimensions are lat and lon correspondingly?
-                data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]], :, :]
-                
-                # Mask all points outside the ROI mask for all times.
-                # TODO: Tuple (time_grid.size, 1, 1) must correspond to number of dimensions of data variable
-                ROI_mask_time = np.tile(ROI_mask, (time_grid.size, 1, 1)) # Propagate ROI mask along the time dimension.
+                if data_slice.ndim > 2: # When time dimension is present.
+                    ROI_mask_time = np.tile(ROI_mask, (time_grid.size, 1, 1)) # Propagate ROI mask along the time dimension.
+                else:                   # When there is only lat and lon dimensions are present.
+                    ROI_mask_time = ROI_mask
                 masked_data_slice = ma.MaskedArray(data_slice, mask=ROI_mask_time, fill_value=data_variable._FillValue) # Create masked array using ROI mask.
 
                 # Remove level variable name from the list of data dimensions if it is present
+                data_dim_names = list(dd)
                 if level_variable_name != NO_LEVEL_NAME:
-                    data_dim_names = [name for name in dd if name != level_variable_name]
+                    data_dim_names.remove(level_variable_name)
                 
                 data_by_segment[segment['@name']] = {}
                 data_by_segment[segment['@name']]['@values'] = masked_data_slice

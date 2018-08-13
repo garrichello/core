@@ -14,7 +14,7 @@
     <data uid='Data_1' type='dataset'> <!-- type: dataset, array -->
     	<description title='Collection long name' name='Temperature' units='K'/>
 		<dataset name='ERA40' resolution='2.5x2.5' time_step='6h' scenario='-'/>  <!-- ERAINT -->
-    	<variable name='t' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
+    	<variable name='2t' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
 		<region units='degrees'>
 	    <!-- <point lon=[/LU_LON/] lat=[/LU_LAT/]/> -->
             <point lon='-100' lat='48'/>
@@ -22,7 +22,7 @@
             <point lon='100' lat='-48'/>
             <point lon='-100' lat='-48'/>
     	</region>
-		<levels values='1000;925;850'/>
+		<levels values='2m'/>
 		<time uid='Input_1' template='YYYYMMDDHH'>
 	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
 	    	<segment name='Seg1' beginning='1961010100' ending='1961123118'/>

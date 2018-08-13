@@ -51,7 +51,7 @@ class SLDLegend:
         
         # Generate format string for printing legend labels according to a difference between maximum and minimum values
         value_order = np.log10((data_max-data_min)/num_labels) # Order of magnitude of the difference between max and min values.
-        precision = 0 if value_order >= 0 else int(abs(np.ceil(value_order)))
+        precision = 0 if value_order >= 0 else int(np.ceil(abs(value_order)))
         width = int(np.ceil(np.log10(data_max)) + precision)
         format_string = '{}:{}.{}f{}'.format('{', width, precision, '}')
         

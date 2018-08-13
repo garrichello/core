@@ -3,7 +3,7 @@
 """
 
 from datetime import datetime
-from netCDF4 import MFDataset, date2index, num2date, Dataset, date2num
+from netCDF4 import MFDataset, date2index, num2date, Dataset, date2num, MFTime
 from string import Template
 import re
 import numpy as np
@@ -148,6 +148,7 @@ class DataNetcdf:
 
             time_variable = unlistify(netcdf_root.get_variables_by_attributes(
                     units=lambda v: True in [tu in v for tu in TIME_UNITS]))
+            time_variable = MFTime(time_variable, calendar='standard')  # Apply multi-file support to the time variable
             
             # Process each time segment separately.
             data_by_segment = {} # Contains data array for each time segment.
@@ -156,7 +157,7 @@ class DataNetcdf:
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')
-                time_idx_range = date2index([segment_start, segment_end], time_variable)
+                time_idx_range = date2index([segment_start, segment_end], time_variable, select='nearest')
                 variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1])
                 time_values = time_variable[variable_indices[time_variable._name]] # Raw time values.
                 time_grid = num2date(time_values, time_variable.units) # Time grid as a datetime object.
@@ -181,7 +182,14 @@ class DataNetcdf:
                     ROI_mask_time = np.tile(ROI_mask, (time_grid.size, 1, 1)) # Propagate ROI mask along the time dimension.
                 else:                   # When there is only lat and lon dimensions are present.
                     ROI_mask_time = ROI_mask
-                masked_data_slice = ma.MaskedArray(data_slice, mask=ROI_mask_time, fill_value=data_variable._FillValue) # Create masked array using ROI mask.
+                try:
+                    fill_value = data_variable._FillValue
+                except AttributeError:
+                    try:
+                        fill_value = data_variable.missing_value
+                    except AttributeError:
+                        fill_value = float('NAN')
+                masked_data_slice = ma.MaskedArray(data_slice, mask=ROI_mask_time, fill_value=fill_value) # Create masked array using ROI mask.
 
                 # Remove level variable name from the list of data dimensions if it is present
                 data_dim_names = list(dd)
@@ -261,5 +269,3 @@ class DataNetcdf:
         longitudes[:] = options['longitudes']
         latitudes[:] = options['latitudes']
         data[:] = ma.filled(values, fill_value=values.fill_value)
-
-        pass

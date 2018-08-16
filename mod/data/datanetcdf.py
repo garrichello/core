@@ -85,7 +85,7 @@ class DataNetcdf:
             level_variable_name = self._data_info['levels'][level_name]['@level_variable_name']
             file_name_template = self._data_info['levels'][level_name]['@file_name_template'] # Template as in MDDB.
             percent_template = PercentTemplate(file_name_template) # Custom string template %keyword%.
-            file_name_wildcard = percent_template.substitute({'year' : '????'}) # Create wildcard-ed template
+            file_name_wildcard = percent_template.substitute({'year':'????', 'mm':'??'}) # Create wildcard-ed template
 
             netcdf_root = MFDataset(file_name_wildcard, check=True)
 
@@ -137,7 +137,10 @@ class DataNetcdf:
                             level_variable_name))
                     raise
                 try:
-                    level_index = level_variable[:].astype('str').tolist().index(level_name)
+                    # Little hack: convert level name from metadata database to float and back to string type
+                    # to be able to search it correctly in float type level variable converted to string.
+                    # Level variable is also primarily converted to float to 'synchronize' types.
+                    level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(level_name)))
                 except KeyError:
                     print ('(DataNetcdf::read) Level \'{0}\' is not found in level variable \'{1}\'. Aborting!'.format(
                             level_name, level_variable_name))
@@ -176,6 +179,8 @@ class DataNetcdf:
                 if data_variable.ndim == 2:
                     data_slice = data_variable[:, :]
                 print ('(DataNetcdf::read) Done!')
+
+                data_slice = np.squeeze(data_slice) # Remove single-dimensional entries
 
                 # TODO: Are we sure that the last two dimensions are lat and lon correspondingly?
                 if data_slice.ndim > 2: # When time dimension is present.

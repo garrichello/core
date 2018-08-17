@@ -87,7 +87,10 @@ class DataNetcdf:
             percent_template = PercentTemplate(file_name_template) # Custom string template %keyword%.
             file_name_wildcard = percent_template.substitute({'year':'????', 'mm':'??'}) # Create wildcard-ed template
 
-            netcdf_root = MFDataset(file_name_wildcard, check=True)
+            try:
+                netcdf_root = MFDataset(file_name_wildcard, check=True)
+            except OSError:
+                netcdf_root = MFDataset(file_name_wildcard, check=True, aggdim='time')
 
             data_variable = netcdf_root.variables[self._data_info['data']['variable']['@name']] # Data variable.
 

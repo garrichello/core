@@ -2,6 +2,8 @@
 
 from base.dataaccess import DataAccess
 
+from base.common import print
+
 class cvcOutput:
     """ Provides redirection of input data arrays to corresponding plotting/writing modules
     

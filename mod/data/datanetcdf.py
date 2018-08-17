@@ -26,7 +26,7 @@ class PercentTemplate(Template):
     pattern = r'''
     \%(?:
         (?P<escaped>%) |
-        (?P<named>[_a-z][_a-z0-9]*)% |
+        (?P<named>[_a-z][_a-z0-9\-]*)% |
         \b\B(?P<braced>) |
         (?P<invalid>)
     )
@@ -85,14 +85,19 @@ class DataNetcdf:
             level_variable_name = self._data_info['levels'][level_name]['@level_variable_name']
             file_name_template = self._data_info['levels'][level_name]['@file_name_template'] # Template as in MDDB.
             percent_template = PercentTemplate(file_name_template) # Custom string template %keyword%.
-            file_name_wildcard = percent_template.substitute({'year':'????', 'mm':'??'}) # Create wildcard-ed template
+            wildcards = {'year':'????', 'mm':'??', 'year1':'????', 'year2':'????', 'year1s-4':'????', 'year2s-4':'????'}
+            file_name_wildcard = percent_template.substitute(wildcards) # Create wildcard-ed template
 
             try:
                 netcdf_root = MFDataset(file_name_wildcard, check=True)
             except OSError:
-                netcdf_root = MFDataset(file_name_wildcard, check=True, aggdim='time')
+                try:
+                    netcdf_root = MFDataset(file_name_wildcard, check=True, aggdim='time')
+                except OSError:
+                    netcdf_root = MFDataset(file_name_wildcard, check=True, aggdim='initial_time0_hours')
 
             data_variable = netcdf_root.variables[self._data_info['data']['variable']['@name']] # Data variable.
+            data_variable.set_auto_mask(False)
 
             # Determine indices of longitudes. 
             longitude_variable = unlistify(netcdf_root.get_variables_by_attributes(units=lambda v: v in LONGITUDE_UNITS))
@@ -152,9 +157,19 @@ class DataNetcdf:
             else:
                 level_index = None
 
-            time_variable = unlistify(netcdf_root.get_variables_by_attributes(
-                    units=lambda v: True in [tu in v for tu in TIME_UNITS]))
-            time_variable = MFTime(time_variable, calendar='standard')  # Apply multi-file support to the time variable
+            # A small temporary hack. 
+            # TODO: Dataset DS131, T62 grid variables has a dimension 'forecast_time1'. Now I set it 
+            # to the first element (whatever it is), but in the future it somehow should be selected by a user
+            # in the GUI (may be) and passed here through an XML task-file.
+            variable_indices['forecast_time1'] = [0]
+
+            units = lambda v: True in [tu in v for tu in TIME_UNITS] if v is not None else False
+            time_variable = unlistify(netcdf_root.get_variables_by_attributes(units=units))
+            try:
+                calendar = time_variable.calendar
+            except AttributeError:
+                calendar = 'standard'
+            time_variable = MFTime(time_variable, calendar=calendar)  # Apply multi-file support to the time variable
             
             # Process each time segment separately.
             data_by_segment = {} # Contains data array for each time segment.
@@ -164,6 +179,9 @@ class DataNetcdf:
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')
                 time_idx_range = date2index([segment_start, segment_end], time_variable, select='nearest')
+                if time_idx_range[0] == 0 or time_idx_range[1] == 0:
+                    print ('(DataNetcdf::read) Error! Some of the times given are before the first time. Aborting!')
+                    raise ValueError
                 variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1])
                 time_values = time_variable[variable_indices[time_variable._name]] # Raw time values.
                 time_grid = num2date(time_values, time_variable.units) # Time grid as a datetime object.
@@ -197,8 +215,11 @@ class DataNetcdf:
                         fill_value = data_variable.missing_value
                     except AttributeError:
                         fill_value = float('NAN')
-                masked_data_slice = ma.MaskedArray(data_slice, mask=ROI_mask_time, fill_value=fill_value) # Create masked array using ROI mask.
-
+                fill_value_mask = data_slice == fill_value
+                combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time)
+                masked_data_slice = ma.MaskedArray(data_slice, mask=combined_mask, fill_value=fill_value) # Create masked array using ROI mask.
+                print ('Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
+                
                 # Remove level variable name from the list of data dimensions if it is present
                 data_dim_names = list(dd)
                 if level_variable_name != NO_LEVEL_NAME:

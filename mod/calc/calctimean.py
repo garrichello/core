@@ -2,7 +2,7 @@
 
 from base.dataaccess import DataAccess
 
-from base.common import listify
+from base.common import listify, print
 
 class cvcCalcTiMean():
     """ Performs calculation of time averaged values.

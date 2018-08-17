@@ -8,6 +8,8 @@ import xmltodict
 from matplotlib import cm, colors
 import numpy as np
 
+from base.common import print
+
 class SLDLegend:
     """Class SLDLegend.
     Provides methods for creating legend files in SLD format.
@@ -43,20 +45,24 @@ class SLDLegend:
 
         # Generate legend colors, labels and values.
         num_colors = 253 if self._legend_options['@type'] == 'continuous' else int(self._legend_options['ncolors'])
-        legend_colors = [int(color_idx/num_colors*253) for color_idx in range(num_colors+1)]
+        legend_colors = [int(float(color_idx)/(num_colors)*253.0) for color_idx in range(num_colors+1)]
         legend_colors.reverse()
         num_labels = int(self._legend_options['nlabels'])
         idxs = [int(idx*(num_colors-1+0.9999)/(num_labels-1)) for idx in range(num_labels)] # Color's indices to be shown in the legend.
-        legend_values = [(legend_colors[i]-1)/float(num_colors-1)*(data_max-data_min)+data_min for i in idxs]
         
         # Generate format string for printing legend labels according to a difference between maximum and minimum values
-        value_order = np.log10((data_max-data_min)/num_labels) # Order of magnitude of the difference between max and min values.
-        precision = 0 if value_order >= 0 else int(np.ceil(abs(value_order)))
-        width = int(np.ceil(np.log10(data_max)) + precision)
-        format_string = '{}:{}.{}f{}'.format('{', width, precision, '}')
-        
-        legend_labels = [format_string.format(value) for value in legend_values] # Labels for each colorbar tick
-        rgb_values = [colors.to_hex(colormap(legend_colors[i])) for i in idxs] # Colors for each colorbar tick in HEX format
+        if values.count() != 0: # When data values are present
+            legend_values = [(legend_colors[i])/float(num_colors)*(data_max-data_min)+data_min for i in idxs]      
+            value_order = np.log10((data_max-data_min)/num_labels) # Order of magnitude of the difference between max and min values.
+            precision = 0 if value_order >= 0 else int(np.ceil(abs(value_order)))
+            width = int(np.ceil(np.log10(data_max)) + precision)
+            format_string = '{}:{}.{}f{}'.format('{', width, precision, '}')
+            legend_labels = [format_string.format(value) for value in legend_values] # Labels for each colorbar tick
+            rgb_values = [colors.to_hex(colormap(legend_colors[i])) for i in idxs] # Colors for each colorbar tick in HEX format
+        else:   # When there are no any data values
+            legend_values = [values.fill_value for i in idxs]
+            legend_labels = ['NO DATA!' for value in legend_values] # Labels for each colorbar tick
+            rgb_values = [colors.to_hex((0, 0, 0)) for i in idxs] # Colors for each colorbar tick in HEX format
 
         # Legend file name composition.
         (file_root, file_ext) = os.path.splitext(self._legend_options['file']['@name'])

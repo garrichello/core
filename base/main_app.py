@@ -34,6 +34,9 @@ class MainApp:
         except FileNotFoundError:
             print('(MainApp::_read_task) Task file not found: ' + self._task_file_name)
             raise
+        except UnicodeDecodeError:
+            with open(self._task_file_name, encoding='windows-1251') as fd:
+                self._task = xmltodict.parse(fd.read())
 
     def _prepare_proc_arguments(self, task, proc, proc_args):
         """Adds a new 'data' element into the argument's dictionary 

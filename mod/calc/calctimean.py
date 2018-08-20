@@ -22,7 +22,9 @@ class cvcCalcTiMean():
         vertical_levels = listify(self._data_helper.get_levels(input_uids[0]))
 
         # Get data for all time segments and levels at once
-        result = self._data_helper.get(input_uids[0], time_segments, vertical_levels)
+        result = self._data_helper.get(input_uids[0], levels=vertical_levels[0])
+        result = self._data_helper.get(input_uids[0], segments=time_segments[0])
+        result = self._data_helper.get(input_uids[0])        
 
         output_uids = self._data_helper.output_uids()
 

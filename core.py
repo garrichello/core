@@ -17,7 +17,7 @@ def main(args):
     """Main function.
 
     It creates an instance of the MainApp class and runs the application."""
-    print(__prog__ + ' v. ' + __version__)
+    print(__prog__ + ' v.' + __version__)
 
     app = MainApp(args)
 

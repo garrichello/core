@@ -71,16 +71,21 @@ class DataNetcdf:
             result['array'] -- data array
         """
 
+        # Levels must be a list or None.
+        levels_to_read = listify(options['levels'])
+        if levels_to_read is None:
+            levels_to_read = self._data_info['levels']  # Read all levels if nothing specified.
         # Segments must be a list or None.
-        self._segments = listify(options['segments'])
-        self._levels = listify(options['levels'])
+        segments_to_read = listify(options['segments'])
+        if segments_to_read is None:
+            segments_to_read = listify(self._data_info['data']['time']['segment'])  # Read all levels if nothing specified.
 
         variable_indices = {} # Contains lists of indices for each dimension of the data variable in the domain to read.
         result = {} # Contains data arrays, grids and some additional information.
         result['data'] = {} # Contains data arrays being read from netCDF files at each vertical level.
 
         # Process each vertical level separately.
-        for level_name in self._data_info["levels"]:
+        for level_name in levels_to_read:
             print ('(DataNetcdf::read) Reading level: \'{0}\''.format(level_name))
             level_variable_name = self._data_info['levels'][level_name]['@level_variable_name']
             file_name_template = self._data_info['levels'][level_name]['@file_name_template'] # Template as in MDDB.
@@ -173,7 +178,7 @@ class DataNetcdf:
             
             # Process each time segment separately.
             data_by_segment = {} # Contains data array for each time segment.
-            for segment in self._segments:
+            for segment in segments_to_read:
                 print ('(DataNetcdf::read) Reading time segment \'{0}\''.format(segment['@name']))
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')

@@ -6,7 +6,7 @@ from osgeo import osr
 import os.path
 import numpy as np
 
-from base.common import load_module
+from base.common import load_module, print
 from base import SLDLegend
 
 class DataImage:

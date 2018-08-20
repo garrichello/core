@@ -1,12 +1,14 @@
 """Provides classes
     DataDB
 """
-
+from sqlalchemy import create_engine, Table, MetaData
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 from datetime import datetime
 
 from base.common import listify, unlistify, print
 
-class DataDB:
+class DataDb:
     """ Provides methods for reading and writing geodatabase files.
     """
     def __init__(self, data_info):
@@ -27,10 +29,16 @@ class DataDB:
 
         # Segments must be a list or None.
         self._segments = listify(options['segments'])
+        self._levels = listify(options['levels'])
 
         result = {} # Contains data arrays, grids and some additional information.
         result['data'] = {} # Contains data arrays being read from netCDF files at each vertical level.
 
+        # Process each vertical level separately.
+        for level_name in self._data_info["levels"]:
+            print ('(DataDb::read) Reading level: \'{0}\''.format(level_name))
+        
+        
         return result
 
     def write(self, values, options):

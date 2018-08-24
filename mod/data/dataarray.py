@@ -61,7 +61,7 @@ class DataArray:
             result['@longitude_grid'] = self._data_info['data']['@longitudes']
             result['@latitude_grid'] = self._data_info['data']['@latitudes']
             result['@fill_value'] = self._data_info['data'][level_name][segment['@name']]['@values'].fill_value
-            result['meta'] = None
+            result['meta'] = self._data_info['meta']
         
         return result
 

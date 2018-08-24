@@ -30,20 +30,25 @@ class DataArray:
             result['array'] -- data array
         """
 
+        # Levels must be a list or None.
+        levels_to_read = listify(options['levels'])
+        if levels_to_read is None:
+            levels_to_read = self._data_info['levels']  # Read all levels if nothing specified.
         # Segments must be a list or None.
-        self._segments = listify(options['segments'])
-        self._levels = listify(options['levels'])
+        segments_to_read = listify(options['segments'])
+        if segments_to_read is None:
+            segments_to_read = listify(self._data_info['data']['time']['segment'])  # Read all levels if nothing specified.
         
         result = {} # Contains data arrays, grids and some additional information.
         result['data'] = {} # Contains data arrays being read from netCDF files at each vertical level.
 
         # Process each vertical level separately.
-        for level_name in self._levels:
+        for level_name in levels_to_read:
             print ('(DataArray::read) Reading level: \'{0}\''.format(level_name))
 
             # Process each time segment separately.
             data_by_segment = {} # Contains data array for each time segment.
-            for segment in self._segments:
+            for segment in segments_to_read:
                 print ('(DataArray::read) Reading time segment \'{0}\''.format(segment['@name']))
 
                 data_by_segment[segment['@name']] = {}
@@ -55,6 +60,8 @@ class DataArray:
             result['data'][level_name] = data_by_segment
             result['@longitude_grid'] = self._data_info['data']['@longitudes']
             result['@latitude_grid'] = self._data_info['data']['@latitudes']
+            result['@fill_value'] = self._data_info['data'][level_name][segment['@name']]['@values'].fill_value
+            result['meta'] = None
         
         return result
 
@@ -77,6 +84,7 @@ class DataArray:
         times = options['times']
         longitudes = options['longitudes']
         latitudes = options['latitudes']
+        meta = options['meta']
 
         if level is not None:
             # Append a new level name.
@@ -107,3 +115,5 @@ class DataArray:
                 self._data_info['data'][level]['@values'] = values
         else:
            self._data_info['data']['@values'] = values
+
+        self._data_info['meta'] = meta

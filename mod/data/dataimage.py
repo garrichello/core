@@ -134,3 +134,47 @@ class ImageGeotiff:
 
         dataset = None
 
+class ImageShape:
+    """ Provides reading/writing data from/to ESRI shapefiles.
+
+    """
+    def __init__(self, data_info):
+        self._data_info = data_info
+
+    def read(self, options):
+        """Reads ESRI shapefile into an array.
+
+        Arguments:
+            options -- dictionary of read options
+        """
+
+        pass
+
+    def write(self, values, options):
+        """Writes data array into a ESRI shapefile.
+
+        Arguments:
+            values -- processing result's values as a masked array/array/list.
+            options -- dictionary of write options:
+                ['level'] -- vertical level name 
+                ['segment'] -- time segment description (as in input time segments taken from a task file)
+                ['times'] -- time grid as a list of datatime values
+                ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
+                ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
+                ['description'] -- dictionary describing data:
+                    ['title'] -- general title of the data (e.g., Average)
+                    ['name'] --  name of the data (e.g., Temperature)
+                    ['units'] -- units of th data (e.g., K)
+                ['meta'] -- additional metadata
+                    ['stations'] -- weather stations metadata
+                        ['@names'] -- names of stations
+                        ['@wmo_codes'] -- WMO codes of stations
+                        ['@elevations'] -- elevations of stations
+
+        """    
+        
+        # Prepare data array with masked values replaced with a fill value.
+        data = np.ma.filled(values, fill_value=values.fill_value)
+        longitudes = options['longitudes']
+        latitudes = options['latitudes']
+

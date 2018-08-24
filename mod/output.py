@@ -22,7 +22,7 @@ class cvcOutput:
         vertical_levels = self._data_helper.get_levels(input_uids[0])
 
         # Get data for all time segments and levels at once
-        result = self._data_helper.get(input_uids[0], time_segments, vertical_levels)
+        result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
 
         output_uids = self._data_helper.output_uids()
 

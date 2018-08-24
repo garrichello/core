@@ -132,15 +132,15 @@ class DataDb:
                 data_by_segment[segment['@name']]['segment'] = segment
             
             result['data'][level_name] = data_by_segment
-            result['@longitude_grid'] = longitudes
-            result['@latitude_grid'] = latitudes
+            result['@longitude_grid'] = np.array(longitudes)
+            result['@latitude_grid'] = np.array(latitudes)
             result['@grid_type'] = 'station'
             result['@fill_value'] = fill_value
             result['meta'] = {}
             result['meta']['stations'] = {}
-            result['meta']['stations']['@names'] = stations_names
-            result['meta']['stations']['@wmo_codes'] = stations_codes
-            result['meta']['stations']['@elevations'] = elevations
+            result['meta']['stations']['@names'] = np.array(stations_names)
+            result['meta']['stations']['@wmo_codes'] = np.array(stations_codes)
+            result['meta']['stations']['@elevations'] = np.array(elevations)
 
             session.close()
             

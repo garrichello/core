@@ -30,6 +30,6 @@ class cvcOutput:
             for segment in time_segments:
                 self._data_helper.put(output_uids[0], result['data'][level_name][segment['@name']]['@values'], level=level_name, 
                         segment=segment, longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'], 
-                        description=result['data'][level_name][segment['@name']]['description'])
+                        description=result['data'][level_name][segment['@name']]['description'], meta=result['meta'])
 
         print('(cvcOutput::run) Finished!')

@@ -226,7 +226,7 @@ class DataAccess():
         return levels
 
     def put(self, uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None, fill_value=None,
-                description = None):
+                description = None, meta = None):
         """Writes data and metadata to an output data storage (array).
 
         Arguments:
@@ -241,6 +241,7 @@ class DataAccess():
                 ['title'] -- general title of the data (e.g., Average)
                 ['name'] --  name of the data (e.g., Temperature)
                 ['units'] -- units of th data (e.g., K)
+            meta -- additional metadata passed from data readers to data writers through data processors
         """
         options = {}
         options['level'] = level
@@ -251,6 +252,7 @@ class DataAccess():
         if fill_value is not None:
             values.fill_value = fill_value
         options['description'] = description
+        options['meta'] = meta
         self._data_objects[uid].write(values, options)
 
     def output_uids(self):

@@ -232,7 +232,7 @@ class DataNetcdf:
                 
                 data_by_segment[segment['@name']] = {}
                 data_by_segment[segment['@name']]['@values'] = masked_data_slice
-                data_by_segment[segment['@name']]['@units'] = data_variable.units
+                data_by_segment[segment['@name']]['description'] = self._data_info['data']['description']
                 data_by_segment[segment['@name']]['@dimensions'] = data_dim_names
                 data_by_segment[segment['@name']]['@time_grid'] = time_grid
                 data_by_segment[segment['@name']]['segment'] = segment
@@ -241,6 +241,8 @@ class DataNetcdf:
             result['@longitude_grid'] = lons #longitude_grid
             result['@latitude_grid'] = lats #latitude_grid
             result['@grid_type'] = grid_type
+            result['@fill_value'] = fill_value
+            result['meta'] = None
 
         return result
 
@@ -298,6 +300,7 @@ class DataNetcdf:
         data.long_name = '{} {}'.format(options['description']['@title'], options['description']['@name'])
 
         # Write variables.
+        # TODO: May be in the future we will write time grid into a file. If needed.
         if options['times'] is not None:
             pass
         longitudes[:] = options['longitudes']

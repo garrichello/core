@@ -2,6 +2,7 @@
 
 import importlib
 import datetime
+import os.path
 # Python 3 only
 import builtins
 
@@ -73,3 +74,21 @@ def print(*args, **kwargs):
     date_time = '({0:02}/{1:02}/{2:04} {3:02}:{4:02}:{5:02}) '.format(now.day, now.month, now.year, now.hour, now.minute, now.second)
     builtins.print(date_time, end='')
     return builtins.print(*args, **kwargs)
+
+def make_filename(data_info, options):
+    """Constructs a file name for writing output.
+    It's used in write-methods of various data-access classes.
+
+    Arguments:
+        data_info -- dictionary describing dataset, usually it's a self._data.info in a data-access module.
+        options -- dictionary containing metadata of the data array to be written, usually it's a options argument of the write method.
+
+    Returns:
+        filename -- constructed filename which includes level name and time segment.
+
+    """
+    (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
+    filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], 
+            options['segment']['@beginning'], options['segment']['@ending'], file_ext)
+            
+    return filename

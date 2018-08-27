@@ -9,9 +9,8 @@ import re
 import numpy as np
 import numpy.ma as ma
 from matplotlib.path import Path
-import os.path
 
-from base.common import listify, unlistify, print
+from base.common import listify, unlistify, print, make_filename
 
 LONGITUDE_UNITS =  {'degrees_east', 'degree_east', 'degrees_E', 'degree_E', 'degreesE', 'degreeE', 'lon'}
 LATITUDE_UNITS = {'degrees_north', 'degree_north', 'degrees_N', 'degree_N', 'degreesN', 'degreeN', 'lat'}
@@ -261,11 +260,9 @@ class DataNetcdf:
         
         print('(DataNetcdf::write) Writing netCDF...')
 
-        # Contrcut file name
-        (file_root, file_ext) = os.path.splitext(self._data_info['data']['file']['@name'])
-        filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], 
-            options['segment']['@beginning'], options['segment']['@ending'], file_ext)
-
+        # Construct the file name
+        filename = make_filename(self._data_info, options)
+        
         # Create netCDF file.
         root = Dataset(filename, 'w') #, format='NETCDF3_64BIT_OFFSET')
 

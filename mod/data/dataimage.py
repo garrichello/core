@@ -3,10 +3,10 @@
 """
 from osgeo import gdal
 from osgeo import osr
-import os.path
 import numpy as np
+from base import shapefile
 
-from base.common import load_module, print
+from base.common import load_module, print, make_filename
 from base import SLDLegend
 
 class DataImage:
@@ -108,9 +108,8 @@ class ImageGeotiff:
 
         # Write image.
         dims = data.shape
-        (file_root, file_ext) = os.path.splitext(self._data_info['data']['file']['@name'])
-        filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], 
-            options['segment']['@beginning'], options['segment']['@ending'], file_ext)
+        filename = make_filename(self._data_info, options)
+
         dataset = drv.Create(filename, dims[1], dims[0], 1, gdal.GDT_Float32)
         dataset.GetRasterBand(1).WriteArray(data)
 
@@ -140,7 +139,7 @@ class ImageShape:
     """
     def __init__(self, data_info):
         self._data_info = data_info
-
+        
     def read(self, options):
         """Reads ESRI shapefile into an array.
 
@@ -172,9 +171,24 @@ class ImageShape:
                         ['@elevations'] -- elevations of stations
 
         """    
-        
-        # Prepare data array with masked values replaced with a fill value.
-        data = np.ma.filled(values, fill_value=values.fill_value)
-        longitudes = options['longitudes']
-        latitudes = options['latitudes']
+        filename = make_filename(self._data_info, options)
+        with shapefile.Writer(filename) as shape_writer:
+            if (values.ndim == 1):  # 1-D values means we have stations without a time dimension
+                # Get stations with valid data only
+                valid_values = values[~values.mask]
+                valid_lon = options['longitudes'][~values.mask]
+                valid_lat = options['latitudes'][~values.mask]
+                valid_name = options['meta']['stations']['@names'][~values.mask]
+                valid_elevation = options['meta']['stations']['@elevations'][~values.mask]
+                valid_wmo_code = options['meta']['stations']['@wmo_codes'][~values.mask]
 
+                shape_writer.shapeType = shapefile.POINTZ
+                shape_writer.field('VALUE', 'N', decimal=8)
+                shape_writer.field('WMO_CODE', 'N', decimal=0)
+                shape_writer.field('NAME', 'C')
+
+                for i in range(len(valid_values)):
+                    shape_writer.pointz(valid_lon[i], valid_lat[i], z=valid_elevation[i])
+                    shape_writer.record(valid_values.data[i], valid_wmo_code[i], valid_name[i])
+                
+                shape_writer.close()

@@ -95,7 +95,7 @@ class DataDb:
                 res = q.all()
                 q = None
 
-                all_stations_codes = np.array([st.station for st in res])
+                all_stations_codes = np.array([int(st.station) for st in res])
                 stations_codes = list(set(all_stations_codes))
 
                 # Create time grid. It is the same for all stations now. So we take the first station as a source.
@@ -115,9 +115,9 @@ class DataDb:
                     values = station_values if values is None else np.vstack((values, station_values))
                     # Station location is taken from the first row in the query response corresponding this station.
                     station_location = res[station_indices[0]].location.replace('(', '').replace(')', '').split(' ')
-                    longitudes.append(station_location[2])
-                    latitudes.append(station_location[3])
-                    elevations.append(station_location[4])
+                    longitudes.append(float(station_location[2]))
+                    latitudes.append(float(station_location[3]))
+                    elevations.append(float(station_location[4]))
                     stations_names.append(res[station_indices[0]].st_name)
 
                 values = values.transpose()

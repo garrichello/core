@@ -4,7 +4,7 @@
 from base.common import listify, print
 
 class DataArray:
-    """ Provides methods for reading and writing arrays in memory.
+    """ Provides methods for reading and writing arrays from/to memory.
     """
 
     def __init__(self, data_info):

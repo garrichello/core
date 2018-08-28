@@ -183,8 +183,8 @@ class DataNetcdf:
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')
                 time_idx_range = date2index([segment_start, segment_end], time_variable, select='nearest')
-                if time_idx_range[0] == 0 or time_idx_range[1] == 0:
-                    print ('(DataNetcdf::read) Error! Some of the times given are before the first time. Aborting!')
+                if time_idx_range[1] == 0:
+                    print ('(DataNetcdf::read) Error! The end of the time segment is before the first time in the dataset. Aborting!')
                     raise ValueError
                 variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1])
                 time_values = time_variable[variable_indices[time_variable._name]] # Raw time values.

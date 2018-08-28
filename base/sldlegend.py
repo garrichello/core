@@ -72,6 +72,8 @@ class SLDLegend:
         # Select writer corresponding to data kind.
         if self._legend_options['@data_kind'] == 'raster':
             self.write_raster(legend_filename, legend_values, legend_labels, rgb_values, values.fill_value)
+        if self._legend_options['@data_kind'] == 'station':
+            self.write_stations(legend_filename, legend_values, legend_labels, rgb_values, values.fill_value)
 
     def write_raster(self, filename, legend_values, legend_labels, rgb_values, fill_value):
         """Writes a legend for raster data into SLD file.
@@ -109,3 +111,81 @@ class SLDLegend:
     
         with open(filename, 'w') as fd:
             fd.write(xmltodict.unparse(sld, pretty=True))
+
+    def write_stations(self, filename, legend_values, legend_labels, rgb_values, fill_value):
+        """Writes a legend for stations data into SLD file.
+
+        Arguments:
+            filename -- name of SLD file.
+            legend_values -- data values to be written into SLD file.
+            legend_labels -- labels corresponding to data values.
+            rgb_values -- hex-values of colors corresponding to data values.
+            fill_value -- value for transparent pixels
+        """
+
+        field_name = 'VALUE'
+        symbol_name = 'circle'
+        symbol_size = 6
+
+        sld = {}
+        sld['StyledLayerDescriptor'] = {}
+        sld['StyledLayerDescriptor']['@version'] = '1.0.0'
+        sld['StyledLayerDescriptor']['@xmlns'] = 'http://www.opengis.net/sld'
+        sld['StyledLayerDescriptor']['@xmlns:ogc'] = 'http://www.opengis.net/ogc'
+        sld['StyledLayerDescriptor']['@xmlns:xlink'] = 'http://www.w3.org/1999/xlink'
+        sld['StyledLayerDescriptor']['@xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance'
+        sld['StyledLayerDescriptor']['@xsi:schemaLocation'] = 'http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd'
+        sld['StyledLayerDescriptor']['NamedLayer'] = {}
+        sld['StyledLayerDescriptor']['NamedLayer']['Name'] = 'Stations'
+        sld['StyledLayerDescriptor']['NamedLayer']['UserStyle'] = {}
+        sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['Title'] = 'Station data'
+        sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['Abstract'] = 'Based on VALUE field'
+        sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['FeatureTypeStyle'] = {}
+        sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['FeatureTypeStyle']['Rule'] = []
+
+        n_values = len(legend_values)
+        for i in range(n_values-1, -1, -1):
+            rule = {}
+            ogcFilter = {}
+            if i == n_values-1: # Top line of the legend
+                rule['Name'] = 'First level'
+                rule['Title'] = '<'+legend_labels[i]
+                ogcFilter['ogc:PropertyIsLessThan'] = {}
+                ogcFilter['ogc:PropertyIsLessThan']['ogc:PropertyName'] = field_name
+                ogcFilter['ogc:PropertyIsLessThan']['ogc:Literal'] = legend_values[i]
+            elif i == 0: # Bottom line of the legend
+                rule['Name'] = 'Last level'
+                rule['Title'] = '>'+legend_labels[i]
+                ogcFilter['ogc:PropertyIsGreaterThanOrEqualTo'] = {}
+                ogcFilter['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:PropertyName'] = field_name
+                ogcFilter['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:Literal'] = legend_values[i]
+            else:
+                rule['Name'] = 'Next level'
+                rule['Title'] = legend_labels[i] + ' .. ' + legend_labels[i-1]
+                ogcFilter['ogc:And'] = {}
+                ogcFilter['ogc:And']['ogc:PropertyIsGreaterThanOrEqualTo'] = {}
+                ogcFilter['ogc:And']['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:PropertyName'] = field_name
+                ogcFilter['ogc:And']['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:Literal'] = legend_values[i]
+                ogcFilter['ogc:And']['ogc:PropertyIsLessThan'] = {}
+                ogcFilter['ogc:And']['ogc:PropertyIsLessThan']['ogc:PropertyName'] = field_name
+                ogcFilter['ogc:And']['ogc:PropertyIsLessThan']['ogc:Literal'] = legend_values[i-1]
+            
+            rule['ogc:Filter'] = ogcFilter
+            point_symbolizer = {}
+            point_symbolizer['Graphic'] = {}
+            point_symbolizer['Graphic']['Mark'] = {}
+            point_symbolizer['Graphic']['Mark']['WellKnownName'] = symbol_name
+            point_symbolizer['Graphic']['Mark']['Fill'] = {}
+            point_symbolizer['Graphic']['Mark']['Fill']['CssParameter'] = {}
+            point_symbolizer['Graphic']['Mark']['Fill']['CssParameter']['@name'] = 'fill'
+            point_symbolizer['Graphic']['Mark']['Fill']['CssParameter']['#text'] = rgb_values[i]
+            point_symbolizer['Graphic']['Mark']['Stroke'] = {}
+            point_symbolizer['Graphic']['Mark']['Stroke']['CssParameter'] = []
+            point_symbolizer['Graphic']['Mark']['Stroke']['CssParameter'].append({'@name':'stroke', '#text':rgb_values[i]})
+            point_symbolizer['Graphic']['Mark']['Stroke']['CssParameter'].append({'@name':'stroke-width', '#text':'1'})
+            point_symbolizer['Graphic']['Size'] = symbol_size
+            rule['PointSymbolizer'] = point_symbolizer
+            sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['FeatureTypeStyle']['Rule'].append(rule)
+    
+        with open(filename, 'w') as fd:
+            fd.write(xmltodict.unparse(sld, pretty=True, indent='    '))

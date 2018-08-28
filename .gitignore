@@ -7,4 +7,4 @@ debug.sh
 .vscode/.ropeproject/config.py
 .vscode/.ropeproject/objectdb
 output
-base/shapefile.py
+ext/shapefile.py

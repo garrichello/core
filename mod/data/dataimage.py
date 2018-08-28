@@ -4,7 +4,7 @@
 from osgeo import gdal
 from osgeo import osr
 import numpy as np
-from base import shapefile
+from ext import shapefile
 
 from base.common import load_module, print, make_filename
 from base import SLDLegend

@@ -8,9 +8,9 @@ from string import Template
 import re
 import numpy as np
 import numpy.ma as ma
-from matplotlib.path import Path
 
 from base.common import listify, unlistify, print, make_filename
+from mod.data.data import Data
 
 LONGITUDE_UNITS =  {'degrees_east', 'degree_east', 'degrees_E', 'degree_E', 'degreesE', 'degreeE', 'lon'}
 LATITUDE_UNITS = {'degrees_north', 'degree_north', 'degrees_N', 'degree_N', 'degreesN', 'degreeN', 'lat'}
@@ -31,32 +31,12 @@ class PercentTemplate(Template):
     )
     '''
 
-class DataNetcdf:
+class DataNetcdf(Data):
     """ Provides methods for reading and writing archives of netCDF files.
     """
     def __init__(self, data_info):
         self._data_info = data_info
-        if self._data_info['data']['@type'] == 'dataset':
-            self._set_ROI()
-
-    def _set_ROI(self):
-        ROI_lats_string = [p['@lat'] for p in self._data_info['data']['region']['point']]
-        try:
-            ROI_lats = [float(lat_string) for lat_string in ROI_lats_string]
-        except ValueError:
-            print('(DataNetcdf::__init__): Bad latitude value (not a number) in data: {0}'.format(self._data_info['data']['@uid']))
-            raise
-        ROI_lons_string = [p['@lon'] for p in self._data_info['data']['region']['point']]
-        try:
-            ROI_lons = [float(lon_string) for lon_string in ROI_lons_string]
-        except ValueError:
-            print('(DataNetcdf::__init__): Bad longitude value (not a number) in data: {0}'.format(self._data_info['data']['@uid']))
-            raise
-        
-        self._ROI_limits = {'min_lon' : min(ROI_lons), 'max_lon' : max(ROI_lons),
-                            'min_lat' : min(ROI_lats), 'max_lat' : max(ROI_lats)}
-
-        self._ROI = [(lon, lat) for lon, lat in zip(ROI_lons, ROI_lats)]
+        super().__init__(data_info)
 
     def read(self, options):
         """Reads netCDF-file into an array.
@@ -110,8 +90,6 @@ class DataNetcdf:
                 lons = longitude_variable[:]
                 if lons.max() > 180:
                     lons = ((lons + 180.0) % 360.0) - 180.0 # Switch from 0-360 to -180-180 grid
-#                longitude_indices = np.nonzero([ge and le for ge, le in 
-#                        zip(lons >= self._ROI_limits['min_lon'], lons <= self._ROI_limits['max_lon'])])[0]
             variable_indices[longitude_variable.name] = np.arange(lons.size) # longitude_indices
 #            longitude_grid = lons[longitude_indices]
 
@@ -120,8 +98,6 @@ class DataNetcdf:
             if longitude_variable.ndim == 1:
                 lat_grid_type = 'regular'
                 lats = latitude_variable[:]
-#                latitude_indices = np.nonzero([ge and le for ge, le in 
-#                        zip(lats >= self._ROI_limits['min_lat'], lats <= self._ROI_limits['max_lat'])])[0]
             variable_indices[latitude_variable.name] = np.arange(lats.size) # latitude_indices
 #            latitude_grid = lats[latitude_indices]
             
@@ -132,13 +108,7 @@ class DataNetcdf:
                 raise ValueError
 
             # Create ROI mask.
-            lon2d, lat2d = np.meshgrid(lons, lats)
-            lon_coords, lat_coords = lon2d.flatten(), lat2d.flatten()
-            points = np.vstack((lon_coords, lat_coords)).T
-
-            path = Path(self._ROI)
-            ROI_mask = path.contains_points(points) # True is for the points inside the ROI
-            ROI_mask = ~ROI_mask.reshape((lats.size, lons.size)) # True is masked so we need to inverse the mask
+            ROI_mask = self._create_ROI_mask(lons, lats)
 
             # Determine index of the current vertical level to read data variable.
             if level_variable_name != NO_LEVEL_NAME:

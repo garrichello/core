@@ -1,5 +1,5 @@
 """Provides classes
-    DataHdf4
+    DataHdfeos
 """
 
 from datetime import datetime
@@ -12,26 +12,9 @@ from matplotlib.path import Path
 
 from base.common import listify, unlistify, print, make_filename
 
-LONGITUDE_UNITS =  {'degrees_east', 'degree_east', 'degrees_E', 'degree_E', 'degreesE', 'degreeE', 'lon'}
-LATITUDE_UNITS = {'degrees_north', 'degree_north', 'degrees_N', 'degree_N', 'degreesN', 'degreeN', 'lat'}
-TIME_UNITS = {'since', 'time'}
 NO_LEVEL_NAME = 'none'
 
-class PercentTemplate(Template):
-    """ Custom template for the string substitute method.
-        It changes the template delimiter to %<template>%
-    """
-    delimiter = '%'
-    pattern = r'''
-    \%(?:
-        (?P<escaped>%) |
-        (?P<named>[_a-z][_a-z0-9\-]*)% |
-        \b\B(?P<braced>) |
-        (?P<invalid>)
-    )
-    '''
-
-class DataHdf4:
+class DataHdfeos:
     """ Provides methods for reading and writing archives of HDF4 files.
     """
     def __init__(self, data_info):
@@ -39,7 +22,7 @@ class DataHdf4:
 
 
     def read(self, options):
-        """Reads HDF4-file into an array.
+        """Reads HDF-EOS file into an array.
 
         Arguments:
             options -- dictionary of read options:
@@ -50,13 +33,13 @@ class DataHdf4:
             result['array'] -- data array
         """
 
-        print('(DataHDF4::read) Reading HDF4...')
+        print('(DataHdfeos::read) Reading HDF-EOS data...')
 
         pass
 
 
     def write(self, values, options):
-        """Writes data array into a HDF4 file.
+        """Writes data array into a HDF-EOS file.
 
         Arguments:
             values -- processing result's values as a masked array/array/list.
@@ -68,6 +51,6 @@ class DataHdf4:
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """    
         
-        print('(DataHDF4::write) Writing HDF4...')
+        print('(DataHdfeos::write) Writing data to a HDF-EOS file...')
 
         pass

@@ -4,22 +4,21 @@
 
 from datetime import datetime
 
-from string import Template
 import re
 import numpy as np
 import numpy.ma as ma
-from matplotlib.path import Path
 
 from base.common import listify, unlistify, print, make_filename
+from mod.data.data import Data
 
 NO_LEVEL_NAME = 'none'
 
-class DataHdfeos:
+class DataHdfeos(Data):
     """ Provides methods for reading and writing archives of HDF4 files.
     """
     def __init__(self, data_info):
         self._data_info = data_info
-
+        super().__init__(data_info)
 
     def read(self, options):
         """Reads HDF-EOS file into an array.

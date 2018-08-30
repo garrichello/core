@@ -1,6 +1,7 @@
 """Provides classes:
     DataParameter
 """
+from base.common import listify
 
 class DataParameter:
     """ Provides methods for reading and writing parameters in a task file.
@@ -34,7 +35,7 @@ class DataParameter:
             result -- dictionary containing parameters from a task file
         """
 
-        parameters = self._data_info['data']['param']
+        parameters = listify(self._data_info['data']['param'])
         result = {}
         for parameter in parameters:
             result[parameter['@uid']] = self._type_cast(parameter['#text'], parameter['@type'])

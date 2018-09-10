@@ -4,6 +4,7 @@
 
 from base.common import load_module
 
+
 class DataRaw:
     """ Provides reading/writing data from/to raw data files (bin, netcdf, xml, ascii...).
     """
@@ -23,8 +24,8 @@ class DataRaw:
         Returns:
             result['array'] -- data array
         """
-        
-        pass    
+
+        pass
 
     def write(self, values, options):
         """Writes data (and metadata) to an output data file.
@@ -34,5 +35,5 @@ class DataRaw:
             options -- dictionary of write options
 
         """
-        
+
         self._data.write(values, options)

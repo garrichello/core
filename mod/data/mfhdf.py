@@ -44,28 +44,34 @@ class MFDataset:
         for dataset_name in datasets.keys():
             self.variables[dataset_name] = Variable(dataset_name, self._files)
 
-
         pass
 
     def _list_to_dict(self, pairlist):
+        ''' Recursively converts a list of hierarchically organized key-value pairs into a dictionary.
+
+        Arguments:
+            pairlist -- list with key-value pairs.
+
+        Result:
+            pairdict -- dictionary with key-value pairs.
+        '''
+        
         pairdict = {}
-        group_list = []
         in_group = False
         
         for pair in pairlist:
-            if pair[0] == 'GROUP' and not in_group:
+            if (pair[0] == 'GROUP' or pair[0] == 'OBJECT') and not in_group:
                 group_name = pair[1]
                 group_list = []
                 in_group = True
-            elif pair[0] == 'END_GROUP' and pair[1] == group_name:
+            elif (pair[0] == 'END_GROUP' or pair[0] == 'END_OBJECT') and pair[1] == group_name:
                 pairdict[group_name] = self._list_to_dict(group_list)
                 in_group = False
-            else:
+            elif in_group:
                 group_list.append(pair)
+            else:
+                pairdict[pair[0]] = pair[1]
         
-        if len(pairdict) == 0:
-            pairdict = dict(group_list)
-
         return pairdict
 
     def _get_metadata(self, file):

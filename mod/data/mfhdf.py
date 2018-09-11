@@ -3,10 +3,20 @@
 
 import glob
 from pyhdf.SD import SD, SDC
-import re
+from datetime import datetime
 import numpy as np
 
-from base.common import print
+from base.common import print, list_remove_all, listify
+
+
+def date2index(datetime_values, time_variable, select=None):
+
+    indices = []
+    for value in listify(datetime_values):
+        idx = np.searchsorted(time_variable, value, side='right')
+        indices.append(idx if (time_variable[idx] - value) < (value - time_variable[idx - 1]) else idx - 1)
+
+    return indices
 
 
 class MFDataset:
@@ -14,16 +24,16 @@ class MFDataset:
     """
     def __init__(self, file_name_wildcard):
         self._file_name_wildcard = file_name_wildcard
-        
-        self._files = {}
-        
+
+        self._files = []
         self.variables = {}
 
+        # Open all files and read metadata to create longitude, latitude and time grids.
         datasets = None
-        meta = None
+        datetime_range = []
         for file_name in glob.iglob(file_name_wildcard):
-            self._files[file_name] = SD(file_name, SDC.READ)
-            new_datasets = self._files[file_name].datasets()
+            hdf_file = SD(file_name, SDC.READ)
+            new_datasets = hdf_file.datasets()
             if datasets is None:
                 datasets = new_datasets
             else:
@@ -35,16 +45,43 @@ class MFDataset:
                     else:
                         diff = set(datasets.keys()) - set(new_datasets.keys())
                         print('Missing dataset: {}'.format(diff))
-            if meta is None:
-                meta = self._get_metadata(self._files[file_name])
-                self._longitudes = meta['longitudes']
-                self._latitudes = meta['latitudes']
-            pass
+
+            meta = self._get_metadata(hdf_file)
+            self._longitudes = meta['longitudes']
+            self._latitudes = meta['latitudes']
+            datetime_range.append(meta['datetime_range'])
+            self._files.append(hdf_file)
+
+        # Let's take the beginning of the range for each file to construct a time grid.
+        self._times = [beginning for beginning, ending in datetime_range]
+
+        # Sort files by date and time.
+        sorter = np.argsort(self._times)
+        self._files = [self._files[i] for i in sorter]
+        self._times = np.array([self._times[i] for i in sorter])
 
         for dataset_name in datasets.keys():
             self.variables[dataset_name] = Variable(dataset_name, self._files)
 
         pass
+
+    def _meta_to_list(self, meta):
+        ''' Convert metadata in string format into a list of key-value pairs.
+
+        Uses:
+            common.list_remove_all()
+
+        Arguments:
+            structmetadata -- a string with hierarchically organized HDF metadata
+
+        Result: a list of key-value pairs
+        '''
+
+        list_ = meta.replace('\x00', '').split('\n')
+        list_ = list_remove_all(list_, 'END')
+        list_ = list_remove_all(list_, '')
+
+        return [s.split('=', 1) for s in list_]
 
     def _list_to_dict(self, pairlist):
         ''' Recursively converts a list of hierarchically organized key-value pairs into a dictionary.
@@ -55,73 +92,84 @@ class MFDataset:
         Result:
             pairdict -- dictionary with key-value pairs.
         '''
-        
+
         pairdict = {}
         in_group = False
-        
-        for pair in pairlist:
-            if (pair[0] == 'GROUP' or pair[0] == 'OBJECT') and not in_group:
-                group_name = pair[1]
+
+        for key, value in pairlist:
+            key = key.strip()
+            value = value.strip()
+            if (key == 'GROUP' or key == 'OBJECT') and not in_group:
+                group_name = value
                 group_list = []
                 in_group = True
-            elif (pair[0] == 'END_GROUP' or pair[0] == 'END_OBJECT') and pair[1] == group_name:
+            elif (key == 'END_GROUP' or key == 'END_OBJECT') and value == group_name:
                 pairdict[group_name] = self._list_to_dict(group_list)
                 in_group = False
             elif in_group:
-                group_list.append(pair)
+                group_list.append([key, value])
             else:
-                pairdict[pair[0]] = pair[1]
-        
+                pairdict[key] = value
+
         return pairdict
 
     def _get_metadata(self, file):
+        ''' Reads metadata from HDF file and returns some values as a dictionary.
+
+        Arguments:
+            file -- HDF file handle.
+
+        Result:
+            meta -- dictionary:
+                ['longitudes'] -- longitude grid.
+                ['latitudes'] -- latitude grid.
+                ['datetime_range'] -- tuple, datetime range.
+        '''
 
         meta = {}
 
         # Read global attributes.
         fattrs = file.attributes()
-        stringmeta = fattrs["StructMetadata.0"]
-        
-        listmeta = stringmeta.replace('\x00', '').split('\n')
-        listmeta.remove('END')
-        listmeta.remove('')
-        pairmeta = [s.strip().split('=') for s in listmeta]
-        dictmeta = self._list_to_dict(pairmeta)
 
-        # The needed information is in a global attribute 'StructMetadata.0'.  
-        # Use regular expressions to extract it.
-        # Upper left corner.
-        ul_regex = re.compile(r'''UpperLeftPointMtrs=\(
-                                  (?P<upper_left_x>[+-]?\d+\.\d+)
-                                  ,
-                                  (?P<upper_left_y>[+-]?\d+\.\d+)
-                                  \)''', re.VERBOSE)
-        match = ul_regex.search(gridmeta)
-        lon0 = np.float(match.group('upper_left_x')) / 1.0E6
-        lat0 = np.float(match.group('upper_left_y')) / 1.0E6
-        # Bottom right corner.
-        lr_regex = re.compile(r'''LowerRightMtrs=\(
-                                  (?P<lower_right_x>[+-]?\d+\.\d+)
-                                  ,
-                                  (?P<lower_right_y>[+-]?\d+\.\d+)
-                                  \)''', re.VERBOSE)
-        match = lr_regex.search(gridmeta)
-        lon1 = np.float(match.group('lower_right_x')) / 1.0E6
-        lat1 = np.float(match.group('lower_right_y')) / 1.0E6
-        # Longitude dimension size.
-        xdim_regex = re.compile(r'''XDim=(?P<x_dim>\d+)''', re.VERBOSE)
-        match = xdim_regex.search(gridmeta)
-        n_lon = np.float(match.group('x_dim'))
-        # Latitude dimension size.
-        ydim_regex = re.compile(r'''YDim=(?P<y_dim>\d+)''', re.VERBOSE)
-        match = ydim_regex.search(gridmeta)
-        n_lat = np.float(match.group('y_dim'))
+        # The needed information is in a global attribute 'StructMetadata.0'.
+        structmeta = fattrs["StructMetadata.0"]
+        structlist = self._meta_to_list(structmeta)
+        structdict = self._list_to_dict(structlist)
+
+        # The additional needed information is in a global attribute 'CoreMetadata.0'.
+        coremeta = fattrs["CoreMetadata.0"]
+        corelist = self._meta_to_list(coremeta)
+        coredict = self._list_to_dict(corelist)
+
+        # Corners of the area
+        spatial_container = coredict['INVENTORYMETADATA']['SPATIALDOMAINCONTAINER']
+        bounding_rectangle = spatial_container['HORIZONTALSPATIALDOMAINCONTAINER']['BOUNDINGRECTANGLE']
+        lon0 = np.float(bounding_rectangle['WESTBOUNDINGCOORDINATE']['VALUE'])
+        lat0 = np.float(bounding_rectangle['NORTHBOUNDINGCOORDINATE']['VALUE'])
+        lon1 = np.float(bounding_rectangle['EASTBOUNDINGCOORDINATE']['VALUE'])
+        lat1 = np.float(bounding_rectangle['SOUTHBOUNDINGCOORDINATE']['VALUE'])
+
+        # Dimensions.
+        n_lon = np.int(structdict['GridStructure']['GRID_1']['XDim'])
+        n_lat = np.int(structdict['GridStructure']['GRID_1']['YDim'])
+
         # Steps.
         lon_inc = (lon1 - lon0) / n_lon
-        lat_inc = (lon1 - lon0) / n_lon
+        lat_inc = (lat1 - lat0) / n_lat
+
         # Generate longitude and latitude grids.
-        meta['longitudes'] = np.linspace(lon0, lon0 + lon_inc*n_lon, n_lon)
-        meta['latitudes'] = np.linspace(lat0, lat0 + lat_inc*n_lat, n_lat)
+        meta['longitudes'] = np.linspace(lon0, lon0 + lon_inc * n_lon, n_lon)
+        meta['latitudes'] = np.linspace(lat0, lat0 + lat_inc * n_lat, n_lat)
+
+        # Get date and time range values
+        rangedatetime_container = coredict['INVENTORYMETADATA']['RANGEDATETIME']
+        date0_string = rangedatetime_container['RANGEBEGINNINGDATE']['VALUE']
+        time0_string = rangedatetime_container['RANGEBEGINNINGTIME']['VALUE']
+        datetime0 = datetime.strptime(date0_string + time0_string, '"%Y-%m-%d""%H:%M:%S.%f"')
+        date1_string = rangedatetime_container['RANGEENDINGDATE']['VALUE']
+        time1_string = rangedatetime_container['RANGEENDINGTIME']['VALUE']
+        datetime1 = datetime.strptime(date1_string + time1_string, '"%Y-%m-%d""%H:%M:%S.%f"')
+        meta['datetime_range'] = (datetime0, datetime1)
 
         return meta
 
@@ -132,7 +180,7 @@ class MFDataset:
         return self._latitudes
 
     def get_time_variable(self):
-        pass
+        return self._times
 
 
 class Variable:
@@ -141,4 +189,6 @@ class Variable:
     def __init__(self, dataset_name, files):
         self._dataset_name = dataset_name
         self._files = files
+        self.dimensions = ['time', 'latitude', 'longitude']
+        self.ndim = 2
         pass

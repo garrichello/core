@@ -2,31 +2,34 @@
     DataAccess
 """
 
-from sqlalchemy import create_engine, Table, MetaData
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
 from base.common import load_module, listify, print
 
+
 class DataAccess():
     """Class-helper for accessing data.
     Provides access to data through unified API for processing modules.
-    """    
+    """
     def __init__(self, inputs, outputs, metadb_info):
-        """Initializes class's attributes. Reads metadata database. 
-        Instantiate classes-readers and classes-writers for input and output arguments of a processing module correspondingly.
-        
+        """Initializes class's attributes. Reads metadata database.
+        Instantiate classes-readers and classes-writers for input and output arguments of a processing module
+        correspondingly.
+
         Arguments:
             inputs -- list of dictionaries describing input arguments of a processing module
             outputs -- list of dictionaries describing output arguments of a processing module
             metadb_info -- dictionary describing metadata database (location and user credentials)
         """
 
-        self._input_uids = [] # UIDs of input data sources.
-        self._output_uids = [] # UID of output data destinations.
-        self._data_objects = {} # Instanses of data access classes.
-    
-        # Process input arguments: None - no inputs; get metadata for each data source (if any) and instantiate corresponding classes.
+        self._input_uids = []  # UIDs of input data sources.
+        self._output_uids = []  # UID of output data destinations.
+        self._data_objects = {}  # Instanses of data access classes.
+
+        # Process input arguments: None - no inputs; get metadata for each data source (if any)
+        # and instantiate corresponding classes.
         print('(DataAccess::__init__) Prepare inputs...')
         self._inputs = listify(inputs)
         if self._inputs is None:
@@ -35,14 +38,17 @@ class DataAccess():
             for input_ in self._inputs:
                 uid = input_['@uid']
                 self._input_uids.append(uid)
-                input_info = self._get_metadata(metadb_info, input_) # Get additional info about an input from the metadata database
-                data_class_name = 'Data' + input_info['@data_type'].capitalize() #  Data access class name is: 'Data' + <data type name> (e.g., DataNetcdf)
+                # Get additional info about an input from the metadata database
+                input_info = self._get_metadata(metadb_info, input_)
+                #  Data access class name is: 'Data' + <data type name> (e.g., DataNetcdf)
+                data_class_name = 'Data' + input_info['@data_type'].capitalize()
                 data_class = load_module('mod', data_class_name)
                 if input_['data'].get('@object') is None:
                     input_['data']['@object'] = data_class(input_info)  # Try to instantiate data reading class
                 self._data_objects[uid] = input_['data']['@object']
-                
-        # Process ouput argumetns: None - no outputs; get metadata for each data destination (if any) and instantiate corresponding classes.
+
+        # Process ouput argumetns: None - no outputs; get metadata for each data destination (if any)
+        # and instantiate corresponding classes.
         print('(DataAccess::__init__) Prepare outputs...')
         self._outputs = listify(outputs)
         if outputs is None:
@@ -51,8 +57,10 @@ class DataAccess():
             for output_ in self._outputs:
                 uid = output_['@uid']
                 self._output_uids.append(uid)
-                output_info = self._get_metadata(metadb_info, output_) # Get additional info about an output from the metadata database
-                data_class_name = 'Data' + output_info['@data_type'].capitalize() #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
+                # Get additional info about an output from the metadata database
+                output_info = self._get_metadata(metadb_info, output_)
+                #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
+                data_class_name = 'Data' + output_info['@data_type'].capitalize()
                 data_class = load_module('mod', data_class_name)
                 if output_['data'].get('@object') is None:
                     output_['data']['@object'] = data_class(output_info)  # Try to instantiate data writing class
@@ -81,12 +89,13 @@ class DataAccess():
 
         # If it is a dataset there is much to do
         info['data'] = argument['data'] # All the information about the dataset is passed to the data-accessing modules
-        db_url = 'mysql://{0}@{1}/{2}'.format(metadb_info['@user'], metadb_info['@host'], metadb_info['@name']) # metadata database URL
+        # Metadata database URL
+        db_url = 'mysql://{0}@{1}/{2}'.format(metadb_info['@user'], metadb_info['@host'], metadb_info['@name'])
         engine = create_engine(db_url)
-        meta = MetaData(bind = engine, reflect = True)
+        meta = MetaData(bind=engine, reflect=True)
         Session = sessionmaker(bind=engine)
         session = Session()
-        
+
         # Tables in a metadata database
         collection_tbl = meta.tables['collection']
         scenario_tbl = meta.tables['scenario'] 
@@ -109,7 +118,7 @@ class DataAccess():
         time_step_name = argument['data']['dataset']['@time_step']
         variable_name = argument['data']['variable']['@name']
         levels_names = [level_name.strip() for level_name in argument['data']['levels']['@values'].split(';')]
- 
+
         # Get some info about the dataset.
         try:
             dataset_tbl_info = session.query(dataset_tbl.columns['id'],
@@ -160,15 +169,16 @@ class DataAccess():
 
             info['levels'][level_name]['@scale'] = data_tbl_info.scale
             info['levels'][level_name]['@offset'] = data_tbl_info.offset
-            file_name_template = '{0}{1}{2}{3}{4}'.format(dataset_tbl_info.rootpath, dataset_tbl_info.subpath0, 
-                    dataset_tbl_info.subpath1, dataset_tbl_info.subpath2, data_tbl_info.file_name_template)
+            file_name_template = '{0}{1}{2}{3}{4}'.format(dataset_tbl_info.rootpath, dataset_tbl_info.subpath0,
+                                                          dataset_tbl_info.subpath1, dataset_tbl_info.subpath2,
+                                                          data_tbl_info.file_name_template)
             info['levels'][level_name]['@file_name_template'] = file_name_template
             info['levels'][level_name]['@time_start'] = data_tbl_info.timestart
             info['levels'][level_name]['@time_end'] = data_tbl_info.timeend
             info['levels'][level_name]['@level_variable_name'] = data_tbl_info.level_variable_name
 
         return info
-    
+
     def get(self, uid, segments=None, levels=None):
         """Reads data and metadata from an input data source (dataset, parameter, array).
 
@@ -185,12 +195,12 @@ class DataAccess():
 
     def input_uids(self):
         """Returns a list of UIDs of processing module inputs (as in a task file)"""
-        
+
         return self._input_uids
 
     def get_segments(self, uid):
         """Returns time segments list
-        
+
         Arguments:
             uid -- UID of a processing module's input (as in a task file)
         """
@@ -207,7 +217,7 @@ class DataAccess():
 
     def get_levels(self, uid):
         """Returns vertical levels list
-        
+
         Arguments:
             uid -- UID of a processing module's input  (as in a task file)
         """
@@ -257,6 +267,5 @@ class DataAccess():
 
     def output_uids(self):
         """Returns a list of UIDs of processing module outputs (as in a task file)"""
-        
-        return self._output_uids
 
+        return self._output_uids

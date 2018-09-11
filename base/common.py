@@ -6,6 +6,7 @@ import os.path
 # Python 3 only
 import builtins
 
+
 def load_module(module_name, class_name):
     """Loads module by its name and returns class to instantiate
 
@@ -25,6 +26,7 @@ def load_module(module_name, class_name):
         raise
     return class_
 
+
 def listify(obj):
     """Makes a list from an object if it is not already a list.
     None is unchanged.
@@ -39,11 +41,12 @@ def listify(obj):
     if result is not None:
         if not isinstance(obj, list):
             result = [obj]
-    
+
     return result
 
+
 def unlistify(list_):
-    """Extracts an object from a list if it is a list. 
+    """Extracts an object from a list if it is a list.
     None is unchanged.
 
     Arguments:
@@ -63,6 +66,11 @@ def unlistify(list_):
         result = None
     return result
 
+
+def list_remove_all(list_, item_to_remove):
+    return [item for item in list_ if item != item_to_remove]
+
+
 def print(*args, **kwargs):
     """Prints out to a standard output a string prefixed with current date and time
 
@@ -71,9 +79,11 @@ def print(*args, **kwargs):
 
     """
     now = datetime.datetime.now()
-    date_time = '({0:02}/{1:02}/{2:04} {3:02}:{4:02}:{5:02}) '.format(now.day, now.month, now.year, now.hour, now.minute, now.second)
+    date_time = '({0:02}/{1:02}/{2:04} {3:02}:{4:02}:{5:02}) '.format(
+        now.day, now.month, now.year, now.hour, now.minute, now.second)
     builtins.print(date_time, end='')
     return builtins.print(*args, **kwargs)
+
 
 def make_filename(data_info, options):
     """Constructs a file name for writing output.
@@ -81,14 +91,15 @@ def make_filename(data_info, options):
 
     Arguments:
         data_info -- dictionary describing dataset, usually it's a self._data.info in a data-access module.
-        options -- dictionary containing metadata of the data array to be written, usually it's a options argument of the write method.
+        options -- dictionary containing metadata of the data array to be written, usually it's an options
+        argument of the write method.
 
     Returns:
         filename -- constructed filename which includes level name and time segment.
 
     """
     (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
-    filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], 
-            options['segment']['@beginning'], options['segment']['@ending'], file_ext)
-            
+    filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], options['segment']['@beginning'],
+                                      options['segment']['@ending'], file_ext)
+
     return filename

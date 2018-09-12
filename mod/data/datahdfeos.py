@@ -2,15 +2,13 @@
     DataHdfeos
 """
 
-# from datetime import datetime
-
+from datetime import datetime
 import re
-# import numpy as np
+import numpy as np
 import numpy.ma as ma
-from netCDF4 import date2index, num2date
 from base.common import listify, print  # , make_filename
 from mod.data.data import Data
-from mod.data.mfhdf import MFDataset, Variable
+from mod.data.mfhdf import MFDataset, date2index
 
 NO_LEVEL_NAME = 'none'
 
@@ -66,17 +64,17 @@ class DataHdfeos(Data):
             longitude_variable = hdf_root.get_longitude_variable()
             if longitude_variable.ndim == 1:
                 lon_grid_type = 'regular'
-                lons = longitude_variable.values
+                lons = longitude_variable[:]
                 if lons.max() > 180:
                     lons = ((lons + 180.0) % 360.0) - 180.0  # Switch from 0-360 to -180-180 grid
-            variable_indices[longitude_variable.name] = np.arange(lons.size)  # longitude_indices
+            variable_indices['XDim'] = np.arange(lons.size)  # longitude_indices
 
             # Determine indices of latitudes.
             latitude_variable = hdf_root.get_latitude_variable()
             if latitude_variable.ndim == 1:
                 lat_grid_type = 'regular'
-                lats = latitude_variable.values
-            variable_indices[latitude_variable.name] = np.arange(lats.size)  # latitude_indices
+                lats = latitude_variable[:]
+            variable_indices['YDim'] = np.arange(lats.size)  # latitude_indices
 
             if lon_grid_type == lat_grid_type:
                 grid_type = lon_grid_type
@@ -100,22 +98,25 @@ class DataHdfeos(Data):
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')
-                time_idx_range = date2index([segment_start, segment_end], time_variable.values, select='nearest')
+                time_idx_range = date2index([segment_start, segment_end], time_variable, select='nearest')
                 if time_idx_range[1] == 0:
                     print('''(DataHdfeos::read) Error! The end of the time segment is before the first time in the dataset.
                             Aborting!''')
                     raise ValueError
-                variable_indices[time_variable.name] = np.arange(time_idx_range[0], time_idx_range[1])
-                time_values = time_variable.values[variable_indices[time_variable.name]]  # Raw time values.
-                time_grid = num2date(time_values, time_variable.units)  # Time grid as a datetime object.
+                variable_indices['Time'] = np.arange(time_idx_range[0], time_idx_range[1] + 1)
+                time_grid = time_variable[variable_indices['Time']]  # Time grid.
 
                 dd = data_variable.dimensions  # Names of dimensions of the data variable.
 
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
                 # And mask all points outside the ROI mask for all times.
                 print('(DataHdfeos::read) Actually reading...')
-                if data_variable.ndim == 2:
-                    data_slice = data_variable[:, :]
+                if data_variable.ndim == 4:
+                    data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
+                                               variable_indices[dd[2]], variable_indices[dd[3]]]
+                if data_variable.ndim == 3:
+                    data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
+                                               variable_indices[dd[2]]]
                 print('(DataHdfeos::read) Done!')
 
                 data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries

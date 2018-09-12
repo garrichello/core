@@ -5,11 +5,22 @@ import glob
 from pyhdf.SD import SD, SDC
 from datetime import datetime
 import numpy as np
+from collections.abc import Sequence
 
 from base.common import print, list_remove_all, listify
 
 
 def date2index(datetime_values, time_variable, select=None):
+    ''' Converts datetime values into indices in time_variable.
+    Nearest mode only!
+
+    Arguments:
+        datetime_values -- datetime value or list of values.
+        time_variable -- time grid where datetime_values positions are searched for.
+
+    Result:
+        indices -- indices of the elements of the time_variable nearest to the datetime_values.
+    '''
 
     indices = []
     for value in listify(datetime_values):
@@ -20,7 +31,7 @@ def date2index(datetime_values, time_variable, select=None):
 
 
 class MFDataset:
-    """ Provides access to multifile HDF files
+    """ Provides access to multifile HDF files.
     """
     def __init__(self, file_name_wildcard):
         self._file_name_wildcard = file_name_wildcard
@@ -32,12 +43,14 @@ class MFDataset:
         datasets = None
         datetime_range = []
         for file_name in glob.iglob(file_name_wildcard):
-            hdf_file = SD(file_name, SDC.READ)
-            new_datasets = hdf_file.datasets()
+            hdf_file = SD(file_name, SDC.READ)  # Open file.
+            self._files.append(hdf_file)  # Store HDF file handler.
+            new_datasets = hdf_file.datasets()  # Get datasets info.
+            # All files should have the same set of datasets.
             if datasets is None:
                 datasets = new_datasets
             else:
-                if datasets != new_datasets:
+                if datasets != new_datasets:  # If not - print a warning.
                     print('(MFDataset::__init__) Warning! Datasets list in the file {} is different!'.format(file_name))
                     if set(new_datasets.keys()) > set(datasets.keys()):
                         diff = set(new_datasets.keys()) - set(datasets.keys())
@@ -46,11 +59,10 @@ class MFDataset:
                         diff = set(datasets.keys()) - set(new_datasets.keys())
                         print('Missing dataset: {}'.format(diff))
 
-            meta = self._get_metadata(hdf_file)
+            meta = self._get_metadata(hdf_file)  # Get metadata.
             self._longitudes = meta['longitudes']
             self._latitudes = meta['latitudes']
-            datetime_range.append(meta['datetime_range'])
-            self._files.append(hdf_file)
+            datetime_range.append(meta['datetime_range'])  # Store datetime range.
 
         # Let's take the beginning of the range for each file to construct a time grid.
         self._times = [beginning for beginning, ending in datetime_range]
@@ -183,12 +195,42 @@ class MFDataset:
         return self._times
 
 
-class Variable:
+class Variable(Sequence):
     """ Provides access to HDF variables
     """
     def __init__(self, dataset_name, files):
         self._dataset_name = dataset_name
         self._files = files
-        self.dimensions = ['time', 'latitude', 'longitude']
-        self.ndim = 2
-        pass
+
+        dataset = files[0].select(dataset_name)
+        attributes = dataset.attributes()
+
+        self.dimensions = ['Time']
+        self._shape = [len(files)]
+        for i in range(len(dataset.dimensions())):
+            name, length, _, _ = dataset.dim(i).info()
+            self.dimensions.append(name.split(':')[0])
+            self._shape.append(length)
+        self.ndim = len(self.dimensions)
+        self._FillValue = attributes['_FillValue']
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            pass
+        elif isinstance(key, int):
+            pass
+        elif isinstance(key, tuple):
+            file_indices = key[0]  # We know it because we did it (see init)
+            s = [int(key[i][0]) for i in range(1, len(key))]
+            c = [int(key[i][-1]) + 1 for i in range(1, len(key))]
+            data = []
+            for i in file_indices:
+                dataset = self._files[i].select(self._dataset_name)
+                data.append(dataset.get(start=s, count=c))
+        else:
+            raise TypeError("Invalid argument type.")
+
+        return np.array(data)
+
+    def __len__(self):
+        return np.prod(self._shape)

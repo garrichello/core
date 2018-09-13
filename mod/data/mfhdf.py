@@ -75,8 +75,6 @@ class MFDataset:
         for dataset_name in datasets.keys():
             self.variables[dataset_name] = Variable(dataset_name, self._files)
 
-        pass
-
     def _meta_to_list(self, meta):
         ''' Convert metadata in string format into a list of key-value pairs.
 
@@ -213,6 +211,15 @@ class Variable(Sequence):
             self._shape.append(length)
         self.ndim = len(self.dimensions)
         self._FillValue = attributes['_FillValue']
+        layers = {int(key.split(' ')[1]): value for key, value in attributes.items() if key.find('Layer') != -1}
+        self._levels = np.array([None] * len(layers))
+        for i in range(len(layers)):
+            self._levels[i] = layers[i]
+        # Set fake level variable name
+        if self.ndim == 4:  # Dataset contains layers
+            self._level_variable_name = self.dimensions[3]
+        else:
+            self._level_variable_name = None
 
     def __getitem__(self, key):
         if isinstance(key, slice):
@@ -222,7 +229,7 @@ class Variable(Sequence):
         elif isinstance(key, tuple):
             file_indices = key[0]  # We know it because we did it (see init)
             s = [int(key[i][0]) for i in range(1, len(key))]
-            c = [int(key[i][-1]) + 1 for i in range(1, len(key))]
+            c = [len(key[i]) for i in range(1, len(key))]
             data = []
             for i in file_indices:
                 dataset = self._files[i].select(self._dataset_name)
@@ -234,3 +241,9 @@ class Variable(Sequence):
 
     def __len__(self):
         return np.prod(self._shape)
+
+    def get_level_variable(self):
+        return self._levels
+
+    def get_level_variable_name(self):
+        return self._level_variable_name

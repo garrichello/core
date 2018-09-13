@@ -50,7 +50,6 @@ class DataHdfeos(Data):
         # Process each vertical level separately.
         for level_name in levels_to_read:
             print('(DataNetcdf::read) Reading level: \'{0}\''.format(level_name))
-            level_variable_name = self._data_info['levels'][level_name]['@level_variable_name']
             file_name_template = self._data_info['levels'][level_name]['@file_name_template']  # Template as in MDDB.
             # Create wildcard-ed template.
             file_name_template = re.sub(r'\%[a-z0-9\-]{2}\%', '??', file_name_template)  # Replace %mm% and %dd% with ??.
@@ -59,6 +58,10 @@ class DataHdfeos(Data):
             hdf_root = MFDataset(file_name_wildcard)
 
             data_variable = hdf_root.variables[self._data_info['data']['variable']['@name']]  # Data variable.
+
+            # Get level variable.
+            level_variable = data_variable.get_level_variable()
+            level_variable_name = data_variable.get_level_variable_name()
 
             # Determine indices of longitudes.
             longitude_variable = hdf_root.get_longitude_variable()
@@ -86,7 +89,10 @@ class DataHdfeos(Data):
             ROI_mask = self._create_ROI_mask(lons, lats)
 
             # Determine index of the current vertical level to read data variable.
-            level_index = None
+            if level_variable_name is not None:
+                variable_indices[level_variable_name] = [level_variable.tolist().index(level_name)]
+            else:
+                level_variable_name = NO_LEVEL_NAME
 
             # Get time variable
             time_variable = hdf_root.get_time_variable()

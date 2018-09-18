@@ -42,6 +42,7 @@ class MFDataset:
         # Open all files and read metadata to create longitude, latitude and time grids.
         datasets = None
         datetime_range = []
+        first_file = True
         for file_name in glob.iglob(file_name_wildcard):
             hdf_file = SD(file_name, SDC.READ)  # Open file.
             self._files.append(hdf_file)  # Store HDF file handler.
@@ -59,10 +60,15 @@ class MFDataset:
                         diff = set(datasets.keys()) - set(new_datasets.keys())
                         print('Missing dataset: {}'.format(diff))
 
-            meta = self._get_metadata(hdf_file)  # Get metadata.
-            self._longitudes = meta['longitudes']
-            self._latitudes = meta['latitudes']
-            datetime_range.append(meta['datetime_range'])  # Store datetime range.
+            # Read datetime range for each file (because it's different)
+            datetime_range.append(self._get_datetime_range(hdf_file))
+
+            # We read spatial grids only from the first file (should be the same for all files).
+            if first_file:
+                spatial_grids = self._get_spatial_grids(hdf_file)
+                self._longitudes = spatial_grids['longitudes']
+                self._latitudes = spatial_grids['latitudes']
+                first_file = False
 
         # Let's take the beginning of the range for each file to construct a time grid.
         self._times = [beginning for beginning, ending in datetime_range]
@@ -123,31 +129,28 @@ class MFDataset:
 
         return pairdict
 
-    def _get_metadata(self, file):
-        ''' Reads metadata from HDF file and returns some values as a dictionary.
-
+    def _get_spatial_grids(self, file):
+        ''' Reads metadata from HDF file and returns longitude and latitude grids.
         Arguments:
             file -- HDF file handle.
 
         Result:
-            meta -- dictionary:
-                ['longitudes'] -- longitude grid.
-                ['latitudes'] -- latitude grid.
-                ['datetime_range'] -- tuple, datetime range.
+            spatial_grids -- dictionary {'longitude': longitude_grid, 'latitude': latitude_grid}.
         '''
 
-        meta = {}
+        spatial_grids = {}
 
-        # Read global attributes.
-        fattrs = file.attributes()
+        # Get indices of global attributes.
+        index_struct_meta = file.attr('StructMetadata.0').index()
+        index_core_meta = file.attr('CoreMetadata.0').index()
 
         # The needed information is in a global attribute 'StructMetadata.0'.
-        structmeta = fattrs["StructMetadata.0"]
+        structmeta = file.attr(index_struct_meta).get()
         structlist = self._meta_to_list(structmeta)
         structdict = self._list_to_dict(structlist)
 
         # The additional needed information is in a global attribute 'CoreMetadata.0'.
-        coremeta = fattrs["CoreMetadata.0"]
+        coremeta = file.attr(index_core_meta).get()
         corelist = self._meta_to_list(coremeta)
         coredict = self._list_to_dict(corelist)
 
@@ -168,20 +171,44 @@ class MFDataset:
         lat_inc = (lat1 - lat0) / n_lat
 
         # Generate longitude and latitude grids.
-        meta['longitudes'] = np.linspace(lon0, lon0 + lon_inc * n_lon, n_lon)
-        meta['latitudes'] = np.linspace(lat0, lat0 + lat_inc * n_lat, n_lat)
+        spatial_grids['longitudes'] = np.linspace(lon0, lon0 + lon_inc * n_lon, n_lon)
+        spatial_grids['latitudes'] = np.linspace(lat0, lat0 + lat_inc * n_lat, n_lat)
+
+        return spatial_grids
+
+    def _get_datetime_range(self, file):
+        ''' Reads metadata from HDF file and returns a time range.
+
+        Arguments:
+            file -- HDF file handle.
+
+        Result:
+            datetime_range -- tuple, datetime range (begin, end).
+        '''
+
+        # Get indexx of a global attribute CoreMetadata.0 containing datetime info.
+        index_core_meta = file.attr('CoreMetadata.0').index()
+        coremeta = file.attr(index_core_meta).get()
+        corelist = self._meta_to_list(coremeta)
+        coredict = self._list_to_dict(corelist)
 
         # Get date and time range values
         rangedatetime_container = coredict['INVENTORYMETADATA']['RANGEDATETIME']
         date0_string = rangedatetime_container['RANGEBEGINNINGDATE']['VALUE']
         time0_string = rangedatetime_container['RANGEBEGINNINGTIME']['VALUE']
-        datetime0 = datetime.strptime(date0_string + time0_string, '"%Y-%m-%d""%H:%M:%S.%f"')
+        if len(time0_string) == 15:
+            datetime0 = datetime.strptime(date0_string + time0_string, '"%Y-%m-%d""%H:%M:%S.%f"')
+        else:
+            datetime0 = datetime.strptime(date0_string + time0_string, '"%Y-%m-%d""%H:%M:%S"')
         date1_string = rangedatetime_container['RANGEENDINGDATE']['VALUE']
         time1_string = rangedatetime_container['RANGEENDINGTIME']['VALUE']
-        datetime1 = datetime.strptime(date1_string + time1_string, '"%Y-%m-%d""%H:%M:%S.%f"')
-        meta['datetime_range'] = (datetime0, datetime1)
+        if len(time0_string) == 15:
+            datetime1 = datetime.strptime(date1_string + time1_string, '"%Y-%m-%d""%H:%M:%S.%f"')
+        else:
+            datetime1 = datetime.strptime(date1_string + time1_string, '"%Y-%m-%d""%H:%M:%S"')
+        datetime_range = (datetime0, datetime1)
 
-        return meta
+        return datetime_range
 
     def get_longitude_variable(self):
         return self._longitudes

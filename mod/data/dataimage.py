@@ -9,12 +9,13 @@ from ext import shapefile
 from base.common import load_module, print, make_filename
 from base import SLDLegend
 
+
 class DataImage:
     """ Provides reading/writing data from/to graphical files.
     Supported formats: float geoTIFF.
 
     """
-    
+
     def __init__(self, data_info):
         image_class_name = 'Image' + data_info['data']['file']['@type'].capitalize()
         image_class = load_module('mod', image_class_name)
@@ -42,18 +43,19 @@ class DataImage:
             values -- processing result's values as a masked array/array/list.
             options -- dictionary of write options
 
-        """    
+        """
 
         # Write image file
         self._image.write(values, options)
 
         # Write legend into an SLD-file
-        if (self._data_info['data']['graphics']['legend']['@kind'] == 'file'
-                and self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
+        if (self._data_info['data']['graphics']['legend']['@kind'] == 'file' and
+                self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
             self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if values.ndim == 1 else 'raster'
             legend = SLDLegend(self._data_info)
             legend.write(values, options)
-        
+
+
 class ImageGeotiff:
     """ Provides reading/writing data from/to Geotiff files.
 
@@ -76,34 +78,36 @@ class ImageGeotiff:
         Arguments:
             values -- processing result's values as a masked array/array/list.
             options -- dictionary of write options:
-                ['level'] -- vertical level name 
+                ['level'] -- vertical level name
                 ['segment'] -- time segment description (as in input time segments taken from a task file)
                 ['times'] -- time grid as a list of datatime values
                 ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
-        """    
-        
+        """
+
         # Prepare data array with masked values replaced with a fill value.
         data = np.ma.filled(values, fill_value=values.fill_value)
         longitudes = options['longitudes']
         latitudes = options['latitudes']
 
         # Check if we have a (0..180,-180..0) grid and swap parts if its true. Negative should be on the left and increasing.
-        if longitudes[0] > longitudes[-1]: 
-            first_negative_latitude_idx = np.where(longitudes < 0)[0][0] # It's a border between pos and neg longitudes.
+        if longitudes[0] > longitudes[-1]:
+            first_negative_latitude_idx = np.where(longitudes < 0)[0][0]  # It's a border between pos and neg longitudes.
             longitudes = np.concatenate((longitudes[first_negative_latitude_idx:], longitudes[:first_negative_latitude_idx]))
-            left_part = data[:,first_negative_latitude_idx:]
-            right_part = data[:,:first_negative_latitude_idx]
+            left_part = data[:, first_negative_latitude_idx:]
+            right_part = data[:, :first_negative_latitude_idx]
             data = np.hstack((left_part, right_part))
 
         # Prepare GeoTIFF driver.
         fmt = 'GTiff'
         drv = gdal.GetDriverByName(fmt)
         metadata = drv.GetMetadata()
-        
+
         # Check if driver supports Create() method.
         if (gdal.DCAP_CREATE not in metadata) or (metadata[gdal.DCAP_CREATE] != 'YES'):
-            print('(ImageGeotiff::write) Error! Driver {} does not support Create() method. Unable to write GeoTIFF.'.format(fmt))
+            print('''(ImageGeotiff::write) Error!
+                     Driver {} does not support Create() method.
+                     Unable to write GeoTIFF.'''.format(fmt))
             raise AssertionError
 
         # Write image.
@@ -118,10 +122,10 @@ class ImageGeotiff:
         cs = osr.GetWellKnownGeogCSAsWKT(gtype)
         dataset.SetProjection(cs)
 
-        gt = [0, 1, 0, 0, 0, 1] # Default value.
+        gt = [0, 1, 0, 0, 0, 1]  # Default value.
 
         # Pixel scale.
-        limits = {limit['@role']:int(limit['#text']) for limit in self._data_info['data']['projection']['limits']['limit']}
+        limits = {limit['@role']: int(limit['#text']) for limit in self._data_info['data']['projection']['limits']['limit']}
         gt[1] = longitudes[1] - longitudes[0]
         gt[5] = latitudes[1] - latitudes[0]
 
@@ -133,13 +137,14 @@ class ImageGeotiff:
 
         dataset = None
 
+
 class ImageShape:
     """ Provides reading/writing data from/to ESRI shapefiles.
 
     """
     def __init__(self, data_info):
         self._data_info = data_info
-        
+
     def read(self, options):
         """Reads ESRI shapefile into an array.
 
@@ -155,7 +160,7 @@ class ImageShape:
         Arguments:
             values -- processing result's values as a masked array/array/list.
             options -- dictionary of write options:
-                ['level'] -- vertical level name 
+                ['level'] -- vertical level name
                 ['segment'] -- time segment description (as in input time segments taken from a task file)
                 ['times'] -- time grid as a list of datatime values
                 ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
@@ -170,7 +175,8 @@ class ImageShape:
                         ['@wmo_codes'] -- WMO codes of stations
                         ['@elevations'] -- elevations of stations
 
-        """    
+        """
+
         filename = make_filename(self._data_info, options)
         with shapefile.Writer(filename) as shape_writer:
             if (values.ndim == 1):  # 1-D values means we have stations without a time dimension
@@ -190,5 +196,5 @@ class ImageShape:
                 for i in range(len(valid_values)):
                     shape_writer.pointz(valid_lon[i], valid_lat[i], z=valid_elevation[i])
                     shape_writer.record(valid_values.data[i], valid_wmo_code[i], valid_name[i])
-                
+
                 shape_writer.close()

@@ -33,7 +33,7 @@ def date2index(datetime_values, time_variable, select=None):
 class MFDataset:
     """ Provides access to multifile HDF files.
     """
-    def __init__(self, file_name_wildcard):
+    def __init__(self, file_name_wildcard, check=False):
         self._file_name_wildcard = file_name_wildcard
 
         self._files = []
@@ -43,24 +43,28 @@ class MFDataset:
         datasets = None
         datetime_range = []
         first_file = True
+        print('(MFHDF::__init__) Reading files info...')
         for file_name in glob.iglob(file_name_wildcard):
             hdf_file = SD(file_name, SDC.READ)  # Open file.
             self._files.append(hdf_file)  # Store HDF file handler.
-            new_datasets = hdf_file.datasets()  # Get datasets info.
-            # All files should have the same set of datasets.
-            if datasets is None:
-                datasets = new_datasets
-            else:
-                if datasets != new_datasets:  # If not - print a warning.
-                    print('(MFDataset::__init__) Warning! Datasets list in the file {} is different!'.format(file_name))
-                    if set(new_datasets.keys()) > set(datasets.keys()):
-                        diff = set(new_datasets.keys()) - set(datasets.keys())
-                        print('Extra dataset: {}'.format(diff))
-                    else:
-                        diff = set(datasets.keys()) - set(new_datasets.keys())
-                        print('Missing dataset: {}'.format(diff))
+            if check:
+                new_datasets = hdf_file.datasets()  # Get datasets info.
+                # All files should have the same set of datasets.
+                if datasets is None:
+                    datasets = new_datasets
+                else:
+                    if datasets != new_datasets:  # If not - print a warning.
+                        print('(MFDataset::__init__) Warning! Datasets list in the file {} is different!'.format(file_name))
+                        if set(new_datasets.keys()) > set(datasets.keys()):
+                            diff = set(new_datasets.keys()) - set(datasets.keys())
+                            print('Extra dataset: {}'.format(diff))
+                        else:
+                            diff = set(datasets.keys()) - set(new_datasets.keys())
+                            print('Missing dataset: {}'.format(diff))
+            elif datasets is None:
+                datasets = hdf_file.datasets()  # Get datasets info.
 
-            # Read datetime range for each file (because it's different)
+            # Read datetime range for each file (because it differs)
             datetime_range.append(self._get_datetime_range(hdf_file))
 
             # We read spatial grids only from the first file (should be the same for all files).
@@ -70,6 +74,7 @@ class MFDataset:
                 self._latitudes = spatial_grids['latitudes']
                 first_file = False
 
+        print('(MFHDF::__init__) Done!')
         # Let's take the beginning of the range for each file to construct a time grid.
         self._times = [beginning for beginning, ending in datetime_range]
 

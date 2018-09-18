@@ -53,6 +53,7 @@ class DataHdfeos(Data):
             file_name_template = self._data_info['levels'][level_name]['@file_name_template']  # Template as in MDDB.
             # Create wildcard-ed template.
             file_name_template = re.sub(r'\%[a-z0-9\-]{2}\%', '??', file_name_template)  # Replace %mm% and %dd% with ??.
+            file_name_template = re.sub(r'\%[a-z0-9\-]{3}\%', '???', file_name_template)  # Replace %doy% with ???.
             file_name_wildcard = re.sub(r'\%[a-z0-9\-]*\%', '????', file_name_template)  # Replace %year...% with ????.
 
             hdf_root = MFDataset(file_name_wildcard)

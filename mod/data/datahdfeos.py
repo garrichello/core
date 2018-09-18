@@ -155,7 +155,11 @@ class DataHdfeos(Data):
             result['@latitude_grid'] = lats  # latitude_grid
             result['@grid_type'] = grid_type
             result['@fill_value'] = fill_value
-            result['meta'] = None
+            if len(level_variable) > 0:
+                result['meta'] = {}
+                result['meta']['levels'] = {i: level for i, level in enumerate(level_variable)}
+            else:
+                result['meta'] = None
 
         return result
 

@@ -201,13 +201,13 @@ class MFDataset:
         rangedatetime_container = coredict['INVENTORYMETADATA']['RANGEDATETIME']
         date0_string = rangedatetime_container['RANGEBEGINNINGDATE']['VALUE']
         time0_string = rangedatetime_container['RANGEBEGINNINGTIME']['VALUE']
-        if len(time0_string) == 15:
+        if len(time0_string) > 10:
             datetime0 = datetime.strptime(date0_string + time0_string, '"%Y-%m-%d""%H:%M:%S.%f"')
         else:
             datetime0 = datetime.strptime(date0_string + time0_string, '"%Y-%m-%d""%H:%M:%S"')
         date1_string = rangedatetime_container['RANGEENDINGDATE']['VALUE']
         time1_string = rangedatetime_container['RANGEENDINGTIME']['VALUE']
-        if len(time0_string) == 15:
+        if len(time1_string) > 10:
             datetime1 = datetime.strptime(date1_string + time1_string, '"%Y-%m-%d""%H:%M:%S.%f"')
         else:
             datetime1 = datetime.strptime(date1_string + time1_string, '"%Y-%m-%d""%H:%M:%S"')
@@ -244,6 +244,9 @@ class Variable(Sequence):
         self.ndim = len(self.dimensions)
         self._FillValue = attributes['_FillValue']
         layers = {int(key.split(' ')[1]): value for key, value in attributes.items() if key.find('Layer') != -1}
+        if len(layers) == 0 and len(attributes) > 4:  # No layers and many attributes means we have legend as attributes
+            inv_attributes = {value: key for key, value in attributes.items() if type(value) != list}
+            layers = {i: inv_attributes[i] for i in range(attributes['valid_range'][0], attributes['valid_range'][1] + 1)}
         self._levels = np.array([None] * len(layers))
         for i in range(len(layers)):
             self._levels[i] = layers[i]

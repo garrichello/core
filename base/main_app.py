@@ -7,7 +7,7 @@ import xmltodict
 from  base.proc import Proc
 
 class MainApp:
-    """Main application class. It does everythiong the application does."""  
+    """Main application class. It does everything the application does."""  
 
     def __init__(self, args=None):
         """Parses command line arguments, extracts a task file name."
@@ -67,7 +67,7 @@ class MainApp:
                     raise
 
     def _process(self):
-        """Runs modules in an order specified in a task file."""
+        """Runs modules in the order specified in a task file."""
         print('(MainApp::process) Run the processing.')
 
         for task_name in self._task:

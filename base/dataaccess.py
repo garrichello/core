@@ -12,7 +12,45 @@ from base.common import load_module, listify, print
 class DataAccess():
     """Class-helper for accessing data.
     Provides access to data through unified API for processing modules.
+
+    External API:
+        ::get(uid, segments=None, levels=None): 
+        Reads data and metadata from an input data source (dataset, parameter, array).
+            uid -- processing module input's UID (as in a task file)
+            segments -- list of time segments (read all if omitted)
+            levels - list of vertical level (read all if omitted)
+
+        ::input_uids():
+        Returns a list of UIDs of processing module inputs (as in a task file)
+
+        ::get_segments(uid):
+        Returns time segments list
+            uid -- UID of a processing module's input (as in a task file)
+        
+        ::get_levels(uid):
+        Returns vertical levels list
+            uid -- UID of a processing module's input  (as in a task file)
+        
+        ::put(uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None, fill_value=None,
+                description = None, meta = None):
+        Writes data and metadata to an output data storage (array).
+            uid -- UID of a processing module's output (as in a task file)
+            values -- processing result's values as a masked array/array/list
+            level -- vertical level name segment -- time segment description (as in input time segments taken from a task file)
+            times -- time grid as a list of datatime values
+            longitudes -- longitude grid (1-D or 2-D) as an array/list
+            latitudes -- latitude grid (1-D or 2-D) as an array/list
+            fill_value -- fill value
+            description -- dictionary describing data:
+                ['title'] -- general title of the data (e.g., Average)
+                ['name'] --  name of the data (e.g., Temperature)
+                ['units'] -- units of th data (e.g., K)
+            meta -- additional metadata passed from data readers to data writers through data processors
+    
+        ::output_uids():
+        Returns a list of UIDs of processing module outputs (as in a task file)
     """
+
     def __init__(self, inputs, outputs, metadb_info):
         """Initializes class's attributes. Reads metadata database.
         Instantiate classes-readers and classes-writers for input and output arguments of a processing module

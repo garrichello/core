@@ -45,6 +45,7 @@ class SLDLegend:
             data_max = values.max()
 
         # Check for optional color values and names
+        values_override = None
         if options['meta'] is not None:
             if options['meta']['levels'] is not None:
                 values_override = options['meta']['levels']

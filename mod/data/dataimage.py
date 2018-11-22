@@ -4,6 +4,7 @@
 from osgeo import gdal
 from osgeo import osr
 import numpy as np
+from scipy.interpolate import griddata
 from ext import shapefile
 
 from base.common import load_module, print, make_filename
@@ -45,15 +46,55 @@ class DataImage:
 
         """
 
-        # Write image file
-        self._image.write(values, options)
+        # Check the grid for uniformity.
+        eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
+        
+        if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
+            uniform_grid = False
+        else:
+            lons = np.sort(options['longitudes'])
+            dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
+            nlons = len(lons)
+            lats = np.sort(options['latitudes'])
+            dlats = [lats[i+1] - lats[i] for i in range(len(lats)-1)]
+            nlats = len(lats)
+            if ((np.std(dlons) > eps) or (np.std(dlats) > eps)):
+                uniform_grid = False
+            else:
+                uniform_grid = True
 
-        # Write legend into an SLD-file
+        # If the grid is irregular, regrid to a regular one
+        if (not uniform_grid):
+            options_regular = options.copy()
+            
+            # Create a uniform grid
+            dlon_regular = np.min(dlons) / 2.0  # Divide by 2 to avoid a strange latitudinal shift
+            dlat_regular = np.min(dlats) / 2.0 
+            nlons_regular = np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1)
+            nlats_regular = np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1)
+            options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + min(lons)
+            options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + min(lats)
+        
+            # Prepare data
+            llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
+            llon_regular, llat_regular = np.meshgrid(options_regular['longitudes'], options_regular['latitudes'])
+            interp = griddata((llon.ravel(), llat.ravel()), values.ravel(), 
+                (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
+            values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
+            values_regular.fill_value = values.fill_value
+        else:
+            values_regular = values
+            options_regular = options
+        
+        # Write image file.
+        self._image.write(values_regular, options_regular)
+
+        # Write legend into an SLD-file.
         if (self._data_info['data']['graphics']['legend']['@kind'] == 'file' and
                 self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
-            self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if values.ndim == 1 else 'raster'
+            self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if values_regular.ndim == 1 else 'raster'
             legend = SLDLegend(self._data_info)
-            legend.write(values, options)
+            legend.write(values_regular, options_regular)
 
 
 class ImageGeotiff:

@@ -46,29 +46,29 @@ class DataImage:
 
         """
 
-        # Check the grid for uniformity.
-        eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
-        
-        if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
-            uniform_grid = False
-        else:
-            lons = np.sort(options['longitudes'])
-            dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
-            nlons = len(lons)
-            lats = np.sort(options['latitudes'])
-            dlats = [lats[i+1] - lats[i] for i in range(len(lats)-1)]
-            nlats = len(lats)
-            if ((np.std(dlons) > eps) or (np.std(dlats) > eps)):
-                uniform_grid = False
+        if (values.ndim > 1):   # If it is a grid, check it for uniformity.
+            eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
+            
+            if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
+                should_regrid = True
             else:
-                uniform_grid = True
+                lons = np.sort(options['longitudes'])
+                dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
+                lats = np.sort(options['latitudes'])
+                dlats = [lats[i+1] - lats[i] for i in range(len(lats)-1)]
+                if ((np.std(dlons) > eps) or (np.std(dlats) > eps)):
+                    should_regrid = True
+                else:
+                    should_regrid = False
+        else:
+            should_regrid = False
 
-        # If the grid is irregular, regrid to a regular one
-        if (not uniform_grid):
+        # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
+        if (should_regrid):
             options_regular = options.copy()
             
             # Create a uniform grid
-            dlon_regular = np.min(dlons) / 2.0  # Divide by 2 to avoid a strange latitudinal shift
+            dlon_regular = np.min(dlons) / 2.0  # Half the step to avoid a strange latitudinal shift.
             dlat_regular = np.min(dlats) / 2.0 
             nlons_regular = np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1)
             nlats_regular = np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1)

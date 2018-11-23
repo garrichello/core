@@ -229,6 +229,8 @@ class Variable(Sequence):
     """ Provides access to HDF variables
     """
     def __init__(self, dataset_name, files):
+        not_a_level_attribute = ['long_name', 'calibrated_nt', 'valid_range', 'scale_factor_err', 
+                       'scale_factor', '_FillValue', 'units', 'add_offset', 'add_offset_err']
         self._dataset_name = dataset_name
         self._files = files
 
@@ -244,7 +246,8 @@ class Variable(Sequence):
         self.ndim = len(self.dimensions)
         self._FillValue = attributes['_FillValue']
         layers = {int(key.split(' ')[1]): value for key, value in attributes.items() if key.find('Layer') != -1}
-        if len(layers) == 0 and len(attributes) > 4:  # No layers and many attributes means we have legend as attributes
+        level_attributes = [k for k in attributes.keys() if k not in not_a_level_attribute]
+        if len(layers) == 0 and len(level_attributes) > 4:  # No layers and many attributes means we have legend as attributes
             inv_attributes = {value: key for key, value in attributes.items() if type(value) != list}
             layers = {i: inv_attributes[i] for i in range(attributes['valid_range'][0], attributes['valid_range'][1] + 1)}
         self._levels = np.array([None] * len(layers))

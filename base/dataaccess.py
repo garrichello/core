@@ -65,6 +65,7 @@ class DataAccess():
         self._input_uids = []  # UIDs of input data sources.
         self._output_uids = []  # UID of output data destinations.
         self._data_objects = {}  # Instanses of data access classes.
+        self._data_types = {}   # Types of datasets.
 
         # Process input arguments: None - no inputs; get metadata for each data source (if any)
         # and instantiate corresponding classes.
@@ -84,6 +85,7 @@ class DataAccess():
                 if input_['data'].get('@object') is None:
                     input_['data']['@object'] = data_class(input_info)  # Try to instantiate data reading class
                 self._data_objects[uid] = input_['data']['@object']
+                self._data_types[uid] = input_info['@data_type']
 
         # Process ouput argumetns: None - no outputs; get metadata for each data destination (if any)
         # and instantiate corresponding classes.
@@ -103,6 +105,7 @@ class DataAccess():
                 if output_['data'].get('@object') is None:
                     output_['data']['@object'] = data_class(output_info)  # Try to instantiate data writing class
                 self._data_objects[uid] = output_['data']['@object']
+                self._data_types[uid] = output_info['@data_type']                
 
         self._metadb = metadb_info
         
@@ -126,7 +129,7 @@ class DataAccess():
             return info
 
         # If it is a dataset there is much to do
-        info['data'] = argument['data'] # All the information about the dataset is passed to the data-accessing modules
+        info['data'] = argument['data'] # All the information about the dataset is passed to data-accessing modules
         # Metadata database URL
         db_url = 'mysql://{0}@{1}/{2}'.format(metadb_info['@user'], metadb_info['@host'], metadb_info['@name'])
         engine = create_engine(db_url)
@@ -307,3 +310,23 @@ class DataAccess():
         """Returns a list of UIDs of processing module outputs (as in a task file)"""
 
         return self._output_uids
+
+    def is_stations(self, uid):
+        """Returns True if the dataset linked to the uid contains stations data.
+        
+        Arguments:
+            uid -- UID of an input dataset (or datafile) to be tested.
+
+        Returns:
+            Boolean True if the dataset contains stations data, boolean False otherwise.
+        """
+
+        is_stations = False
+        data_type = self._data_types.get(uid)
+        if data_type is not None:
+            if data_type.upper() == 'DB':  # We assume that stations are stored only in a PostGIS database.
+                is_stations = True
+        else:
+            print('(DataAccess::is_stations) Warning: UID {} is not defined in the task file. False was returned.'.format(uid))
+
+        return is_stations

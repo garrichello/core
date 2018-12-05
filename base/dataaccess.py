@@ -14,7 +14,7 @@ class DataAccess():
     Provides access to data through unified API for processing modules.
 
     External API:
-        ::get(uid, segments=None, levels=None): 
+        ::get(uid, segments=None, levels=None):
         Reads data and metadata from an input data source (dataset, parameter, array).
             uid -- processing module input's UID (as in a task file)
             segments -- list of time segments (read all if omitted)
@@ -26,11 +26,11 @@ class DataAccess():
         ::get_segments(uid):
         Returns time segments list
             uid -- UID of a processing module's input (as in a task file)
-        
+
         ::get_levels(uid):
         Returns vertical levels list
             uid -- UID of a processing module's input  (as in a task file)
-        
+
         ::put(uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None, fill_value=None,
                 description = None, meta = None):
         Writes data and metadata to an output data storage (array).
@@ -46,7 +46,7 @@ class DataAccess():
                 ['name'] --  name of the data (e.g., Temperature)
                 ['units'] -- units of th data (e.g., K)
             meta -- additional metadata passed from data readers to data writers through data processors
-    
+
         ::output_uids():
         Returns a list of UIDs of processing module outputs (as in a task file)
     """
@@ -81,11 +81,14 @@ class DataAccess():
                 input_info = self._get_metadata(metadb_info, input_)
                 #  Data access class name is: 'Data' + <data type name> (e.g., DataNetcdf)
                 data_class_name = 'Data' + input_info['@data_type'].capitalize()
+                print('(DataAccess::__init__)  Input data module: {}'.format(data_class_name))
                 data_class = load_module('mod', data_class_name)
                 if input_['data'].get('@object') is None:
                     input_['data']['@object'] = data_class(input_info)  # Try to instantiate data reading class
                 self._data_objects[uid] = input_['data']['@object']
                 self._data_types[uid] = input_info['@data_type']
+
+        print('(DataAccess::__init__) Done!')
 
         # Process ouput argumetns: None - no outputs; get metadata for each data destination (if any)
         # and instantiate corresponding classes.
@@ -101,14 +104,17 @@ class DataAccess():
                 output_info = self._get_metadata(metadb_info, output_)
                 #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
                 data_class_name = 'Data' + output_info['@data_type'].capitalize()
+                print('(DataAccess::__init__)  Output data module: {}'.format(data_class_name))
                 data_class = load_module('mod', data_class_name)
                 if output_['data'].get('@object') is None:
                     output_['data']['@object'] = data_class(output_info)  # Try to instantiate data writing class
                 self._data_objects[uid] = output_['data']['@object']
-                self._data_types[uid] = output_info['@data_type']                
+                self._data_types[uid] = output_info['@data_type']
+
+        print('(DataAccess::__init__) Done!')
 
         self._metadb = metadb_info
-        
+
     def _get_metadata(self, metadb_info, argument):
         """Loads metadata from metadata database for an argument (input or output of the processing module)
 
@@ -134,12 +140,12 @@ class DataAccess():
         db_url = 'mysql://{0}@{1}/{2}'.format(metadb_info['@user'], metadb_info['@host'], metadb_info['@name'])
         engine = create_engine(db_url)
         meta = MetaData(bind=engine, reflect=True)
-        Session = sessionmaker(bind=engine)
-        session = Session()
+        session_class = sessionmaker(bind=engine)
+        session = session_class()
 
         # Tables in a metadata database
         collection_tbl = meta.tables['collection']
-        scenario_tbl = meta.tables['scenario'] 
+        scenario_tbl = meta.tables['scenario']
         resolution_tbl = meta.tables['res']
         time_step_tbl = meta.tables['tstep']
         dataset_tbl = meta.tables['ds']
@@ -162,19 +168,20 @@ class DataAccess():
 
         # Get some info about the dataset.
         try:
-            dataset_tbl_info = session.query(dataset_tbl.columns['id'],
-                    file_type_tbl.columns['name'].label('file_type_name'), 
-                    scenario_tbl.columns['subpath0'], 
-                    resolution_tbl.columns['subpath1'], 
-                    time_step_tbl.columns['subpath2'],
-                    time_span_tbl.columns['name'].label('file_time_span'),
-                    dataset_root_tbl.columns['rootpath']).join(
-                        collection_tbl).join(scenario_tbl).join(resolution_tbl).join(
-                        time_step_tbl).join(file_type_tbl).join(dataset_root_tbl).join(time_span_tbl).filter(
-                            collection_tbl.columns['name'] == dataset_name).filter(
-                            scenario_tbl.columns['name'] == scenario_name).filter(
-                            resolution_tbl.columns['name'] == resolution_name).filter(
-                            time_step_tbl.columns['name'] == time_step_name).one()
+            dataset_tbl_info = \
+                session.query(dataset_tbl.columns['id'],
+                              file_type_tbl.columns['name'].label('file_type_name'),
+                              scenario_tbl.columns['subpath0'],
+                              resolution_tbl.columns['subpath1'],
+                              time_step_tbl.columns['subpath2'],
+                              time_span_tbl.columns['name'].label('file_time_span'),
+                              dataset_root_tbl.columns['rootpath']).join(
+                                  collection_tbl).join(scenario_tbl).join(resolution_tbl).join(
+                                      time_step_tbl).join(file_type_tbl).join(dataset_root_tbl).join(time_span_tbl).filter(
+                                          collection_tbl.columns['name'] == dataset_name).filter(
+                                              scenario_tbl.columns['name'] == scenario_name).filter(
+                                                  resolution_tbl.columns['name'] == resolution_name).filter(
+                                                      time_step_tbl.columns['name'] == time_step_name).one()
         except NoResultFound:
             print('{} collection: {}, scenario: {}, resolution: {}, time step: {}'.format(
                 '(DataAccess::_get_metadata) No records found in MDDB for', dataset_name, scenario_name,
@@ -192,16 +199,17 @@ class DataAccess():
             level_name_pattern = '%:{0}:%'.format(level_name) # Pattern for LIKE in the following SQL-request
             # Get some info about the data array and file names template
             try:
-                data_tbl_info = session.query(data_tbl.columns['scale'], 
-                        data_tbl.columns['offset'], 
-                        file_tbl.columns['name'].label('file_name_template'), 
-                        file_tbl.columns['timestart'],
-                        file_tbl.columns['timeend'],
-                        levels_variable_tbl.columns['name'].label('level_variable_name')).join(dataset_tbl).join(
-                            variable_tbl).join(levels_tbl).join(file_tbl).join(levels_variable_tbl).filter(
-                                dataset_tbl.columns['id'] == dataset_tbl_info.id).filter(
-                                variable_tbl.columns['name'] == variable_name).filter(
-                                levels_tbl.columns['name'].like(level_name_pattern)).one()
+                data_tbl_info = \
+                    session.query(data_tbl.columns['scale'],
+                                  data_tbl.columns['offset'],
+                                  file_tbl.columns['name'].label('file_name_template'),
+                                  file_tbl.columns['timestart'],
+                                  file_tbl.columns['timeend'],
+                                  levels_variable_tbl.columns['name'].label('level_variable_name')).join(dataset_tbl).join(
+                                      variable_tbl).join(levels_tbl).join(file_tbl).join(levels_variable_tbl).filter(
+                                          dataset_tbl.columns['id'] == dataset_tbl_info.id).filter(
+                                              variable_tbl.columns['name'] == variable_name).filter(
+                                                  levels_tbl.columns['name'].like(level_name_pattern)).one()
             except NoResultFound:
                 print('{} collection: {}, scenario: {}, resolution: {}, time step: {}, variable: {}, level: {}'.format(
                     '(DataAccess::_get_metadata) No records found in MDDB for', dataset_name, scenario_name,
@@ -277,7 +285,7 @@ class DataAccess():
         return levels
 
     def put(self, uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None, fill_value=None,
-                description = None, meta = None):
+            description=None, meta=None):
         """Writes data and metadata to an output data storage (array).
 
         Arguments:
@@ -313,7 +321,7 @@ class DataAccess():
 
     def is_stations(self, uid):
         """Returns True if the dataset linked to the uid contains stations data.
-        
+
         Arguments:
             uid -- UID of an input dataset (or datafile) to be tested.
 

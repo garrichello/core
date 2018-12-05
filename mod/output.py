@@ -6,13 +6,15 @@ from base.common import print
 
 class cvcOutput:
     """ Provides redirection of input data arrays to corresponding plotting/writing modules
-    
+
     """
 
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
-        
+
     def run(self):
+        """ Passes output data array to a write method of a data module (through data access helper0) """
+
         print('(cvcOutput::run) Started!')
 
         input_uids = self._data_helper.input_uids()
@@ -28,8 +30,10 @@ class cvcOutput:
 
         for level_name in vertical_levels:
             for segment in time_segments:
-                self._data_helper.put(output_uids[0], result['data'][level_name][segment['@name']]['@values'], level=level_name, 
-                        segment=segment, longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'], 
-                        description=result['data'][level_name][segment['@name']]['description'], meta=result['meta'])
+                self._data_helper.put(output_uids[0], result['data'][level_name][segment['@name']]['@values'],
+                                      level=level_name, segment=segment,
+                                      longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                      description=result['data'][level_name][segment['@name']]['description'],
+                                      meta=result['meta'])
 
         print('(cvcOutput::run) Finished!')

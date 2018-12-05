@@ -1,14 +1,14 @@
 """Provides classes
     DataDB
 """
-from sqlalchemy import create_engine, Table, MetaData, func, and_
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
-from geoalchemy2 import *
 from datetime import datetime
+
+from sqlalchemy import create_engine, MetaData, func, and_
+from sqlalchemy.orm import sessionmaker
+from geoalchemy2 import *
 import numpy as np
 
-from base.common import listify, unlistify, print
+from base.common import listify, print
 
 class DataDb:
     """ Provides methods for reading and writing geodatabase files.
@@ -22,9 +22,9 @@ class DataDb:
 
         ROI_polygon = 'POLYGON(('
         for ROI_point in self._data_info['data']['region']['point']:
-                ROI_polygon += '{} {}, '.format(ROI_point['@lon'], ROI_point['@lat'])
-        ROI_polygon += '{} {}))'.format(self._data_info['data']['region']['point'][0]['@lon'], 
-            self._data_info['data']['region']['point'][0]['@lat'])
+            ROI_polygon += '{} {}, '.format(ROI_point['@lon'], ROI_point['@lat'])
+        ROI_polygon += '{} {}))'.format(self._data_info['data']['region']['point'][0]['@lon'],
+                                        self._data_info['data']['region']['point'][0]['@lat'])
         return ROI_polygon
 
     def read(self, options):
@@ -38,6 +38,8 @@ class DataDb:
         Returns:
             result['array'] -- data array
         """
+
+        print('(DataDb::read) Accessing a PostGIS database...')
 
         # Set default fill value here
         fill_value = -999
@@ -62,15 +64,15 @@ class DataDb:
 
         # Process each vertical level separately.
         for level_name in levels_to_read:
-            print ('(DataDb::read) Reading level: \'{0}\''.format(level_name))
+            print('(DataDb::read)  Reading level: \'{0}\''.format(level_name))
             file_name_template = self._data_info['levels'][level_name]['@file_name_template']
-            (db_name, scenario, hor_res, time_step, tables_names) = file_name_template.split('/')
+            (db_name, _, _, _, _) = file_name_template.split('/')
             db_url = 'postgresql://{}'.format(db_name.replace(':', '/'))
             engine = create_engine(db_url)
-            meta = MetaData(bind = engine, reflect = True)
+            meta = MetaData(bind=engine, reflect=True)
             Session = sessionmaker(bind=engine)
             session = Session()
-        
+
             # Get tables objects
             stations_tbl = meta.tables['stations']
             st_data_tbl = meta.tables['st_data']
@@ -78,7 +80,7 @@ class DataDb:
             # Process each time segment separately.
             data_by_segment = {} # Contains data array for each time segment.
             for segment in segments_to_read:
-                print ('(DataNetcdf::read) Reading time segment \'{0}\''.format(segment['@name']))
+                print('(DataDb::read)  Reading time segment \'{0}\''.format(segment['@name']))
 
                 # Date is stored in the PostGIS DB as integers of form YYYYMMDD.
                 # So convert string dates into integers and cut off hours.
@@ -86,11 +88,14 @@ class DataDb:
                 date_end = int(segment['@ending'])//100
 
                 # Form query
-                q = session.query(st_data_tbl.columns[variable_name], st_data_tbl.columns.date, st_data_tbl.columns.station, 
-                    stations_tbl.columns.st_name, func.ST_AsText(stations_tbl.columns.location).label('location')).join(
-                    stations_tbl, st_data_tbl.columns.station == stations_tbl.columns.station).filter(
-                    func.ST_Covers(ROI_polygon, stations_tbl.columns.location.ST_AsText())).filter(
-                    and_(st_data_tbl.columns.date >= date_start, st_data_tbl.columns.date <= date_end))
+                q = session.query(st_data_tbl.columns[variable_name],
+                                  st_data_tbl.columns.date,
+                                  st_data_tbl.columns.station,
+                                  stations_tbl.columns.st_name,
+                                  func.ST_AsText(stations_tbl.columns.location).label('location')).join(
+                                      stations_tbl, st_data_tbl.columns.station == stations_tbl.columns.station).filter(
+                                          func.ST_Covers(ROI_polygon, stations_tbl.columns.location.ST_AsText())).filter(
+                                              and_(st_data_tbl.columns.date >= date_start, st_data_tbl.columns.date <= date_end))
 
                 res = q.all()
                 q = None
@@ -101,7 +106,7 @@ class DataDb:
                 # Create time grid. It is the same for all stations now. So we take the first station as a source.
                 station_indices = np.where(all_stations_codes == stations_codes[0])[0]
                 time_grid = [datetime.strptime(str(res[i].date), '%Y%m%d') for i in station_indices]
-                
+
                 values = None
                 longitudes = []
                 latitudes = []
@@ -130,7 +135,7 @@ class DataDb:
                 data_by_segment[segment['@name']]['@dimensions'] = ('time', 'station')
                 data_by_segment[segment['@name']]['@time_grid'] = time_grid
                 data_by_segment[segment['@name']]['segment'] = segment
-            
+
             result['data'][level_name] = data_by_segment
             result['@longitude_grid'] = np.array(longitudes)
             result['@latitude_grid'] = np.array(latitudes)
@@ -143,7 +148,8 @@ class DataDb:
             result['meta']['stations']['@elevations'] = np.array(elevations)
 
             session.close()
-            
+
+        print('(DataDb::read) Done!')
 
         return result
 
@@ -154,13 +160,16 @@ class DataDb:
         Arguments:
             values -- processing result's values as a masked array/array/list.
             options -- dictionary of write options:
-                ['level'] -- vertical level name 
+                ['level'] -- vertical level name
                 ['segment'] -- time segment description (as in input time segments taken from a task file)
                 ['times'] -- time grid as a list of datatime values
                 ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
-        """    
+        """
+
+        print('(DataDB::write) Writing data to a PostGIS database...')
+        print(values)
+        print(options)
+        print('(DataDb::write) Done!')
+        raise NotImplementedError
         
-        print('(DataDB::write) Writing DB...')
-        print('(DataDB::write) Not implemented yet!')
-        pass

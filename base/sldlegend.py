@@ -8,8 +8,6 @@ import xmltodict
 from matplotlib import cm, colors
 import numpy as np
 
-from base.common import print
-
 
 class SLDLegend:
     """Class SLDLegend.
@@ -62,7 +60,7 @@ class SLDLegend:
         else:
             num_labels = int(self._legend_options['nlabels'])
         # Color's indices to be shown in the legend.
-        idxs = [int(idx * (num_colors - 1 + 0.9999) / (num_labels - 1)) for idx in range(num_labels)]  
+        idxs = [int(idx * (num_colors - 1 + 0.9999) / (num_labels - 1)) for idx in range(num_labels)]
 
         # Generate format string for printing legend labels according to a difference between maximum and minimum values
         if values.count() != 0:  # When data values are present
@@ -70,7 +68,7 @@ class SLDLegend:
                 legend_values = list(values_override.keys())
                 legend_labels = list(values_override.values())
             else:
-                legend_values = [(legend_colors[i]) / float(num_colors) * (data_max - data_min) + data_min for i in idxs]      
+                legend_values = [(legend_colors[i]) / float(num_colors) * (data_max - data_min) + data_min for i in idxs]
                 # Order of magnitude of the difference between max and min values.
                 value_order = np.log10((data_max - data_min) / num_labels)
                 precision = 0 if value_order >= 0 else int(np.ceil(abs(value_order)))
@@ -87,14 +85,15 @@ class SLDLegend:
 
         # Legend file name composition.
         (file_root, file_ext) = os.path.splitext(self._legend_options['file']['@name'])
-        legend_filename = '{}_{}_{}-{}{}'.format(file_root, options['level'],
-            options['segment']['@beginning'], options['segment']['@ending'], file_ext)
+        legend_filename = \
+            '{}_{}_{}-{}{}'.format(file_root, options['level'], options['segment']['@beginning'],
+                                   options['segment']['@ending'], file_ext)
 
         # Select writer corresponding to data kind.
         if self._legend_options['@data_kind'] == 'raster':
             self.write_raster(legend_filename, legend_values, legend_labels, rgb_values, values.fill_value)
         if self._legend_options['@data_kind'] == 'station':
-            self.write_stations(legend_filename, legend_values, legend_labels, rgb_values, values.fill_value)
+            self.write_stations(legend_filename, legend_values, legend_labels, rgb_values)
 
     def write_raster(self, filename, legend_values, legend_labels, rgb_values, fill_value):
         """Writes a legend for raster data into SLD file.
@@ -126,14 +125,14 @@ class SLDLegend:
         sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['FeatureTypeStyle']['Rule']['RasterSymbolizer']['Opacity'] = 0.8
         sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['FeatureTypeStyle']['Rule']['RasterSymbolizer']['ColorMap'] = {}
         colormap_entry = [{'@color':'#000000', '@quantity':fill_value, '@label':'', '@opacity':'0.0'}]
-        for i in range(len(legend_values)):
+        for i, _ in enumerate(legend_values):
             colormap_entry.append({'@color':rgb_values[i], '@quantity': legend_values[i], '@label':legend_labels[i]})
         sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['FeatureTypeStyle']['Rule']['RasterSymbolizer']['ColorMap']['ColorMapEntry'] = colormap_entry
-    
-        with open(filename, 'w') as fd:
-            fd.write(xmltodict.unparse(sld, pretty=True))
 
-    def write_stations(self, filename, legend_values, legend_labels, rgb_values, fill_value):
+        with open(filename, 'w') as file_descriptor:
+            file_descriptor.write(xmltodict.unparse(sld, pretty=True))
+
+    def write_stations(self, filename, legend_values, legend_labels, rgb_values):
         """Writes a legend for stations data into SLD file.
 
         Arguments:
@@ -141,7 +140,6 @@ class SLDLegend:
             legend_values -- data values to be written into SLD file.
             legend_labels -- labels corresponding to data values.
             rgb_values -- hex-values of colors corresponding to data values.
-            fill_value -- value for transparent pixels
         """
 
         field_name = 'VALUE'
@@ -167,31 +165,31 @@ class SLDLegend:
         n_values = len(legend_values)
         for i in range(n_values-1, -1, -1):
             rule = {}
-            ogcFilter = {}
+            ogc_filter = {}
             if i == n_values-1: # Top line of the legend
                 rule['Name'] = 'First level'
                 rule['Title'] = '<'+legend_labels[i]
-                ogcFilter['ogc:PropertyIsLessThan'] = {}
-                ogcFilter['ogc:PropertyIsLessThan']['ogc:PropertyName'] = field_name
-                ogcFilter['ogc:PropertyIsLessThan']['ogc:Literal'] = legend_values[i]
+                ogc_filter['ogc:PropertyIsLessThan'] = {}
+                ogc_filter['ogc:PropertyIsLessThan']['ogc:PropertyName'] = field_name
+                ogc_filter['ogc:PropertyIsLessThan']['ogc:Literal'] = legend_values[i]
             elif i == 0: # Bottom line of the legend
                 rule['Name'] = 'Last level'
                 rule['Title'] = '>'+legend_labels[i]
-                ogcFilter['ogc:PropertyIsGreaterThanOrEqualTo'] = {}
-                ogcFilter['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:PropertyName'] = field_name
-                ogcFilter['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:Literal'] = legend_values[i]
+                ogc_filter['ogc:PropertyIsGreaterThanOrEqualTo'] = {}
+                ogc_filter['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:PropertyName'] = field_name
+                ogc_filter['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:Literal'] = legend_values[i]
             else:
                 rule['Name'] = 'Next level'
                 rule['Title'] = legend_labels[i] + ' .. ' + legend_labels[i-1]
-                ogcFilter['ogc:And'] = {}
-                ogcFilter['ogc:And']['ogc:PropertyIsGreaterThanOrEqualTo'] = {}
-                ogcFilter['ogc:And']['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:PropertyName'] = field_name
-                ogcFilter['ogc:And']['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:Literal'] = legend_values[i]
-                ogcFilter['ogc:And']['ogc:PropertyIsLessThan'] = {}
-                ogcFilter['ogc:And']['ogc:PropertyIsLessThan']['ogc:PropertyName'] = field_name
-                ogcFilter['ogc:And']['ogc:PropertyIsLessThan']['ogc:Literal'] = legend_values[i-1]
-            
-            rule['ogc:Filter'] = ogcFilter
+                ogc_filter['ogc:And'] = {}
+                ogc_filter['ogc:And']['ogc:PropertyIsGreaterThanOrEqualTo'] = {}
+                ogc_filter['ogc:And']['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:PropertyName'] = field_name
+                ogc_filter['ogc:And']['ogc:PropertyIsGreaterThanOrEqualTo']['ogc:Literal'] = legend_values[i]
+                ogc_filter['ogc:And']['ogc:PropertyIsLessThan'] = {}
+                ogc_filter['ogc:And']['ogc:PropertyIsLessThan']['ogc:PropertyName'] = field_name
+                ogc_filter['ogc:And']['ogc:PropertyIsLessThan']['ogc:Literal'] = legend_values[i-1]
+
+            rule['ogc:Filter'] = ogc_filter
             point_symbolizer = {}
             point_symbolizer['Graphic'] = {}
             point_symbolizer['Graphic']['Mark'] = {}
@@ -207,6 +205,6 @@ class SLDLegend:
             point_symbolizer['Graphic']['Size'] = symbol_size
             rule['PointSymbolizer'] = point_symbolizer
             sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['FeatureTypeStyle']['Rule'].append(rule)
-    
-        with open(filename, 'w') as fd:
-            fd.write(xmltodict.unparse(sld, pretty=True, indent='    '))
+
+        with open(filename, 'w') as file_descriptor:
+            file_descriptor.write(xmltodict.unparse(sld, pretty=True, indent='    '))

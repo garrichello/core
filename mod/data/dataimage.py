@@ -4,7 +4,7 @@
 from osgeo import gdal
 from osgeo import osr
 import numpy as np
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata  # pylint: disable=E0401
 from ext import shapefile
 
 from base.common import load_module, print, make_filename
@@ -46,9 +46,12 @@ class DataImage:
 
         """
 
-        if (values.ndim > 1):   # If it is a grid, check it for uniformity.
+        print('(DataImage::write) Writing image...')
+
+        if values.ndim > 1:   # If it is a grid, check it for uniformity.
+            print('(DataImage::write)  Checking grid uniformity...')
             eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
-            
+
             if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
                 should_regrid = True
             else:
@@ -60,32 +63,35 @@ class DataImage:
                     should_regrid = True
                 else:
                     should_regrid = False
+            print('(DataImage::write)  Done!')
         else:
             should_regrid = False
 
         # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
-        if (should_regrid):
+        if should_regrid:
+            print('(DataImage::write)  Non-uniform grid. Regridding...')
             options_regular = options.copy()
-            
+
             # Create a uniform grid
             dlon_regular = np.min(dlons) / 2.0  # Half the step to avoid a strange latitudinal shift.
-            dlat_regular = np.min(dlats) / 2.0 
+            dlat_regular = np.min(dlats) / 2.0
             nlons_regular = np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1)
             nlats_regular = np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1)
             options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + min(lons)
             options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + min(lats)
-        
+
             # Prepare data
             llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
             llon_regular, llat_regular = np.meshgrid(options_regular['longitudes'], options_regular['latitudes'])
-            interp = griddata((llon.ravel(), llat.ravel()), values.ravel(), 
-                (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
+            interp = griddata((llon.ravel(), llat.ravel()), values.ravel(),
+                              (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
             values_regular.fill_value = values.fill_value
+            print('(DataImage::write)  Done!')
         else:
             values_regular = values
             options_regular = options
-        
+
         # Write image file.
         self._image.write(values_regular, options_regular)
 
@@ -94,7 +100,11 @@ class DataImage:
                 self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
             self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if values_regular.ndim == 1 else 'raster'
             legend = SLDLegend(self._data_info)
+            print('(DataImage::write)  Writing legend...')
             legend.write(values_regular, options_regular)
+            print('(DataImage::write)  Done!')
+
+        print('(DataImage::write) Done')
 
 
 class ImageGeotiff:
@@ -125,6 +135,8 @@ class ImageGeotiff:
                 ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
+
+        print('(ImageGeotiff::write)  Writing geoTIFF...')
 
         # Prepare data array with masked values replaced with a fill value.
         data = np.ma.filled(values, fill_value=values.fill_value)
@@ -166,7 +178,7 @@ class ImageGeotiff:
         gt = [0, 1, 0, 0, 0, 1]  # Default value.
 
         # Pixel scale.
-        limits = {limit['@role']: int(limit['#text']) for limit in self._data_info['data']['projection']['limits']['limit']}
+        # limits = {limit['@role']: int(limit['#text']) for limit in self._data_info['data']['projection']['limits']['limit']}
         gt[1] = longitudes[1] - longitudes[0]
         gt[5] = latitudes[1] - latitudes[0]
 
@@ -177,6 +189,8 @@ class ImageGeotiff:
         dataset.SetGeoTransform(gt)
 
         dataset = None
+
+        print('(ImageGeotiff::write)  Done!')
 
 
 class ImageShape:
@@ -217,10 +231,11 @@ class ImageShape:
                         ['@elevations'] -- elevations of stations
 
         """
+        print('(ImageShape::write)  Writing ESRI Shapefile...')
 
         filename = make_filename(self._data_info, options)
         with shapefile.Writer(filename) as shape_writer:
-            if (values.ndim == 1):  # 1-D values means we have stations without a time dimension
+            if values.ndim == 1:  # 1-D values means we have stations without a time dimension
                 # Get stations with valid data only
                 valid_values = values[~values.mask]
                 valid_lon = options['longitudes'][~values.mask]
@@ -239,3 +254,5 @@ class ImageShape:
                     shape_writer.record(valid_values.data[i], valid_wmo_code[i], valid_name[i])
 
                 shape_writer.close()
+
+        print('(ImageShape::write)  Done!')

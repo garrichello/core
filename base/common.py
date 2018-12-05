@@ -56,7 +56,7 @@ def unlistify(list_):
     """
     if list_ is not None:
         if isinstance(list_, list):
-            if len(list_) == 0:
+            if not list_:
                 result = None
             elif len(list_) == 1:
                 result = list_[0]
@@ -68,6 +68,8 @@ def unlistify(list_):
 
 
 def list_remove_all(list_, item_to_remove):
+    """ Removes all occurences of the item_to_remove from the list """
+
     return [item for item in list_ if item != item_to_remove]
 
 

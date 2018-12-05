@@ -1,16 +1,16 @@
 """Provides classes: MFDataset, Variable
 """
+from collections.abc import Sequence
+from datetime import datetime
 
 import glob
 from pyhdf.SD import SD, SDC
-from datetime import datetime
 import numpy as np
-from collections.abc import Sequence
 
 from base.common import print, list_remove_all, listify
 
 
-def date2index(datetime_values, time_variable, select=None):
+def date2index(datetime_values, time_variable):
     ''' Converts datetime values into indices in time_variable.
     Nearest mode only!
 
@@ -83,7 +83,7 @@ class MFDataset:
         self._files = [self._files[i] for i in sorter]
         self._times = np.array([self._times[i] for i in sorter])
 
-        for dataset_name in datasets.keys():
+        for dataset_name, _ in datasets:
             self.variables[dataset_name] = Variable(dataset_name, self._files)
 
     def _meta_to_list(self, meta):
@@ -216,12 +216,15 @@ class MFDataset:
         return datetime_range
 
     def get_longitude_variable(self):
+        """ Returns longitude variable """
         return self._longitudes
 
     def get_latitude_variable(self):
+        """ Returns latitude variable """
         return self._latitudes
 
     def get_time_variable(self):
+        """ Returns time variable """
         return self._times
 
 
@@ -229,14 +232,15 @@ class Variable(Sequence):
     """ Provides access to HDF variables
     """
     def __init__(self, dataset_name, files):
-        not_a_level_attribute = ['long_name', 'calibrated_nt', 'valid_range', 'scale_factor_err', 
-                       'scale_factor', '_FillValue', 'units', 'add_offset', 'add_offset_err']
+        NOT_A_LEVEL_ATTRIBUTE = ['long_name', 'calibrated_nt', 'valid_range', 'scale_factor_err',
+                                 'scale_factor', '_FillValue', 'units', 'add_offset', 'add_offset_err']
         self._dataset_name = dataset_name
         self._files = files
 
         dataset = files[0].select(dataset_name)
         attributes = dataset.attributes()
 
+        self.units = attributes['units']
         self.dimensions = ['Time']
         self._shape = [len(files)]
         for i in range(len(dataset.dimensions())):
@@ -246,13 +250,13 @@ class Variable(Sequence):
         self.ndim = len(self.dimensions)
         self._FillValue = attributes['_FillValue']
         layers = {int(key.split(' ')[1]): value for key, value in attributes.items() if key.find('Layer') != -1}
-        level_attributes = [k for k in attributes.keys() if k not in not_a_level_attribute]
-        if len(layers) == 0 and len(level_attributes) > 4:  # No layers and many attributes means we have legend as attributes
-            inv_attributes = {value: key for key, value in attributes.items() if type(value) != list}
+        level_attributes = [k for k in attributes.keys() if k not in NOT_A_LEVEL_ATTRIBUTE]
+        if not layers and len(level_attributes) > 4:  # No layers and many attributes means we have legend as attributes
+            inv_attributes = {value: key for key, value in attributes.items() if not isinstance(value, list)}
             layers = {i: inv_attributes[i] for i in range(attributes['valid_range'][0], attributes['valid_range'][1] + 1)}
         self._levels = np.array([None] * len(layers))
-        for i in range(len(layers)):
-            self._levels[i] = layers[i]
+        for i, v in layers:
+            self._levels[i] = v
         # Set fake level variable name
         if self.ndim == 4:  # Dataset contains layers
             self._level_variable_name = self.dimensions[3]
@@ -281,7 +285,9 @@ class Variable(Sequence):
         return np.prod(self._shape)
 
     def get_level_variable(self):
+        """ Returns level variable """
         return self._levels
 
     def get_level_variable_name(self):
+        """ Returns level variable name """
         return self._level_variable_name

@@ -8,11 +8,13 @@ class cvcCalcTiMean():
     """ Performs calculation of time averaged values.
 
     """
-    
+
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
-    
+
     def run(self):
+        """ Main method of the class. Reads data arrays, process them and returns results. """
+
         print('(cvcCalcTiMean::run) Started!')
 
         input_uids = self._data_helper.input_uids()
@@ -23,7 +25,7 @@ class cvcCalcTiMean():
 
         # Get data for all time segments and levels at once
         result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
-       
+
         # Get parameters
         if len(input_uids) == 2:
             parameters = self._data_helper.get(input_uids[1])
@@ -36,8 +38,8 @@ class cvcCalcTiMean():
                 timean = result['data'][level][segment['@name']]['@values'].mean(axis=0)
                 fill_value = result['data'][level][segment['@name']]['@values'].fill_value
 
-                self._data_helper.put(output_uids[0], values=timean, level=level, segment=segment, 
-                    longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'], 
-                    fill_value = fill_value, meta=result['meta'])
-        
+                self._data_helper.put(output_uids[0], values=timean, level=level, segment=segment,
+                                      longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                      fill_value=fill_value, meta=result['meta'])
+
         print('(cvcCalcTiMean::run) Finished!')

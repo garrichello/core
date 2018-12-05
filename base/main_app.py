@@ -5,43 +5,54 @@ import collections
 import xmltodict
 
 from  base.proc import Proc
+from base.common import print
 
 class MainApp:
-    """Main application class. It does everything the application does."""  
+    """Main application class. It does everything the application does."""
 
     def __init__(self, args=None):
         """Parses command line arguments, extracts a task file name."
-        
+
         Arguments:
             args - argparse's Namespace with command line arguments of the application.
         """
+
         self._task_file_name = args.task_file_name
-    
+        self._task = {}
+        self._data_uid_list = []
+        self._destination_uid_list = []
+
     def run(self):
         """Run this function to run the Core."""
+
         print('(MainApp::run) Let\'s do it!')
 
         self._read_task()
         self._process()
 
+        print('(MainApp::run) Job is done. Exiting.')
+
     def _read_task(self):
         """Reads the task file and creates all necessary structures."""
-        print("(MainApp::read_task) Read the task file.")
-        
+
+        print("(MainApp::read_task) Read the task file...")
+
         try:
-            with open(self._task_file_name) as fd:
-                self._task = xmltodict.parse(fd.read())
+            with open(self._task_file_name) as file_descriptor:
+                self._task = xmltodict.parse(file_descriptor.read())
         except FileNotFoundError:
             print('(MainApp::_read_task) Task file not found: ' + self._task_file_name)
             raise
         except UnicodeDecodeError:
-            with open(self._task_file_name, encoding='windows-1251') as fd:
-                self._task = xmltodict.parse(fd.read())
+            with open(self._task_file_name, encoding='windows-1251') as file_descriptor:
+                self._task = xmltodict.parse(file_descriptor.read())
+
+        print("(MainApp::read_task) Done!")
 
     def _prepare_proc_arguments(self, task, proc, proc_args):
-        """Adds a new 'data' element into the argument's dictionary 
+        """Adds a new 'data' element into the argument's dictionary
         containing a full description of the data/destination argument.
-        
+
         Arguments:
             task -- task dictionary (used in generating an error message)
             proc -- current processing dictionary (used in generating an error message)
@@ -53,7 +64,7 @@ class MainApp:
             proc_args = [proc_args]
         for arg in proc_args:
             argument_uid = arg['@data'] # UID of the data/destination argument.
-            try: 
+            try:
                 data_idx = self._data_uid_list.index(argument_uid) # Search for a 'data' element.
                 arg['data'] = task['data'][data_idx] # Add a new dictionary item with a description.
             except ValueError:
@@ -61,21 +72,22 @@ class MainApp:
                     data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
                     arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.
                 except ValueError: # Print error message and abort if nothing found
-                    print('(MainApp::process) Can\'t find data or destination UID: \'' 
-                            + argument_uid + '\' in processing \'' + proc['@uid'] 
-                            + '\' input \'' + arg['@uid'] + '\'')
+                    print('(MainApp::process) Can\'t find data or destination UID: \''
+                          + argument_uid + '\' in processing \'' + proc['@uid']
+                          + '\' input \'' + arg['@uid'] + '\'')
                     raise
 
     def _process(self):
         """Runs modules in the order specified in a task file."""
-        print('(MainApp::process) Run the processing.')
+
+        print('(MainApp::process) Start the processing.')
 
         for task_name in self._task:
             task = self._task[task_name]
             metadb_info = task['metadb'] # Location of the metadata database and user credentials to access it.
             self._data_uid_list = [data['@uid'] for data in task['data']] # List of all data UIDs.
             self._destination_uid_list = [destination['@uid'] for destination in task['destination']] # List of all destination UIDs.
-            
+
             # Run processings one by one as specified in a task file.
             for proc in task['processing']:
                 proc_class_name = proc['@class'] # The name of a processing class.
@@ -95,3 +107,5 @@ class MainApp:
 
                 # Run the processor which in turn should run the processing module.
                 processor.run()
+
+        print('(MainApp::process) Processing is finished.')

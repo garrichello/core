@@ -1,7 +1,7 @@
 """Provides classes:
     DataParameter
 """
-from base.common import listify
+from base.common import listify, print
 
 class DataParameter:
     """ Provides methods for reading and writing parameters in a task file.
@@ -25,7 +25,7 @@ class DataParameter:
             return string_value
 
 
-    def read(self, options):
+    def read(self, options):    # pylint: disable=W0613
         """Reads parameters.
 
         Arguments:
@@ -35,9 +35,13 @@ class DataParameter:
             result -- dictionary containing parameters from a task file
         """
 
+        print('(DataParameter::read) Reading parameters...')
+
         parameters = listify(self._data_info['data']['param'])
         result = {}
         for parameter in parameters:
             result[parameter['@uid']] = self._type_cast(parameter['#text'], parameter['@type'])
+
+        print('(DataParameter::read) Done')
 
         return result

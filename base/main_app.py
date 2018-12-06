@@ -4,7 +4,7 @@
 import collections
 import xmltodict
 
-from  base.proc import Proc
+from base.proc import Proc
 from base.common import print
 
 class MainApp:

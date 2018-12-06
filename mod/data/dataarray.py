@@ -3,8 +3,10 @@
 """
 from base.common import listify, print
 
+from mod.data.data import Data
 
-class DataArray:
+
+class DataArray(Data):
     """ Provides methods for reading and writing arrays from/to memory.
     """
 
@@ -19,6 +21,8 @@ class DataArray:
         self._data_info['data']['time'] = {}
         self._data_info['data']['time']['segment'] = []
 
+        super().__init__(data_info)
+
     def read(self, options):
         """Reads an array.
 
@@ -30,6 +34,8 @@ class DataArray:
         Returns:
             result['array'] -- data array
         """
+
+        print('(DataArray::read) Reading memory data array...')
 
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])
@@ -44,28 +50,33 @@ class DataArray:
         result['data'] = {}  # Contains data arrays being read from netCDF files at each vertical level.
 
         # Process each vertical level separately.
+        level_name = None
         for level_name in levels_to_read:
-            print('(DataArray::read) Reading level: \'{0}\''.format(level_name))
+            print('(DataArray::read)  Reading level: \'{0}\''.format(level_name))
 
             # Process each time segment separately.
-            data_by_segment = {}  # Contains data array for each time segment.
+            self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
+            segment = None
             for segment in segments_to_read:
-                print('(DataArray::read) Reading time segment \'{0}\''.format(segment['@name']))
+                print('(DataArray::read)  Reading time segment \'{0}\''.format(segment['@name']))
+                print('(DataArray::read)   Min data value: {}, max data value: {}'.format(
+                    self._data_info['data'][level_name][segment['@name']]['@values'].min(),
+                    self._data_info['data'][level_name][segment['@name']]['@values'].max()))
+                self._add_segment_data(level_name=level_name,
+                                       values=self._data_info['data'][level_name][segment['@name']]['@values'],
+                                       description=self._data_info['data']['description'],
+                                       time_grid=self._data_info['data']['time'].get('@grid'),
+                                       time_segment=segment)
+                print('(DataArray::read)  Done!')
 
-                data_by_segment[segment['@name']] = {}
-                data_by_segment[segment['@name']]['@values'] = \
-                    self._data_info['data'][level_name][segment['@name']]['@values']
-                data_by_segment[segment['@name']]['description'] = self._data_info['data']['description']
-                data_by_segment[segment['@name']]['@time_grid'] = self._data_info['data']['time'].get('@grid')
-                data_by_segment[segment['@name']]['segment'] = segment
+        self._add_metadata(longitude_grid=self._data_info['data']['@longitudes'],
+                           latitude_grid=self._data_info['data']['@latitudes'],
+                           fill_value=self._data_info['data'][level_name][segment['@name']]['@values'].fill_value,
+                           meta=self._data_info['meta'])
 
-            result['data'][level_name] = data_by_segment
-            result['@longitude_grid'] = self._data_info['data']['@longitudes']
-            result['@latitude_grid'] = self._data_info['data']['@latitudes']
-            result['@fill_value'] = self._data_info['data'][level_name][segment['@name']]['@values'].fill_value
-            result['meta'] = self._data_info['meta']
+        print('(DataArray::read) Done!')
 
-        return result
+        return self._get_result_data()
 
     def write(self, values, options):
         """ Stores values and metadata in data_info dictionary
@@ -80,6 +91,8 @@ class DataArray:
                 ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
+
+        print('(DataArray:write) Creating memory data array...')
 
         level = options['level']
         segment = options['segment']
@@ -119,3 +132,5 @@ class DataArray:
             self._data_info['data']['@values'] = values
 
         self._data_info['meta'] = meta
+
+        print('(DataArray::write) Done!')

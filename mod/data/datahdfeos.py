@@ -7,10 +7,11 @@ import re
 import numpy as np
 import numpy.ma as ma
 from base.common import listify, print  # , make_filename
-from mod.data.data import Data
+from mod.data.data import Data, GRID_TYPE_REGULAR
 from mod.data.mfhdf import MFDataset, date2index
 
 NO_LEVEL_NAME = 'none'
+CLASS_UNITS = ['class number']
 
 
 class DataHdfeos(Data):
@@ -44,12 +45,10 @@ class DataHdfeos(Data):
             segments_to_read = listify(self._data_info['data']['time']['segment'])  # Read all levels if nothing specified.
 
         variable_indices = {}  # Contains lists of indices for each dimension of the data variable in the domain to read.
-        result = {}  # Contains data arrays, grids and some additional information.
-        result['data'] = {}  # Contains data arrays being read from netCDF files at each vertical level.
 
         # Process each vertical level separately.
         for level_name in levels_to_read:
-            print('(DataNetcdf::read) Reading level: \'{0}\''.format(level_name))
+            print('(DataHdfeos::read)  Reading level: \'{0}\''.format(level_name))
             file_name_template = self._data_info['levels'][level_name]['@file_name_template']  # Template as in MDDB.
             # Create wildcard-ed template.
             file_name_template = re.sub(r'\%[a-z0-9\-]{2}\%', '??', file_name_template)  # Replace %mm% and %dd% with ??.
@@ -67,7 +66,7 @@ class DataHdfeos(Data):
             # Determine indices of longitudes.
             longitude_variable = hdf_root.get_longitude_variable()
             if longitude_variable.ndim == 1:
-                lon_grid_type = 'regular'
+                lon_grid_type = GRID_TYPE_REGULAR
                 lons = longitude_variable[:]
                 if lons.max() > 180:
                     lons = ((lons + 180.0) % 360.0) - 180.0  # Switch from 0-360 to -180-180 grid
@@ -76,7 +75,7 @@ class DataHdfeos(Data):
             # Determine indices of latitudes.
             latitude_variable = hdf_root.get_latitude_variable()
             if latitude_variable.ndim == 1:
-                lat_grid_type = 'regular'
+                lat_grid_type = GRID_TYPE_REGULAR
                 lats = latitude_variable[:]
             variable_indices['YDim'] = np.arange(lats.size)  # latitude_indices
 
@@ -99,13 +98,13 @@ class DataHdfeos(Data):
             time_variable = hdf_root.get_time_variable()
 
             # Process each time segment separately.
-            data_by_segment = {}  # Contains data array for each time segment.
+            self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
-                print('(DataHdfeos::read) Reading time segment \'{0}\''.format(segment['@name']))
+                print('(DataHdfeos::read)  Reading time segment \'{0}\''.format(segment['@name']))
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')
-                time_idx_range = date2index([segment_start, segment_end], time_variable, select='nearest')
+                time_idx_range = date2index([segment_start, segment_end], time_variable)
                 if time_idx_range[1] == 0:
                     print('''(DataHdfeos::read) Error! The end of the time segment is before the first time in the dataset.
                             Aborting!''')
@@ -117,51 +116,50 @@ class DataHdfeos(Data):
 
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
                 # And mask all points outside the ROI mask for all times.
-                print('(DataHdfeos::read) Actually reading...')
+                print('(DataHdfeos::read)  Actually reading...')
                 if data_variable.ndim == 4:
                     data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
                                                variable_indices[dd[2]], variable_indices[dd[3]]]
                 if data_variable.ndim == 3:
                     data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
                                                variable_indices[dd[2]]]
-                print('(DataHdfeos::read) Done!')
+                print('(DataHdfeos::read)  Done!')
 
                 data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
 
                 # Create masks.
                 ROI_mask_time = ROI_mask
-                fill_value = data_variable._FillValue
+                fill_value = data_variable._FillValue   # pylint: disable=W0212
                 fill_value_mask = data_slice == fill_value
                 combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time)
 
                 # Create masked array using ROI mask.
+                print('(DataHdfeos::read)  Creating masked array...')
                 masked_data_slice = ma.MaskedArray(data_slice, mask=combined_mask, fill_value=fill_value)
-                print('Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
+                print('(DataHdfeos::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
+                print('(DataHdfeos::read)  Done!')
 
                 # Remove level variable name from the list of data dimensions if it is present
                 data_dim_names = list(dd)
                 if level_variable_name != NO_LEVEL_NAME:
                     data_dim_names.remove(level_variable_name)
 
-                data_by_segment[segment['@name']] = {}
-                data_by_segment[segment['@name']]['@values'] = masked_data_slice
-                data_by_segment[segment['@name']]['description'] = self._data_info['data']['description']
-                data_by_segment[segment['@name']]['@dimensions'] = data_dim_names
-                data_by_segment[segment['@name']]['@time_grid'] = time_grid
-                data_by_segment[segment['@name']]['segment'] = segment
+                self._add_segment_data(level_name=level_name, values=masked_data_slice,
+                                       description=self._data_info['data']['description'],
+                                       dimensions=data_dim_names, time_grid=time_grid, time_segment=segment)
 
-            result['data'][level_name] = data_by_segment
-            result['@longitude_grid'] = lons  # longitude_grid
-            result['@latitude_grid'] = lats  # latitude_grid
-            result['@grid_type'] = grid_type
-            result['@fill_value'] = fill_value
-            if len(level_variable) > 0:
-                result['meta'] = {}
-                result['meta']['levels'] = {i: level for i, level in enumerate(level_variable)}
-            else:
-                result['meta'] = None
+        # If data variable units are class numbers, generate meta dictionary containing levels names for the legend.
+        if data_variable.units in CLASS_UNITS:
+            meta = {}
+            meta['levels'] = {i: level for i, level in enumerate(level_variable)}
+        else:
+            meta = None
 
-        return result
+        self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, fill_value=fill_value, meta=meta)
+
+        print('(DataHdfeos::read) Done!')
+
+        return self._get_result_data()
 
     def write(self, values, options):
         """Writes data array into a HDF-EOS file.
@@ -177,5 +175,7 @@ class DataHdfeos(Data):
         """
 
         print('(DataHdfeos::write) Writing data to a HDF-EOS file...')
-
-        pass
+        print(values)
+        print(options)
+        print('(DataHdfeos::write) Done!')
+        raise NotImplementedError

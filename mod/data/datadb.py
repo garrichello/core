@@ -9,12 +9,14 @@ from geoalchemy2 import *
 import numpy as np
 
 from base.common import listify, print
+from mod.data.data import Data, GRID_TYPE_STATION
 
-class DataDb:
+class DataDb(Data):
     """ Provides methods for reading and writing geodatabase files.
     """
     def __init__(self, data_info):
         self._data_info = data_info
+        super().__init__(data_info)
 
     def construct_polygon(self):
         """ Constructs a string defining a PostGIS POLYGON element
@@ -59,9 +61,6 @@ class DataDb:
         # ROI as a POLYGON.
         ROI_polygon = self.construct_polygon()
 
-        result = {} # Contains data arrays, grids and some additional information.
-        result['data'] = {} # Contains data arrays being read from netCDF files at each vertical level.
-
         # Process each vertical level separately.
         for level_name in levels_to_read:
             print('(DataDb::read)  Reading level: \'{0}\''.format(level_name))
@@ -78,7 +77,7 @@ class DataDb:
             st_data_tbl = meta.tables['st_data']
 
             # Process each time segment separately.
-            data_by_segment = {} # Contains data array for each time segment.
+            self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
                 print('(DataDb::read)  Reading time segment \'{0}\''.format(segment['@name']))
 
@@ -129,29 +128,25 @@ class DataDb:
                 values.fill_value = fill_value
                 mask = values == fill_value
                 values.mask = mask
-                data_by_segment[segment['@name']] = {}
-                data_by_segment[segment['@name']]['@values'] = values
-                data_by_segment[segment['@name']]['description'] = self._data_info['data']['description']
-                data_by_segment[segment['@name']]['@dimensions'] = ('time', 'station')
-                data_by_segment[segment['@name']]['@time_grid'] = time_grid
-                data_by_segment[segment['@name']]['segment'] = segment
 
-            result['data'][level_name] = data_by_segment
-            result['@longitude_grid'] = np.array(longitudes)
-            result['@latitude_grid'] = np.array(latitudes)
-            result['@grid_type'] = 'station'
-            result['@fill_value'] = fill_value
-            result['meta'] = {}
-            result['meta']['stations'] = {}
-            result['meta']['stations']['@names'] = np.array(stations_names)
-            result['meta']['stations']['@wmo_codes'] = np.array(stations_codes)
-            result['meta']['stations']['@elevations'] = np.array(elevations)
+                self._add_segment_data(level_name=level_name, values=values,
+                                       description=self._data_info['data']['description'],
+                                       dimensions=('time', 'station'), time_grid=time_grid, time_segment=segment)
 
             session.close()
 
+        meta = {}
+        meta['stations'] = {}
+        meta['stations']['@names'] = np.array(stations_names)
+        meta['stations']['@wmo_codes'] = np.array(stations_codes)
+        meta['stations']['@elevations'] = np.array(elevations)
+
+        self._add_metadata(longitude_grid=np.array(longitudes), latitude_grid=np.array(latitudes),
+                           grid_type=GRID_TYPE_STATION, fill_value=fill_value, meta=meta)
+
         print('(DataDb::read) Done!')
 
-        return result
+        return self._get_result_data()
 
 
     def write(self, values, options):

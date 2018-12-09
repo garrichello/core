@@ -1,6 +1,8 @@
 """Modules:
-    MainApp
-    Task
+    main_app
+    proc
+    dataaccess
+    sldlegend
 """
 from .main_app import MainApp
 from .proc import Proc

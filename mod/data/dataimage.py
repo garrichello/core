@@ -4,7 +4,7 @@
 from osgeo import gdal
 from osgeo import osr
 import numpy as np
-from scipy.interpolate import griddata  # pylint: disable=E0401
+from scipy.interpolate import griddata
 from ext import shapefile
 
 from base.common import load_module, print, make_filename

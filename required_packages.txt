@@ -1,0 +1,28 @@
+Packages needed to install on a Win10 machine.
+Normally installed by pip. Except GDAL and python-hdf4.
+
+1) ptvsd
+2) sqlalchemy
+3) xmltodict
+4) matplotlib
+5) numpy
+6) scipy
+7) geoalchemy2
+8) gdal: 
+     https://pypi.org/project/GDAL/
+     python setup.py build
+     python setup.py install
+   gdal alt: (https://stackoverflow.com/questions/42489700/python-gdal-package-missing-header-file-when-installing-via-pip-in-windows)
+     OSGeo4W64
+     pip install gdal==2.3.2 --global-option=build_ext --global-option="-IC:/OSGeo4W64/include/" --global-option="-LC:/OSGeo4W64/lib/"
+9) netCDF4
+10) python-hdf4: (http://fhs.github.io/python-hdf4/install.html)
+      http://pysclint.sourceforge.net/pyhdf/hdf4-all-enc.zip -> c:\hdf4
+      python setup.py build --hdf4 c:\hdf4
+      python setup.py install -- hdf4 c:\hdf4
+      msvcr71.dll (https://www.dll-files.com/msvcr71.dll.html) 
+        -> C:\Users\Garry\AppData\Local\Programs\Python\PythonXX-32\Lib\site-packages\python_hdf4-0.9.1-py3.7-win32.egg\pyhdf\msvcr71.dll 
+           or %PATH% 
+           or system32
+           or WOW64
+  

@@ -49,13 +49,13 @@ class MainApp:
 
         print("(MainApp::read_task) Done!")
 
-    def _prepare_proc_arguments(self, task, proc, proc_args):
+    def _prepare_proc_arguments(self, task, proc_uid, proc_args):
         """Adds a new 'data' element into the argument's dictionary
         containing a full description of the data/destination argument.
 
         Arguments:
             task -- task dictionary (used in generating an error message)
-            proc -- current processing dictionary (used in generating an error message)
+            proc_uid -- UID of the current processing (used in generating an error message)
             proc_args -- input or output arguments dictionary
         """
 
@@ -72,7 +72,7 @@ class MainApp:
                 arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.
             else:
                 print('(MainApp::process) Can\'t find data or destination UID: \''
-                      + argument_uid + '\' in processing \'' + proc['@uid']
+                      + argument_uid + '\' in processing \'' + proc_uid
                       + '\' input \'' + arg['@uid'] + '\'')
                 raise ValueError
 
@@ -95,11 +95,11 @@ class MainApp:
                 # Each argument contains description of the corresponding piece of data or visualization options.
                 proc_input = proc.get('input')
                 if proc_input is not None:
-                    self._prepare_proc_arguments(task, proc, proc_input)
+                    self._prepare_proc_arguments(task, proc['@uid'], proc_input)
 
                 proc_output = proc.get('output')
                 if proc_output is not None:
-                    self._prepare_proc_arguments(task, proc, proc_output)
+                    self._prepare_proc_arguments(task, proc['@uid'], proc_output)
 
                 # Initiate the computing processor (class that runs and controls processing modules).
                 processor = Proc(proc_class_name, proc_input, proc_output, metadb_info)

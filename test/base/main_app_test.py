@@ -6,7 +6,7 @@ from argparse import Namespace
 from base.main_app import MainApp
 
 
-class MainApplication(unittest.TestCase):
+class MainAppTest(unittest.TestCase):
     ''' Tests main application class'''
 
     def test_pass_taskfile_as_argument(self):

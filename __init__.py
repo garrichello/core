@@ -1,4 +1,4 @@
-""" Main __init__.py 
+""" Main __init__.py
 Modules:
     core
 """

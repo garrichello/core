@@ -215,7 +215,7 @@ class DataNetcdf(Data):
 
         self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, fill_value=fill_value)
 
-        print('(DataNetcdf::read) Done')
+        print('(DataNetcdf::read) Done!')
 
         return self._get_result_data()
 

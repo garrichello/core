@@ -64,18 +64,17 @@ class MainApp:
             proc_args = [proc_args]
         for arg in proc_args:
             argument_uid = arg['@data'] # UID of the data/destination argument.
-            try:
+            if argument_uid in self._data_uid_list:
                 data_idx = self._data_uid_list.index(argument_uid) # Search for a 'data' element.
                 arg['data'] = task['data'][data_idx] # Add a new dictionary item with a description.
-            except ValueError:
-                try:
-                    data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
-                    arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.
-                except ValueError: # Print error message and abort if nothing found
-                    print('(MainApp::process) Can\'t find data or destination UID: \''
-                          + argument_uid + '\' in processing \'' + proc['@uid']
-                          + '\' input \'' + arg['@uid'] + '\'')
-                    raise
+            elif argument_uid in self._destination_uid_list:
+                data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
+                arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.
+            else:
+                print('(MainApp::process) Can\'t find data or destination UID: \''
+                      + argument_uid + '\' in processing \'' + proc['@uid']
+                      + '\' input \'' + arg['@uid'] + '\'')
+                raise ValueError
 
     def _process(self):
         """Runs modules in the order specified in a task file."""

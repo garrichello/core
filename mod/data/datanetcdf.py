@@ -17,7 +17,7 @@ LATITUDE_UNITS = {'degrees_north', 'degree_north', 'degrees_N', 'degree_N',
                   'degreesN', 'degreeN', 'lat'}
 TIME_UNITS = {'since', 'time'}
 NO_LEVEL_NAME = 'none'
-
+WILDCARDS = {'year': '????', 'mm': '??', 'year1': '????', 'year2': '????', 'year1s-4': '????', 'year2s-4': '????'}
 
 class PercentTemplate(Template):
     """ Custom template for the string substitute method.
@@ -72,9 +72,8 @@ class DataNetcdf(Data):
             level_variable_name = self._data_info['levels'][level_name]['@level_variable_name']
             file_name_template = self._data_info['levels'][level_name]['@file_name_template']  # Template as in MDDB.
             percent_template = PercentTemplate(file_name_template)  # Custom string template %keyword%.
-            wildcards = {'year': '????', 'mm': '??', 'year1': '????', 'year2': '????',
-                         'year1s-4': '????', 'year2s-4': '????'}
-            file_name_wildcard = percent_template.substitute(wildcards)  # Create wildcard-ed template
+
+            file_name_wildcard = percent_template.substitute(WILDCARDS)  # Create wildcard-ed template
 
             try:
                 netcdf_root = MFDataset(file_name_wildcard, check=True)
@@ -84,7 +83,7 @@ class DataNetcdf(Data):
                 except OSError:
                     netcdf_root = MFDataset(file_name_wildcard, check=True, aggdim='initial_time0_hours')
 
-            data_variable = netcdf_root.variables[self._data_info['data']['variable']['@name']]  # Data variable.
+            data_variable = netcdf_root.variables[self._data_info['data']['variable']['@name']]  # Data variable. pylint: disable=E1136
             data_variable.set_auto_mask(False)
 
             # Determine indices of longitudes.
@@ -117,7 +116,7 @@ class DataNetcdf(Data):
             # Determine index of the current vertical level to read data variable.
             if level_variable_name != NO_LEVEL_NAME:
                 try:
-                    level_variable = netcdf_root.variables[level_variable_name]
+                    level_variable = netcdf_root.variables[level_variable_name]  # pylint: disable=E1136
                 except KeyError:
                     print('(DataNetcdf::read) Level variable \'{0}\' is not found in files. Aborting!'.format(
                         level_variable_name))

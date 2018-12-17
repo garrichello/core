@@ -104,7 +104,7 @@ class DataImage:
             legend.write(values_regular, options_regular)
             print('(DataImage::write)  Done!')
 
-        print('(DataImage::write) Done')
+        print('(DataImage::write) Done!')
 
 
 class ImageGeotiff:
@@ -121,7 +121,6 @@ class ImageGeotiff:
             options -- dictionary of read options
         """
 
-        pass
 
     def write(self, values, options):
         """Writes data array into a Geotiff file.
@@ -207,7 +206,6 @@ class ImageShape:
             options -- dictionary of read options
         """
 
-        pass
 
     def write(self, values, options):
         """Writes data array into a ESRI shapefile.

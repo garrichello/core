@@ -96,9 +96,11 @@ class DataImage:
 
         # Convert Kelvin to Celsius if asked and appropriate
         if (options_regular['description']['@tempk2c'] == 'yes') \
+            & (options_regular['description']['@units'] == 'K') \
             & (values_regular.min() > MINIMUM_POSSIBLE_TEMPERATURE_K) \
             & (values_regular.max() < MAXIMUM_POSSIBLE_TEMPERATURE_K):
-            kelvin_to_celsius(values_regular)
+            values_regular = kelvin_to_celsius(values_regular)
+            options_regular['description']['@units'] = 'C'
 
         # Write image file.
         self._image.write(values_regular, options_regular)

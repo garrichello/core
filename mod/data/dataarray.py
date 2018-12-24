@@ -90,6 +90,11 @@ class DataArray(Data):
                 ['times'] -- time grid as a list of datatime values
                 ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
+                description -- dictionary describing data:
+                    ['title'] -- general title of the data (e.g., Average)
+                    ['name'] --  name of the data (e.g., Temperature)
+                    ['units'] -- units of th data (e.g., K)
+                meta -- additional metadata passed from data readers to data writers through data processors
         """
 
         print('(DataArray:write) Creating memory data array...')
@@ -99,6 +104,7 @@ class DataArray(Data):
         times = options['times']
         longitudes = options['longitudes']
         latitudes = options['latitudes']
+        description = options['description']
         meta = options['meta']
 
         if level is not None:
@@ -131,6 +137,7 @@ class DataArray(Data):
         else:
             self._data_info['data']['@values'] = values
 
+        self._data_info['description'] = description
         self._data_info['meta'] = meta
 
         print('(DataArray::write) Done!')

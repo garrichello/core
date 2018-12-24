@@ -2,7 +2,10 @@
 
 from base.dataaccess import DataAccess
 
-from base.common import print
+from base.common import print, kelvin_to_celsius, celsius_to_kelvin
+
+MINIMUM_POSSIBLE_TEMPERATURE_K = celsius_to_kelvin(-90.0)  # -89.2 degC is the minimum registered temperature on Earth
+MAXIMUM_POSSIBLE_TEMPERATURE_K = celsius_to_kelvin(60.0)  # 56.7 degC is the maximum registered temperature on Earth
 
 class cvcOutput:
     """ Provides redirection of input data arrays to corresponding plotting/writing modules
@@ -30,10 +33,19 @@ class cvcOutput:
 
         for level_name in vertical_levels:
             for segment in time_segments:
-                self._data_helper.put(output_uids[0], result['data'][level_name][segment['@name']]['@values'],
-                                      level=level_name, segment=segment,
+                values = result['data'][level_name][segment['@name']]['@values']
+                description = result['data'][level_name][segment['@name']]['description']
+
+                # Convert Kelvin to Celsius if asked and appropriate
+                if (description['@tempk2c'] == 'yes') \
+                    & (description['@units'] == 'K') \
+                    & (values.min() > MINIMUM_POSSIBLE_TEMPERATURE_K) \
+                    & (values.max() < MAXIMUM_POSSIBLE_TEMPERATURE_K):
+                    values = kelvin_to_celsius(values)
+                    description['@units'] = 'C'
+
+                self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                      description=result['data'][level_name][segment['@name']]['description'],
-                                      meta=result['meta'])
+                                      description=description, meta=result['meta'])
 
         print('(cvcOutput::run) Finished!')

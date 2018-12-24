@@ -6,6 +6,27 @@ import os.path
 # Python 3 only
 import builtins
 
+ZERO_CELSIUS_IN_KELVIN = 273.15  # 0 degC is 273.15 degK
+
+def celsius_to_kelvin(temperature_in_celsius):
+    """Converts temperature in Celsius to Kelvin
+
+    Arguments:
+        temperature_in_celsius -- temperature in degC
+
+    Returns temperature in degK
+    """
+    return temperature_in_celsius + ZERO_CELSIUS_IN_KELVIN
+
+def kelvin_to_celsius(temperature_in_kelvin):
+    """Converts temperature in Kelvin to Celsius
+
+    Arguments:
+        temperature_in_kelvin -- temperature in degK
+
+    Returns temperature in degC
+    """
+    return temperature_in_kelvin - ZERO_CELSIUS_IN_KELVIN
 
 def load_module(module_name, class_name):
     """Loads module by its name and returns class to instantiate

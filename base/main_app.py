@@ -67,6 +67,9 @@ class MainApp:
             if argument_uid in self._data_uid_list:
                 data_idx = self._data_uid_list.index(argument_uid) # Search for a 'data' element.
                 arg['data'] = task['data'][data_idx] # Add a new dictionary item with a description.
+                arg_description = arg['data'].get('description')  # Get argument description
+                if arg_description is not None:
+                    source_idx = arg_description.get('@source')  # Check if the arguments description has 'source' attribute
                 source_uid = arg['data']['description'].get('@source')  # Check if the argument has 'source' attribute
                 if source_uid is not None:
                     source_idx = self._data_uid_list.index(source_uid)

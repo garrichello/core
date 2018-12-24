@@ -67,6 +67,11 @@ class MainApp:
             if argument_uid in self._data_uid_list:
                 data_idx = self._data_uid_list.index(argument_uid) # Search for a 'data' element.
                 arg['data'] = task['data'][data_idx] # Add a new dictionary item with a description.
+                source_uid = arg['data']['description'].get('@source')  # Check if the argument has 'source' attribute
+                if source_uid is not None:
+                    source_idx = self._data_uid_list.index(source_uid)
+                    arg['data']['description']['@name'] = task['data'][source_idx]['description']['@name']  # Get name from source UID
+                    arg['data']['description']['@units'] = task['data'][source_idx]['description']['@units']  # Get units from source UID
             elif argument_uid in self._destination_uid_list:
                 data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
                 arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.

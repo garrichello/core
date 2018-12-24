@@ -7,9 +7,11 @@ import numpy as np
 from scipy.interpolate import griddata
 from ext import shapefile
 
-from base.common import load_module, print, make_filename
+from base.common import load_module, print, make_filename, kelvin_to_celsius, celsius_to_kelvin
 from base import SLDLegend
 
+MINIMUM_POSSIBLE_TEMPERATURE_K = celsius_to_kelvin(-90.0)  # -89.2 degC is the minimum registered temperature on Earth
+MAXIMUM_POSSIBLE_TEMPERATURE_K = celsius_to_kelvin(60.0)  # 56.7 degC is the maximum registered temperature on Earth
 
 class DataImage:
     """ Provides reading/writing data from/to graphical files.
@@ -91,6 +93,12 @@ class DataImage:
         else:
             values_regular = values
             options_regular = options
+
+        # Convert Kelvin to Celsius if asked and appropriate
+        if (options_regular['description']['@tempk2c'] == 'yes') \
+            & (values_regular.min() > MINIMUM_POSSIBLE_TEMPERATURE_K) \
+            & (values_regular.max() < MAXIMUM_POSSIBLE_TEMPERATURE_K):
+            kelvin_to_celsius(values_regular)
 
         # Write image file.
         self._image.write(values_regular, options_regular)

@@ -75,8 +75,7 @@ class SLDLegend:
                 width = int(np.ceil(np.log10(data_max)) + precision)
                 format_string = '{}:{}.{}f{}'.format('{', width, precision, '}')
                 # Labels for each colorbar tick
-                legend_labels = ' '.join([[format_string.format(value) for value in legend_values], 
-                                          options['description']['@units']])
+                legend_labels = [format_string.format(value) + ' ' + options['description']['@units'] for value in legend_values]
             # Colors for each colorbar tick in HEX format
             rgb_values = [colors.to_hex(colormap(legend_colors[i])) for i in idxs]
         else:   # When there are no any data values

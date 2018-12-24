@@ -137,7 +137,8 @@ class DataArray(Data):
         else:
             self._data_info['data']['@values'] = values
 
-        self._data_info['description'] = description
+        if description is not None:
+            self._data_info['data']['description'] = description
         self._data_info['meta'] = meta
 
         print('(DataArray::write) Done!')

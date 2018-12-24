@@ -37,12 +37,9 @@ class cvcCalcTiMean():
                 # Let's calulate time averaged values
                 timean = result['data'][level][segment['@name']]['@values'].mean(axis=0)
                 fill_value = result['data'][level][segment['@name']]['@values'].fill_value
-                description = result['data'][level][segment['@name']]['description']
-                description['@units'] = 'C'
 
                 self._data_helper.put(output_uids[0], values=timean, level=level, segment=segment,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                      fill_value=fill_value, meta=result['meta'], 
-                                      description=description)
+                                      fill_value=fill_value, meta=result['meta'])
 
         print('(cvcCalcTiMean::run) Finished!')

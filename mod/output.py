@@ -37,12 +37,13 @@ class cvcOutput:
                 description = result['data'][level_name][segment['@name']]['description']
 
                 # Convert Kelvin to Celsius if asked and appropriate
-                if (description['@tempk2c'] == 'yes') \
-                    & (description['@units'] == 'K') \
-                    & (values.min() > MINIMUM_POSSIBLE_TEMPERATURE_K) \
-                    & (values.max() < MAXIMUM_POSSIBLE_TEMPERATURE_K):
-                    values = kelvin_to_celsius(values)
-                    description['@units'] = 'C'
+                if ('@tempk2c' in description) & ('@units' in description):
+                    if (description['@tempk2c'] == 'yes') \
+                        & (description['@units'] == 'K') \
+                        & (values.min() > MINIMUM_POSSIBLE_TEMPERATURE_K) \
+                        & (values.max() < MAXIMUM_POSSIBLE_TEMPERATURE_K):
+                        values = kelvin_to_celsius(values)
+                        description['@units'] = 'C'
 
                 self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],

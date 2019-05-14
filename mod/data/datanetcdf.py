@@ -186,13 +186,25 @@ class DataNetcdf(Data):
                     ROI_mask_time = np.tile(ROI_mask, (time_grid.size, 1, 1))  # Propagate ROI mask along the time dimension.
                 else:                   # When there is only lat and lon dimensions are present.
                     ROI_mask_time = ROI_mask
-                try:
+                
+                # Get/guess missing value from the data variable
+                var_attrs_list = data_variable.ncattrs()
+                if '_FillValue' in var_attrs_list:
                     fill_value = data_variable._FillValue     # pylint: disable=W0212
-                except AttributeError:
-                    try:
-                        fill_value = data_variable.missing_value
-                    except AttributeError:
+                elif 'missing_value' in var_attrs_list:
+                    fill_value = data_variable.missing_value
+                elif 'units' in var_attrs_list:
+                    print('(DataNetcdf::read)  No missing value attribute. Trying to guess...')
+                    if data_slice.min() >= 0.0 - 1e12 and data_slice.min() <= 0.0 + 1e12 and data_variable.units == 'K':
+                        fill_value = data_slice.min()
+                        print('(DataNetcdf::read)   Success! Set to {}'.format(fill_value))
+                    else:
+                        print('(DataNetcdf::read)   Can\'t guess missing value. Set to NAN.')
                         fill_value = float('NAN')
+                else:
+                    print('(DataNetcdf::read)  Can\'t get or guess missing value. Set to NAN.')
+                    fill_value = float('NAN')
+
                 fill_value_mask = data_slice == fill_value
                 combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time)
 

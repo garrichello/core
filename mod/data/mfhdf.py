@@ -249,19 +249,24 @@ class Variable(Sequence):
             self._shape.append(length)
         self.ndim = len(self.dimensions)
         self._FillValue = attributes['_FillValue']
-        if self.ndim == 4:  # Dataset contains layers
-            layers = {int(key.split(' ')[1]): value for key, value in attributes.items() if key.find('Layer') != -1}
-            level_attributes = [k for k in attributes.keys() if k not in NOT_A_LEVEL_ATTRIBUTE]
-            if not layers and len(level_attributes) > 4:  # No layers and many attributes means we have legend as attributes
-                inv_attributes = {value: key for key, value in attributes.items() if not isinstance(value, list)}
-                layers = {i: inv_attributes[i] for i in range(attributes['valid_range'][0], attributes['valid_range'][1] + 1)}
-            self._levels = np.array([None] * len(layers))
+        layers = {int(key.split(' ')[1]): value for key, value in attributes.items() if key.find('Layer') != -1}
+        level_attributes = [k for k in attributes.keys() if k not in NOT_A_LEVEL_ATTRIBUTE]
+        if not layers and len(level_attributes) > 4:  # No layers and many attributes means we have legend as attributes
+            inv_attributes = {value: key for key, value in attributes.items() if not isinstance(value, list)}
+            layers = {i: inv_attributes[i] for i in range(attributes['valid_range'][0], attributes['valid_range'][1] + 1)}
+        self._levels = np.array([None] * len(layers))
+
+        if layers:  # Dataset contains layers
             for i, v in layers.items():
                 self._levels[i] = v
+        else:
+            self._levels = []
+        if self.ndim == 4:
             # Set fake level variable name
             self._level_variable_name = self.dimensions[3]
         else:
             self._level_variable_name = None
+            
 
     def __getitem__(self, key):
         if isinstance(key, slice):

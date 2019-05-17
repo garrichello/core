@@ -199,11 +199,11 @@ class DataNetcdf(Data):
                         fill_value = data_slice.min()
                         print('(DataNetcdf::read)   Success! Set to {}'.format(fill_value))
                     else:
-                        print('(DataNetcdf::read)   Can\'t guess missing value. Set to NAN.')
-                        fill_value = float('NAN')
+                        print('(DataNetcdf::read)   Can\'t guess missing value. Set to 1E20.')
+                        fill_value = 1e20
                 else:
-                    print('(DataNetcdf::read)  Can\'t get or guess missing value. Set to NAN.')
-                    fill_value = float('NAN')
+                    print('(DataNetcdf::read)  Can\'t get or guess missing value. Set to 1E20.')
+                    fill_value = 1e20
 
                 fill_value_mask = data_slice == fill_value
                 combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time)

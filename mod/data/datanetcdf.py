@@ -186,7 +186,7 @@ class DataNetcdf(Data):
                     ROI_mask_time = np.tile(ROI_mask, (time_grid.size, 1, 1))  # Propagate ROI mask along the time dimension.
                 else:                   # When there is only lat and lon dimensions are present.
                     ROI_mask_time = ROI_mask
-                
+
                 # Get/guess missing value from the data variable
                 var_attrs_list = data_variable.ncattrs()
                 if '_FillValue' in var_attrs_list:

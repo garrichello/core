@@ -125,8 +125,6 @@ class DataHdfeos(Data):
                                                variable_indices[dd[2]]]
                 print('(DataHdfeos::read)  Done!')
 
-                data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
-
                 # Create masks.
                 ROI_mask_time = ROI_mask
                 fill_value = data_variable._FillValue   # pylint: disable=W0212

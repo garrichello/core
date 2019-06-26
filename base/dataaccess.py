@@ -262,7 +262,7 @@ class DataAccess():
             segments = self._inputs[input_idx]['data']['time']['segment']
         else:
             segments = None
-        return segments
+        return listify(segments)
 
     def get_levels(self, uid):
         """Returns vertical levels list

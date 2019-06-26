@@ -125,6 +125,10 @@ class DataHdfeos(Data):
                                                variable_indices[dd[2]]]
                 print('(DataHdfeos::read)  Done!')
 
+                if data_slice.shape[-1] == 1:   # we expect last two dimensions are lat and lon
+                    data_slice = data_slice[:, :, :, 0] 
+                #data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
+
                 # Create masks.
                 ROI_mask_time = ROI_mask
                 fill_value = data_variable._FillValue   # pylint: disable=W0212

@@ -7,3 +7,6 @@ debug.sh
 .vscode/.ropeproject/config.py
 .vscode/.ropeproject/objectdb
 output
+tasks/*
+tools
+func_tests.sh

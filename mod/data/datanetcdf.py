@@ -41,6 +41,52 @@ class DataNetcdf(Data):
         self._data_info = data_info
         super().__init__(data_info)
 
+    def _get_longitudes(self, nc_root):
+        longitude_variable = unlistify(nc_root.get_variables_by_attributes(units=lambda v: v in LONGITUDE_UNITS))
+        if longitude_variable.ndim == 1:
+            grid_type = GRID_TYPE_REGULAR
+            lons = longitude_variable[:]
+            if lons.max() > 180:
+                lons = ((lons + 180.0) % 360.0) - 180.0  # Switch from 0-360 to -180-180 grid
+        else:
+            print('(DataNetcdf::_get_longitudes) 2-D longitude grid is not implemented yet. Aborting...')
+            raise ValueError
+
+        return (lons, longitude_variable.name, grid_type)
+
+    def _get_latitudes(self, nc_root):
+        latitude_variable = unlistify(nc_root.get_variables_by_attributes(units=lambda v: v in LATITUDE_UNITS))
+        if latitude_variable.ndim == 1:
+            grid_type = GRID_TYPE_REGULAR
+            lats = latitude_variable[:]
+        else:
+            print('(DataNetcdf::_get_latitudes) 2-D latitude grid is not implemented yet. Aborting...')
+            raise ValueError
+
+        return (lats, latitude_variable.name, grid_type)
+
+    def _get_levels(self, nc_root, level_name, level_variable_name):
+        if level_variable_name != NO_LEVEL_NAME:
+            try:
+                level_variable = nc_root.variables[level_variable_name]  # pylint: disable=E1136
+            except KeyError:
+                print('(DataNetcdf::read) Level variable \'{0}\' is not found in files. Aborting!'.format(
+                    level_variable_name))
+                raise
+            try:
+                # Little hack: convert level name from metadata database to float and back to string type
+                # to be able to search it correctly in float type level variable converted to string.
+                # Level variable is also primarily converted to float to 'synchronize' types.
+                level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(level_name)))
+            except KeyError:
+                print('(DataNetcdf::read) Level \'{0}\' is not found in level variable \'{1}\'. Aborting!'.format(
+                    level_name, level_variable_name))
+                raise
+        else:
+            level_index = None
+            
+        return level_index
+
     def read(self, options):
         """Reads netCDF-file into an array.
 
@@ -87,21 +133,13 @@ class DataNetcdf(Data):
             data_variable.set_auto_mask(False)
 
             # Determine indices of longitudes.
-            longitude_variable = unlistify(netcdf_root.get_variables_by_attributes(units=lambda v: v in LONGITUDE_UNITS))
-            if longitude_variable.ndim == 1:
-                lon_grid_type = GRID_TYPE_REGULAR
-                lons = longitude_variable[:]
-                if lons.max() > 180:
-                    lons = ((lons + 180.0) % 360.0) - 180.0  # Switch from 0-360 to -180-180 grid
-            variable_indices[longitude_variable.name] = np.arange(lons.size)  # longitude_indices
+            lons, longitude_variable_name, lon_grid_type = self._get_longitudes(netcdf_root)
+            variable_indices[longitude_variable_name] = np.arange(lons.size)  # longitude_indices
 #            longitude_grid = lons[longitude_indices]
 
             # Determine indices of latitudes.
-            latitude_variable = unlistify(netcdf_root.get_variables_by_attributes(units=lambda v: v in LATITUDE_UNITS))
-            if latitude_variable.ndim == 1:
-                lat_grid_type = GRID_TYPE_REGULAR
-                lats = latitude_variable[:]
-            variable_indices[latitude_variable.name] = np.arange(lats.size)  # latitude_indices
+            lats, latitude_variable_name, lat_grid_type = self._get_latitudes(netcdf_root)
+            variable_indices[latitude_variable_name] = np.arange(lats.size)  # latitude_indices
 #            latitude_grid = lats[latitude_indices]
 
             if lon_grid_type == lat_grid_type:
@@ -114,25 +152,9 @@ class DataNetcdf(Data):
             ROI_mask = self._create_ROI_mask(lons, lats)
 
             # Determine index of the current vertical level to read data variable.
-            if level_variable_name != NO_LEVEL_NAME:
-                try:
-                    level_variable = netcdf_root.variables[level_variable_name]  # pylint: disable=E1136
-                except KeyError:
-                    print('(DataNetcdf::read) Level variable \'{0}\' is not found in files. Aborting!'.format(
-                        level_variable_name))
-                    raise
-                try:
-                    # Little hack: convert level name from metadata database to float and back to string type
-                    # to be able to search it correctly in float type level variable converted to string.
-                    # Level variable is also primarily converted to float to 'synchronize' types.
-                    level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(level_name)))
-                except KeyError:
-                    print('(DataNetcdf::read) Level \'{0}\' is not found in level variable \'{1}\'. Aborting!'.format(
-                        level_name, level_variable_name))
-                    raise
-                variable_indices[level_variable.name] = level_index
-            else:
-                level_index = None
+            level_index = self._get_levels(netcdf_root, level_name, level_variable_name)
+            if level_index:
+                variable_indices[level_variable_name] = level_index
 
             # A small temporary hack.
             # TODO: Dataset DS131, T62 grid variables has a dimension 'forecast_time1'. Now I set it

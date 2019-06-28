@@ -291,10 +291,10 @@ class DataNetcdf(Data):
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
 
-        print('(DataNetcdf::write_array)  Writing data to a netCDF file...')
-
         # Construct the file name
         filename = make_filename(self._data_info, options)
+
+        print('(DataNetcdf::write_array)  Writing netCDF file {}...'.format(filename))
 
         # Create netCDF file.
         root = Dataset(filename, 'w')  # , format='NETCDF3_64BIT_OFFSET')

@@ -100,6 +100,10 @@ class DataNetcdf(Data):
         """
 
         print('(DataNetcdf::read) Reading NetCDF data...')
+        print('(DataNetcdf::read) [Dataset: {}, resolution: {}, scenario: {}, time_step: {}]'.format(
+            self._data_info['data']['dataset']['@name'], self._data_info['data']['dataset']['@resolution'],
+            self._data_info['data']['dataset']['@scenario'], self._data_info['data']['dataset']['@time_step']
+        ))
 
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])

@@ -294,7 +294,7 @@ class DataNetcdf(Data):
         # Construct the file name
         filename = make_filename(self._data_info, options)
 
-        print('(DataNetcdf::write_array)  Writing netCDF file {}...'.format(filename))
+        print('(DataNetcdf::write_array)  Writing netCDF file: {}'.format(filename))
 
         # Create netCDF file.
         root = Dataset(filename, 'w')  # , format='NETCDF3_64BIT_OFFSET')

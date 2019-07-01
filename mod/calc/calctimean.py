@@ -4,9 +4,7 @@ from base.dataaccess import DataAccess
 
 from base.common import print
 
-FIRTS_INPUT_ARGUMENT = 0
 MAX_N_INPUT_ARGUMENTS = 2
-FIRST_OUTPUT_ARGUMENT = 0
 INPUT_PARAMETERS_INDEX = 1
 
 class cvcCalcTiMean():

@@ -3,4 +3,8 @@ Modules:
     core
 """
 
+from .base import *
+from .ext import *
+from .mod import *
+
 from .core import main

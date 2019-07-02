@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
-from base.common import load_module, listify, print
+from .common import load_module, listify, print
 
 
 class DataAccess():

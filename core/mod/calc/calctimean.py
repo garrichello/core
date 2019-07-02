@@ -1,6 +1,6 @@
 """Sample class"""
 
-from base.dataaccess import DataAccess
+from ..base.dataaccess import DataAccess
 import numpy.ma as ma
 
 from base.common import print

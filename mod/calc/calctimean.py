@@ -44,7 +44,7 @@ class cvcCalcTiMean():
                 one_segment_mean = result['data'][level][segment['@name']]['@values'].mean(axis=0)
 
                 if parameters['timeMean'] == 'segment':
-                    self._data_helper.put(output_uids[0], values=timean, level=level, segment=segment,
+                    self._data_helper.put(output_uids[0], values=one_segment_mean, level=level, segment=segment,
                                           longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
                                           fill_value=result['@fill_value'], meta=result['meta'])
                 else:

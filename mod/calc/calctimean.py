@@ -50,6 +50,6 @@ class cvcCalcTiMean():
                 else:
                     all_segments_means.append(one_segment_mean)
             if parameters['timeMean'] == 'data':
-                data_mean = all_segments_means
+                data_mean = all_segments_means[0]
 
         print('(cvcCalcTiMean::run) Finished!')

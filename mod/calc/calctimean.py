@@ -38,12 +38,18 @@ class cvcCalcTiMean():
         result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
 
         for level in vertical_levels:
+            all_segments_means = []
             for segment in time_segments:
                 # Let's calulate time averaged values
-                timean = result['data'][level][segment['@name']]['@values'].mean(axis=0)
+                one_segment_mean = result['data'][level][segment['@name']]['@values'].mean(axis=0)
 
-                self._data_helper.put(output_uids[0], values=timean, level=level, segment=segment,
-                                      longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                      fill_value=result['@fill_value'], meta=result['meta'])
+                if parameters['timeMean'] == 'segment':
+                    self._data_helper.put(output_uids[0], values=timean, level=level, segment=segment,
+                                          longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                          fill_value=result['@fill_value'], meta=result['meta'])
+                else:
+                    all_segments_means.append(one_segment_mean)
+            if parameters['timeMean'] == 'data':
+                data_mean = all_segments_means
 
         print('(cvcCalcTiMean::run) Finished!')

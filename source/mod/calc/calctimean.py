@@ -1,6 +1,7 @@
 """Sample class"""
 
 from base.dataaccess import DataAccess
+import numpy.ma as ma
 
 from base.common import print
 
@@ -50,6 +51,9 @@ class cvcCalcTiMean():
                 else:
                     all_segments_means.append(one_segment_mean)
             if parameters['timeMean'] == 'data':
-                data_mean = all_segments_means[0]
+                data_mean = ma.stack(all_segments_means).mean(axis=0)
+                self._data_helper.put(output_uids[0], values=data_mean, level=level, segment=segment,
+                                      longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                      fill_value=result['@fill_value'], meta=result['meta'])
 
         print('(cvcCalcTiMean::run) Finished!')

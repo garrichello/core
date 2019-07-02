@@ -10,3 +10,4 @@ output
 tasks
 tools
 func_tests.sh
+virtualenv

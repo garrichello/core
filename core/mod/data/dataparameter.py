@@ -1,7 +1,7 @@
 """Provides classes:
     DataParameter
 """
-from base.common import listify, print
+from ...base.common import listify, print
 
 class DataParameter:
     """ Provides methods for reading and writing parameters in a task file.

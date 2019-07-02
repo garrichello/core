@@ -4,8 +4,8 @@
 import collections
 import xmltodict
 
-from base.proc import Proc
-from base.common import print
+from .proc import Proc
+from .common import print
 
 class MainApp:
     """Main application class. It does everything the application does."""

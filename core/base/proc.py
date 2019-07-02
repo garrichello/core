@@ -2,8 +2,8 @@
     Proc
 """
 
-from base.dataaccess import DataAccess
-from base.common import load_module, print
+from .dataaccess import DataAccess
+from .common import load_module, print
 
 class Proc:
     """Class Proc.

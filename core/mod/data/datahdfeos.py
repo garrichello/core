@@ -6,9 +6,9 @@ from datetime import datetime
 import re
 import numpy as np
 import numpy.ma as ma
-from base.common import listify, print  # , make_filename
-from mod.data.data import Data, GRID_TYPE_REGULAR
-from mod.data.mfhdf import MFDataset, date2index
+from ...base.common import listify, print  # , make_filename
+from .data import Data, GRID_TYPE_REGULAR
+from .mfhdf import MFDataset, date2index
 
 NO_LEVEL_NAME = 'none'
 CLASS_UNITS = ['class number']

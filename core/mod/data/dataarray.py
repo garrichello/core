@@ -1,9 +1,9 @@
 """Provides classes
     DataArray
 """
-from base.common import listify, print
+from ...base.common import listify, print
 
-from mod.data.data import Data
+from .data import Data
 
 
 class DataArray(Data):

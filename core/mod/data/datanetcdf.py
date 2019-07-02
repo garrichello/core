@@ -8,8 +8,8 @@ from netCDF4 import MFDataset, date2index, num2date, Dataset, MFTime
 import numpy as np
 import numpy.ma as ma
 
-from base.common import listify, unlistify, print, make_filename
-from mod.data.data import Data, GRID_TYPE_REGULAR
+from ...base.common import listify, unlistify, print, make_filename
+from .data import Data, GRID_TYPE_REGULAR
 
 LONGITUDE_UNITS = {'degrees_east', 'degree_east', 'degrees_E', 'degree_E',
                    'degreesE', 'degreeE', 'lon'}

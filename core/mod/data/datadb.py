@@ -8,8 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from geoalchemy2 import *
 import numpy as np
 
-from base.common import listify, print
-from mod.data.data import Data, GRID_TYPE_STATION
+from ...base.common import listify, print
+from .data import Data, GRID_TYPE_STATION
 
 class DataDb(Data):
     """ Provides methods for reading and writing geodatabase files.

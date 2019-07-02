@@ -7,7 +7,7 @@ import glob
 from pyhdf.SD import SD, SDC
 import numpy as np
 
-from base.common import print, list_remove_all, listify
+from ...base.common import print, list_remove_all, listify
 
 
 def date2index(datetime_values, time_variable):

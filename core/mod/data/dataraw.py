@@ -2,7 +2,7 @@
     DataRaw
 """
 
-from base.common import load_module
+from ...base.common import load_module
 
 
 class DataRaw:

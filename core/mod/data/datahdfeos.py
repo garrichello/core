@@ -6,7 +6,7 @@ from datetime import datetime
 import re
 import numpy as np
 import numpy.ma as ma
-from ...base.common import listify, print  # , make_filename
+from base.common import listify, print  # , make_filename
 from .data import Data, GRID_TYPE_REGULAR
 from .mfhdf import MFDataset, date2index
 

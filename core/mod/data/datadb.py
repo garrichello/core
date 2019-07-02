@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from geoalchemy2 import *
 import numpy as np
 
-from ...base.common import listify, print
+from base.common import listify, print
 from .data import Data, GRID_TYPE_STATION
 
 class DataDb(Data):

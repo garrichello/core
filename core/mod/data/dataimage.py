@@ -5,10 +5,10 @@ from osgeo import gdal
 from osgeo import osr
 import numpy as np
 from scipy.interpolate import griddata
-from ...ext import shapefile
+from ext import shapefile
 
-from ...base.common import load_module, print, make_filename
-from ...base import SLDLegend
+from base.common import load_module, print, make_filename
+from base import SLDLegend
 
 class DataImage:
     """ Provides reading/writing data from/to graphical files.

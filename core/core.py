@@ -6,7 +6,7 @@ It handles command line arguments and creates an instance of the MainApp class.
 import argparse
 import time
 
-from .base import MainApp
+from base import MainApp
 
 __prog__ = 'Core'
 __version__ = '1.0a'

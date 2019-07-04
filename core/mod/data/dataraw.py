@@ -2,7 +2,7 @@
     DataRaw
 """
 
-from core.base.common import load_module
+from core.base.common import load_module, make_module_name
 
 
 class DataRaw:
@@ -12,7 +12,8 @@ class DataRaw:
     def __init__(self, data_info):
         self._data_info = data_info
         data_class_name = 'Data' + data_info['data']['file']['@type'].capitalize()
-        data_class = load_module('mod', data_class_name)
+        module_name = make_module_name(data_class_name)
+        data_class = load_module(module_name, data_class_name, package_name=self.__module__)
         self._data = data_class(data_info)
 
     def read(self, options):

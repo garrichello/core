@@ -5,10 +5,10 @@ from osgeo import gdal
 from osgeo import osr
 import numpy as np
 from scipy.interpolate import griddata
-from ext import shapefile
+from core.ext import shapefile
 
-from base.common import load_module, print, make_filename
-from base import SLDLegend
+from core.base.common import load_module, print, make_filename
+from core.base import SLDLegend
 
 class DataImage:
     """ Provides reading/writing data from/to graphical files.
@@ -18,7 +18,7 @@ class DataImage:
 
     def __init__(self, data_info):
         image_class_name = 'Image' + data_info['data']['file']['@type'].capitalize()
-        image_class = load_module('mod', image_class_name)
+        image_class = load_module(self.__module__, image_class_name)
         self._image = image_class(data_info)
         self._data_info = data_info
 

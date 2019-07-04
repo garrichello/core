@@ -28,15 +28,16 @@ def kelvin_to_celsius(temperature_in_kelvin):
     """
     return temperature_in_kelvin - ZERO_CELSIUS_IN_KELVIN
 
-def load_module(module_name, class_name):
+def load_module(module_name, class_name, package_name=None):
     """Loads module by its name and returns class to instantiate
 
     Arguments:
         module_name -- name of the Python module (file name)
         class_name -- name of the class in this module
+        package_name -- (optional) name of the module's package (for relative module naming)
     """
     try:
-        module_ = importlib.import_module(module_name)
+        module_ = importlib.import_module(module_name, package=package_name)
         try:
             class_ = getattr(module_, class_name)
         except AttributeError:

@@ -5,6 +5,11 @@
 from .dataaccess import DataAccess
 from .common import load_module, print
 
+MOD_PACKAGE_RELPATH = '...mod'
+CALC_SUBPACKAGE_NAME = 'calc'
+CVC_PREFIX = 'cvc'
+CALC_PREFIX = 'calc'
+
 class Proc:
     """Class Proc.
     Loads a processing module and runs it providing a corresponding data access API and error handling
@@ -26,8 +31,13 @@ class Proc:
     def run(self):
         """Creates an instance of the processing module class and runs it
         """
-        # Let's try to create an instance of the processing class.
-        proc_class = load_module('mod', self._proc_class_name)
+        # Let's try to create an instance of the processing class
+        module_name = self._proc_class_name.lower().split(CVC_PREFIX)[-1]  # Remove prefix 'cvc' if present to get module's name.
+        if module_name[0:4] == CALC_PREFIX:
+            print('Calc module!')
+            module_name = '.'.join([CALC_SUBPACKAGE_NAME, module_name])
+        module_name = '.'.join([MOD_PACKAGE_RELPATH, module_name])
+        proc_class = load_module(module_name, self._proc_class_name, package_name=self.__module__)
         processor = proc_class(self._data_helper)
 
         # And here we run the module.

@@ -1,5 +1,6 @@
 Packages needed to install on a Win10 machine.
 Normally installed by pip. Except GDAL and python-hdf4.
+MySQL client must be installed separately
 
 1) ptvsd
 2) sqlalchemy

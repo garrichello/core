@@ -1,9 +1,9 @@
 """Sample class"""
 
-from ..base.dataaccess import DataAccess
+from core.base.dataaccess import DataAccess
 import numpy.ma as ma
 
-from base.common import print
+from core.base.common import print
 
 MAX_N_INPUT_ARGUMENTS = 2
 INPUT_PARAMETERS_INDEX = 1

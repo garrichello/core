@@ -8,7 +8,6 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from .common import load_module, listify, print
 
-
 class DataAccess():
     """Class-helper for accessing data.
     Provides access to data through unified API for processing modules.
@@ -82,7 +81,8 @@ class DataAccess():
                 #  Data access class name is: 'Data' + <data type name> (e.g., DataNetcdf)
                 data_class_name = 'Data' + input_info['@data_type'].capitalize()
                 print('(DataAccess::__init__)  Input data module: {}'.format(data_class_name))
-                data_class = load_module('mod', data_class_name)
+                module_name = data_class_name.lower()  # DataModuleName -> datamodulename
+                data_class = load_module('...mod.data.'+module_name, data_class_name, package_name=self.__module__)
                 if input_['data'].get('@object') is None:
                     input_['data']['@object'] = data_class(input_info)  # Try to instantiate data reading class
                 self._data_objects[uid] = input_['data']['@object']
@@ -105,7 +105,8 @@ class DataAccess():
                 #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
                 data_class_name = 'Data' + output_info['@data_type'].capitalize()
                 print('(DataAccess::__init__)  Output data module: {}'.format(data_class_name))
-                data_class = load_module('mod', data_class_name)
+                module_name = data_class_name.lower()  # DataModuleName -> datamodulename
+                data_class = load_module('...mod.data.'+module_name, data_class_name, package_name=self.__module__)
                 if output_['data'].get('@object') is None:
                     output_['data']['@object'] = data_class(output_info)  # Try to instantiate data writing class
                 self._data_objects[uid] = output_['data']['@object']

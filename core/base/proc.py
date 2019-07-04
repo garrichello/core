@@ -3,12 +3,7 @@
 """
 
 from .dataaccess import DataAccess
-from .common import load_module, print
-
-MOD_PACKAGE_RELPATH = '...mod'
-CALC_SUBPACKAGE_NAME = 'calc'
-CVC_PREFIX = 'cvc'
-CALC_PREFIX = 'calc'
+from .common import load_module, make_module_name, print
 
 class Proc:
     """Class Proc.
@@ -32,11 +27,8 @@ class Proc:
         """Creates an instance of the processing module class and runs it
         """
         # Let's try to create an instance of the processing class
-        module_name = self._proc_class_name.lower().split(CVC_PREFIX)[-1]  # Remove prefix 'cvc' if present to get module's name.
-        if module_name[0:4] == CALC_PREFIX:
-            print('Calc module!')
-            module_name = '.'.join([CALC_SUBPACKAGE_NAME, module_name])
-        module_name = '.'.join([MOD_PACKAGE_RELPATH, module_name])
+
+        module_name = make_module_name(self._proc_class_name)
         proc_class = load_module(module_name, self._proc_class_name, package_name=self.__module__)
         processor = proc_class(self._data_helper)
 

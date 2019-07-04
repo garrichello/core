@@ -9,8 +9,10 @@ import builtins
 ZERO_CELSIUS_IN_KELVIN = 273.15  # 0 degC is 273.15 degK
 MOD_PACKAGE_RELPATH = '...mod'
 CALC_SUBPACKAGE_NAME = 'calc'
+DATA_SUBPACKAGE_NAME = 'data'
 CVC_PREFIX = 'cvc'
 CALC_PREFIX = 'calc'
+DATA_PREFIX = 'data'
 
 def celsius_to_kelvin(temperature_in_celsius):
     """Converts temperature in Celsius to Kelvin
@@ -61,6 +63,8 @@ def make_module_name(class_name):
     module_name = class_name.lower().split(CVC_PREFIX)[-1]  # Remove prefix 'cvc' if present to get module's name.
     if module_name[0:4] == CALC_PREFIX:
         module_name = '.'.join([CALC_SUBPACKAGE_NAME, module_name])
+    if module_name[0:4] == DATA_PREFIX:
+        module_name = '.'.join([DATA_SUBPACKAGE_NAME, module_name])
     module_name = '.'.join([MOD_PACKAGE_RELPATH, module_name])
 
     return module_name

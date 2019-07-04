@@ -1,0 +1,45 @@
+Packages needed to install on a linux machine.
+
+System libraries. Installed first.
+1) sudo yum install mysql-devel
+2) proj 6
+2.1) sqlite3
+# wget https://forensics.cert.org/cert-forensics-tools-release-el6.rpm 
+# rpm -Uvh cert-forensics-tools-release*rpm
+# sudo yum --enablerepo=forensics install sqlite sqlite-devel
+2.2) https://proj.org/download.html#current-release
+3) GDAL 3
+# install sqlite3 binary and libsqlite3 development packages if not done
+# get PROJ 6
+cd proj
+CXXFLAGS="-DPROJ_RENAME_SYMBOLS -O2" CFLAGS=$CXXFLAGS ./configure --disable-static
+make -j16
+make install
+cd /usr/local/lib
+# Rename the library to libinternalproj
+mv libproj.so.15.?.? libinternalproj.so.15.x.x
+ln -s libinternalproj.so.15.?.? libinternalproj.so.15
+ln -s libinternalproj.so.15.?.? libinternalproj.so
+# Carefully remove fresh libproj 6 libs: rm -f libproj.*
+# Install the patchelf package
+yum install patchelf
+patchelf --set-soname libinternalproj.so libinternalproj.so
+# Get GDAL 3
+cd gdal/gdal
+# if needed: export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+./configure --without-libtool --with-proj=/usr/local/lib
+make -j16
+
+Python packages. Installed next with pip.
+1) ptvsd
+2) sqlalchemy
+3) xmltodict
+4) mysqlclient
+4) matplotlib
+5) numpy
+6) scipy
+7) geoalchemy2
+8) gdal
+9) netCDF4
+10) python-hdf4
+

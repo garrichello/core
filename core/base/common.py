@@ -7,7 +7,7 @@ import os.path
 import builtins
 
 ZERO_CELSIUS_IN_KELVIN = 273.15  # 0 degC is 273.15 degK
-MOD_PACKAGE_RELPATH = '...mod'
+MOD_PACKAGE_PATH = 'mod'
 CALC_SUBPACKAGE_NAME = 'calc'
 DATA_SUBPACKAGE_NAME = 'data'
 CVC_PREFIX = 'cvc'
@@ -42,15 +42,17 @@ def load_module(module_name, class_name, package_name=None):
         class_name -- name of the class in this module
         package_name -- (optional) name of the module's package (for relative module naming)
     """
+    relative_shift = '' if package_name is None else '.'*len(package_name.split('.'))
+    load_module_name = relative_shift + module_name
     try:
-        module_ = importlib.import_module(module_name, package=package_name)
+        module_ = importlib.import_module(load_module_name, package=package_name)
         try:
             class_ = getattr(module_, class_name)
         except AttributeError:
             print('(MainApp::load_module) Class ' + class_name + ' does not exist')
             raise
     except ImportError:
-        print('(MainApp::load_module) Module ' + module_name + ' does not exist')
+        print('(MainApp::load_module) Module ' + load_module_name + ' does not exist')
         raise
     return class_
 
@@ -65,7 +67,7 @@ def make_module_name(class_name):
         module_name = '.'.join([CALC_SUBPACKAGE_NAME, module_name])
     if module_name[0:4] == DATA_PREFIX:
         module_name = '.'.join([DATA_SUBPACKAGE_NAME, module_name])
-    module_name = '.'.join([MOD_PACKAGE_RELPATH, module_name])
+    module_name = '.'.join([MOD_PACKAGE_PATH, module_name])
 
     return module_name
 

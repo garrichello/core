@@ -26,7 +26,6 @@ class DataRaw:
             result['array'] -- data array
         """
 
-        pass
 
     def write(self, values, options):
         """Writes data (and metadata) to an output data file.

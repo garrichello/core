@@ -5,28 +5,26 @@ It handles command line arguments and creates an instance of the MainApp class.
 """
 import argparse
 import time
+import traceback
 
-from core.base import MainApp
-
-__prog__ = 'Core'
-__version__ = '1.0a'
-__author__ = 'Igor Okladnikov'
-
+import core
 
 def main(args):
     """Main function.
 
     It creates an instance of the MainApp class and runs the application."""
-    print(__prog__ + ' v.' + __version__)
+    print(core.__prog__ + ' v.' + core.__version__)
 
     start_time = time.time()
-    app = MainApp(args)
+    app = core.MainApp(args)
 
-#    try:
-    app.run()
-    print('SUCCESS!')
-#    except:
-#        print("ERROR!")
+    try:
+        app.run()
+        print('SUCCESS!')
+    except:
+        print("ERROR!")
+        traceback.print_exc()
+
     end_time = time.time()
 
     exec_time = end_time - start_time

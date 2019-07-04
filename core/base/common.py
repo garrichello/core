@@ -7,6 +7,10 @@ import os.path
 import builtins
 
 ZERO_CELSIUS_IN_KELVIN = 273.15  # 0 degC is 273.15 degK
+MOD_PACKAGE_RELPATH = '...mod'
+CALC_SUBPACKAGE_NAME = 'calc'
+CVC_PREFIX = 'cvc'
+CALC_PREFIX = 'calc'
 
 def celsius_to_kelvin(temperature_in_celsius):
     """Converts temperature in Celsius to Kelvin
@@ -48,6 +52,18 @@ def load_module(module_name, class_name, package_name=None):
         raise
     return class_
 
+def make_module_name(class_name):
+    """Makes a relative module name based on the name of the class
+
+    Arguments:
+        class_name -- name of the class
+    """
+    module_name = class_name.lower().split(CVC_PREFIX)[-1]  # Remove prefix 'cvc' if present to get module's name.
+    if module_name[0:4] == CALC_PREFIX:
+        module_name = '.'.join([CALC_SUBPACKAGE_NAME, module_name])
+    module_name = '.'.join([MOD_PACKAGE_RELPATH, module_name])
+
+    return module_name
 
 def listify(obj):
     """Makes a list from an object if it is not already a list.

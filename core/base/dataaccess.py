@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
-from .common import load_module, listify, print
+from .common import load_module, make_module_name, listify, print
 
 class DataAccess():
     """Class-helper for accessing data.
@@ -81,8 +81,8 @@ class DataAccess():
                 #  Data access class name is: 'Data' + <data type name> (e.g., DataNetcdf)
                 data_class_name = 'Data' + input_info['@data_type'].capitalize()
                 print('(DataAccess::__init__)  Input data module: {}'.format(data_class_name))
-                module_name = data_class_name.lower()  # DataModuleName -> datamodulename
-                data_class = load_module('...mod.data.'+module_name, data_class_name, package_name=self.__module__)
+                module_name = make_module_name(data_class_name)
+                data_class = load_module(module_name, data_class_name, package_name=self.__module__)
                 if input_['data'].get('@object') is None:
                     input_['data']['@object'] = data_class(input_info)  # Try to instantiate data reading class
                 self._data_objects[uid] = input_['data']['@object']

@@ -1,4 +1,5 @@
-"""Class cvcCalcTiMean provides methods for time mean calculation"""
+""" Class cvcCalcTiMean provides methods for time mean calculation
+"""
 
 from copy import copy
 import numpy.ma as ma
@@ -44,11 +45,8 @@ class cvcCalcTiMean():
             for segment in time_segments:
                 # Let's calulate time averaged values
                 one_segment_mean = result['data'][level][segment['@name']]['@values'].mean(axis=0)
-
                 if parameters['timeMean'] == 'segment':
-                    self._data_helper.put(output_uids[0], values=one_segment_mean, level=level, segment=segment,
-                                          longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                          fill_value=result['@fill_value'], meta=result['meta'])
+                    self._data_helper.put(output_uids[0], values=one_segment_mean, level=level, segment=segment, longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'], fill_value=result['@fill_value'], meta=result['meta'])
                 else:
                     all_segments_means.append(one_segment_mean)
 

@@ -31,7 +31,7 @@ class cvcOutput:
 
         output_uids = self._data_helper.output_uids()
 
-        description = result['description']
+        description = result['data']['description']
 
         # Check if data are in K and we need to convert them to C.
         CONVERT_K2C = False

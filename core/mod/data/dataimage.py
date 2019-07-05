@@ -74,8 +74,8 @@ class DataImage:
             # Create a uniform grid
             dlon_regular = np.min(dlons) / 2.0  # Half the step to avoid a strange latitudinal shift.
             dlat_regular = np.min(dlats) / 2.0
-            nlons_regular = np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1)
-            nlats_regular = np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1)
+            nlons_regular = int(np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1))
+            nlats_regular = int(np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1))
             options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + min(lons)
             options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + min(lats)
 

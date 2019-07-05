@@ -135,6 +135,7 @@ class DataNetcdf(Data):
 
             data_variable = netcdf_root.variables[self._data_info['data']['variable']['@name']]  # Data variable. pylint: disable=E1136
             data_variable.set_auto_mask(False)
+            dd = data_variable.dimensions  # Names of dimensions of the data variable.
 
             # Determine indices of longitudes.
             lons, longitude_variable_name, lon_grid_type = self._get_longitudes(netcdf_root)
@@ -190,8 +191,6 @@ class DataNetcdf(Data):
                 time_values = time_variable[variable_indices[time_variable._name]]  # Raw time values.  # pylint: disable=W0212, E1101
                 time_grid = num2date(time_values, time_variable.units)  # Time grid as a datetime object.  # pylint: disable=E1101
 
-                dd = data_variable.dimensions  # Names of dimensions of the data variable.
-
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
                 # And mask all points outside the ROI mask for all times.
                 print('(DataNetcdf::read)  Actually reading...')
@@ -240,15 +239,16 @@ class DataNetcdf(Data):
                 print('(DataNetcdf::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
                 print('(DataNetcdf::read)  Done!')
 
-                # Remove level variable name from the list of data dimensions if it is present
-                data_dim_names = list(dd)
-                if level_variable_name != NO_LEVEL_NAME:
-                    data_dim_names.remove(level_variable_name)
+                self._add_segment_data(level_name=level_name, values=masked_data_slice, time_grid=time_grid, time_segment=segment)
 
-                self._add_segment_data(level_name=level_name, values=masked_data_slice,
-                                       dimensions=data_dim_names, time_grid=time_grid, time_segment=segment)
+        # Remove level variable name from the list of data dimensions if it is present
+        data_dim_names = list(dd)
+        try:
+            data_dim_names.remove(level_variable_name)
+        except ValueError:
+            pass
 
-        self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, 
+        self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, dimensions=data_dim_names, 
                            description=self._data_info['data']['description'], fill_value=fill_value)
 
         print('(DataNetcdf::read) Done!')

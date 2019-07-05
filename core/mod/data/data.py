@@ -69,23 +69,21 @@ class Data:
 
         self._data_by_segment[level_name] = {}  # Data for each time segment at a specified vertical level.
 
-    def _add_segment_data(self, level_name, values, time_grid, time_segment, dimensions=None):
+    def _add_segment_data(self, level_name, values, time_grid, time_segment):
         """ Stores data read for each time segment in a unified dictionary.
 
         Arguments:
             values -- masked data slice (MaskedArray)
-            dimension -- names of dimensions (list of strings)
             time_grid -- time grid (datetime list)
             time_segment -- (dictionary)
         """
 
         self._data_by_segment[level_name][time_segment['@name']] = {}
         self._data_by_segment[level_name][time_segment['@name']]['@values'] = values
-        self._data_by_segment[level_name][time_segment['@name']]['@dimensions'] = dimensions
         self._data_by_segment[level_name][time_segment['@name']]['@time_grid'] = time_grid
         self._data_by_segment[level_name][time_segment['@name']]['segment'] = time_segment
 
-    def _add_metadata(self, longitude_grid, latitude_grid, fill_value, description, grid_type=None, meta=None):
+    def _add_metadata(self, longitude_grid, latitude_grid, fill_value, description, grid_type=None, dimensions=None, meta=None):
         """ Stores main metadata for a read data array in a unified dictionary.
 
         Arguments:
@@ -93,6 +91,7 @@ class Data:
             longitude_grid -- longitude grid (1- or 2-D ndarray)
             latitude_grid -- latitude grid (1- or 2-D ndarray)
             grid_type -- grid type: regular/irregular/station (string) - obsoleted, will be removed in future releases
+            dimensions -- names of dimensions (list of strings)
             fill_value -- fill value in a masked array (float)
             description -- data description (string)
             meta -- additional metadata, currently used for passing names of weather stations (dictionary)
@@ -102,8 +101,9 @@ class Data:
         self._read_result['@longitude_grid'] = longitude_grid
         self._read_result['@latitude_grid'] = latitude_grid
         self._read_result['@grid_type'] = grid_type
+        self._read_result['@dimensions'] = dimensions
         self._read_result['@fill_value'] = fill_value
-        self._read_result['description'] = description
+        self._read_result['data']['description'] = description
         self._read_result['meta'] = meta
 
     def _get_result_data(self):

@@ -58,6 +58,7 @@ class DataHdfeos(Data):
             hdf_root = MFDataset(file_name_wildcard)
 
             data_variable = hdf_root.variables[self._data_info['data']['variable']['@name']]  # Data variable.
+            dd = data_variable.dimensions  # Names of dimensions of the data variable.
 
             # Get level variable.
             level_variable = data_variable.get_level_variable()
@@ -112,8 +113,6 @@ class DataHdfeos(Data):
                 variable_indices['Time'] = np.arange(time_idx_range[0], time_idx_range[1] + 1)
                 time_grid = time_variable[variable_indices['Time']]  # Time grid.
 
-                dd = data_variable.dimensions  # Names of dimensions of the data variable.
-
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
                 # And mask all points outside the ROI mask for all times.
                 print('(DataHdfeos::read)  Actually reading...')
@@ -141,13 +140,8 @@ class DataHdfeos(Data):
                 print('(DataHdfeos::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
                 print('(DataHdfeos::read)  Done!')
 
-                # Remove level variable name from the list of data dimensions if it is present
-                data_dim_names = list(dd)
-                if level_variable_name != NO_LEVEL_NAME:
-                    data_dim_names.remove(level_variable_name)
-
                 self._add_segment_data(level_name=level_name, values=masked_data_slice,
-                                       dimensions=data_dim_names, time_grid=time_grid, time_segment=segment)
+                                       time_grid=time_grid, time_segment=segment)
 
         # If data variable units are class numbers, generate meta dictionary containing levels names for the legend.
         if data_variable.units in CLASS_UNITS:
@@ -156,7 +150,14 @@ class DataHdfeos(Data):
         else:
             meta = None
 
-        self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, 
+        # Remove level variable name from the list of data dimensions if it is present
+        data_dim_names = list(dd)
+        try:
+            data_dim_names.remove(level_variable_name)
+        except ValueError:
+            pass
+
+        self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, dimensions=data_dim_names, 
                            description=self._data_info['data']['description'], fill_value=fill_value, meta=meta)
 
         print('(DataHdfeos::read) Done!')

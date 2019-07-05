@@ -31,19 +31,24 @@ class cvcOutput:
 
         output_uids = self._data_helper.output_uids()
 
+        description = result['data']['description']
+
+        # Check if data are in K and we need to convert them to C.
+        CONVERT_K2C = False
+        if ('@tempk2c' in description) & ('@units' in description):
+            if (description['@tempk2c'] == 'yes') & (description['@units'] == 'K'):
+#                & (values.min() > MINIMUM_POSSIBLE_TEMPERATURE_K) \
+#                & (values.max() < MAXIMUM_POSSIBLE_TEMPERATURE_K):
+                description['@units'] = 'C'
+                CONVERT_K2C = True
+
         for level_name in vertical_levels:
             for segment in time_segments:
                 values = result['data'][level_name][segment['@name']]['@values']
-                description = result['data'][level_name][segment['@name']]['description']
 
                 # Convert Kelvin to Celsius if asked and appropriate
-                if ('@tempk2c' in description) & ('@units' in description):
-                    if (description['@tempk2c'] == 'yes') \
-                        & (description['@units'] == 'K') \
-                        & (values.min() > MINIMUM_POSSIBLE_TEMPERATURE_K) \
-                        & (values.max() < MAXIMUM_POSSIBLE_TEMPERATURE_K):
-                        values = kelvin_to_celsius(values)
-                        description['@units'] = 'C'
+                if CONVERT_K2C:
+                    values = kelvin_to_celsius(values)
 
                 self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],

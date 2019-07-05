@@ -130,7 +130,6 @@ class DataDb(Data):
                 values.mask = mask
 
                 self._add_segment_data(level_name=level_name, values=values,
-                                       description=self._data_info['data']['description'],
                                        dimensions=('time', 'station'), time_grid=time_grid, time_segment=segment)
 
             session.close()
@@ -142,7 +141,8 @@ class DataDb(Data):
         meta['stations']['@elevations'] = np.array(elevations)
 
         self._add_metadata(longitude_grid=np.array(longitudes), latitude_grid=np.array(latitudes),
-                           grid_type=GRID_TYPE_STATION, fill_value=fill_value, meta=meta)
+                           grid_type=GRID_TYPE_STATION, fill_value=fill_value, 
+                           description=self._data_info['data']['description'], meta=meta)
 
         print('(DataDb::read) Done!')
 

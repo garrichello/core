@@ -147,7 +147,6 @@ class DataHdfeos(Data):
                     data_dim_names.remove(level_variable_name)
 
                 self._add_segment_data(level_name=level_name, values=masked_data_slice,
-                                       description=self._data_info['data']['description'],
                                        dimensions=data_dim_names, time_grid=time_grid, time_segment=segment)
 
         # If data variable units are class numbers, generate meta dictionary containing levels names for the legend.
@@ -157,7 +156,8 @@ class DataHdfeos(Data):
         else:
             meta = None
 
-        self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, fill_value=fill_value, meta=meta)
+        self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, 
+                           description=self._data_info['data']['description'], fill_value=fill_value, meta=meta)
 
         print('(DataHdfeos::read) Done!')
 

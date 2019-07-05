@@ -64,7 +64,6 @@ class DataArray(Data):
                     self._data_info['data'][level_name][segment['@name']]['@values'].max()))
                 self._add_segment_data(level_name=level_name,
                                        values=self._data_info['data'][level_name][segment['@name']]['@values'],
-                                       description=self._data_info['data']['description'],
                                        time_grid=self._data_info['data']['time'].get('@grid'),
                                        time_segment=segment)
                 print('(DataArray::read)  Done!')
@@ -72,7 +71,7 @@ class DataArray(Data):
         self._add_metadata(longitude_grid=self._data_info['data']['@longitudes'],
                            latitude_grid=self._data_info['data']['@latitudes'],
                            fill_value=self._data_info['data'][level_name][segment['@name']]['@values'].fill_value,
-                           meta=self._data_info['meta'])
+                           description=self._data_info['data']['description'], meta=self._data_info['meta'])
 
         print('(DataArray::read) Done!')
 

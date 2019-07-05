@@ -8,7 +8,7 @@ from netCDF4 import MFDataset, date2index, num2date, Dataset, MFTime
 import numpy as np
 import numpy.ma as ma
 
-from core.base.common import listify, unlistify, print, make_filename
+from core.base.common import listify, unlistify, print, make_filename  # pylint: disable=W0622
 from .data import Data, GRID_TYPE_REGULAR
 
 LONGITUDE_UNITS = {'degrees_east', 'degree_east', 'degrees_E', 'degree_E',
@@ -158,7 +158,7 @@ class DataNetcdf(Data):
 
             # Determine index of the current vertical level to read data variable.
             level_index = self._get_levels(netcdf_root, level_name, level_variable_name)
-            if level_index:
+            if level_index is not None:
                 variable_indices[level_variable_name] = level_index
 
             # A small temporary hack.

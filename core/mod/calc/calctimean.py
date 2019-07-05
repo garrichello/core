@@ -52,7 +52,11 @@ class cvcCalcTiMean():
                     all_segments_means.append(one_segment_mean)
             if parameters['timeMean'] == 'data':
                 data_mean = ma.stack(all_segments_means).mean(axis=0)
-                self._data_helper.put(output_uids[0], values=data_mean, level=level, segment=segment,
+                # Make a global segment covering all input time segments
+                full_range_segment = time_segments[0]
+                full_range_segment['@ending'] = time_segments[-1]['@ending']
+                full_range_segment['@name'] = 'GlobalSeg'
+                self._data_helper.put(output_uids[0], values=data_mean, level=level, segment=full_range_segment,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
                                       fill_value=result['@fill_value'], meta=result['meta'])
 

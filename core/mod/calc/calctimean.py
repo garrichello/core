@@ -1,9 +1,10 @@
-"""Sample class"""
+"""Class cvcCalcTiMean provides methods for time mean calculation"""
 
-from core.base.dataaccess import DataAccess
+from copy import copy
 import numpy.ma as ma
 
-from core.base.common import print
+from core.base.dataaccess import DataAccess
+from core.base.common import print  # pylint: disable=W0622
 
 MAX_N_INPUT_ARGUMENTS = 2
 INPUT_PARAMETERS_INDEX = 1
@@ -53,7 +54,7 @@ class cvcCalcTiMean():
             if parameters['timeMean'] == 'data':
                 data_mean = ma.stack(all_segments_means).mean(axis=0)
                 # Make a global segment covering all input time segments
-                full_range_segment = time_segments[0]
+                full_range_segment = copy(time_segments[0])
                 full_range_segment['@ending'] = time_segments[-1]['@ending']
                 full_range_segment['@name'] = 'GlobalSeg'
                 self._data_helper.put(output_uids[0], values=data_mean, level=level, segment=full_range_segment,

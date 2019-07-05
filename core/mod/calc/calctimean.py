@@ -51,6 +51,7 @@ class cvcCalcTiMean():
                                           fill_value=result['@fill_value'], meta=result['meta'])
                 else:
                     all_segments_means.append(one_segment_mean)
+
             if parameters['timeMean'] == 'data':
                 data_mean = ma.stack(all_segments_means).mean(axis=0)
                 # Make a global segment covering all input time segments

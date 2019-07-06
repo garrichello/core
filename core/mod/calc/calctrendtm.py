@@ -2,7 +2,7 @@
 
 from core.base.dataaccess import DataAccess
 
-from core.base.common import print
+from core.base.common import print  # pylint: disable=W0622
 
 MAX_N_INPUT_ARGUMENTS = 2
 INPUT_PARAMETERS_INDEX = 1

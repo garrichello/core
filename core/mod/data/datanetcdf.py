@@ -41,6 +41,9 @@ class DataNetcdf(Data):
         self._data_info = data_info
         super().__init__(data_info)
 
+        self.file_name_wildcard = ''
+        self.netcdf_root = None
+
     def _get_longitudes(self, nc_root):
         longitude_variable = unlistify(nc_root.get_variables_by_attributes(units=lambda v: v in LONGITUDE_UNITS))
         if longitude_variable.ndim == 1:
@@ -125,13 +128,20 @@ class DataNetcdf(Data):
 
             file_name_wildcard = percent_template.substitute(WILDCARDS)  # Create wildcard-ed template
 
-            try:
-                netcdf_root = MFDataset(file_name_wildcard, check=True)
-            except OSError:
+            # Kind of a caching for netcdf_root to save time working at the same vertical level.
+            if self.file_name_wildcard != file_name_wildcard:  # If this is the first time we see this wildcard...
                 try:
-                    netcdf_root = MFDataset(file_name_wildcard, check=True, aggdim='time')
+                    netcdf_root = MFDataset(file_name_wildcard, check=True)
                 except OSError:
-                    netcdf_root = MFDataset(file_name_wildcard, check=True, aggdim='initial_time0_hours')
+                    try:
+                        netcdf_root = MFDataset(file_name_wildcard, check=True, aggdim='time')
+                    except OSError:
+                        netcdf_root = MFDataset(file_name_wildcard, check=True, aggdim='initial_time0_hours')
+                self.file_name_wildcard = file_name_wildcard  # we store wildcard...
+                self.netcdf_root = netcdf_root                # and netcdf_root.
+            else:
+                netcdf_root = self.netcdf_root  # Otherwise we take its "stored value".
+
 
             data_variable = netcdf_root.variables[self._data_info['data']['variable']['@name']]  # Data variable. pylint: disable=E1136
             data_variable.set_auto_mask(False)

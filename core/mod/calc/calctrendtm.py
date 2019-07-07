@@ -49,9 +49,9 @@ class cvcCalcTrendTM(Calc):
             x = 0
             for segment in time_segments:
                 num_arr += (result['data'][level][segment['@name']]['@values'] - mean_y) * (x - mean_x)
-                den_arr += (range(len(time_segments)) - mean_x)**2
+                den_arr += (x - mean_x)**2
                 x += 1
-            trend_values = num_arr / den_arr * 10.0
+            trend_values = (num_arr / den_arr) * 10.0
 
             trend_values = None
             global_segment = self.make_global_segment(time_segments)

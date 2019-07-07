@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from geoalchemy2 import *
 import numpy as np
 
-from core.base.common import listify, print
+from core.base.common import listify, print  # pylint: disable=W0622
 from .data import Data, GRID_TYPE_STATION
 
 class DataDb(Data):
@@ -87,17 +87,17 @@ class DataDb(Data):
                 date_end = int(segment['@ending'])//100
 
                 # Form query
-                q = session.query(st_data_tbl.columns[variable_name],
-                                  st_data_tbl.columns.date,
-                                  st_data_tbl.columns.station,
-                                  stations_tbl.columns.st_name,
-                                  func.ST_AsText(stations_tbl.columns.location).label('location')).join(
-                                      stations_tbl, st_data_tbl.columns.station == stations_tbl.columns.station).filter(
-                                          func.ST_Covers(ROI_polygon, stations_tbl.columns.location.ST_AsText())).filter(
-                                              and_(st_data_tbl.columns.date >= date_start, st_data_tbl.columns.date <= date_end))
+                qry = session.query(st_data_tbl.columns[variable_name],
+                                    st_data_tbl.columns.date,
+                                    st_data_tbl.columns.station,
+                                    stations_tbl.columns.st_name,
+                                    func.ST_AsText(stations_tbl.columns.location).label('location')).join(
+                                        stations_tbl, st_data_tbl.columns.station == stations_tbl.columns.station).filter(
+                                            func.ST_Covers(ROI_polygon, stations_tbl.columns.location.ST_AsText())).filter(
+                                                and_(st_data_tbl.columns.date >= date_start, st_data_tbl.columns.date <= date_end))
 
-                res = q.all()
-                q = None
+                res = qry.all()
+                qry = None
 
                 all_stations_codes = np.array([int(st.station) for st in res])
                 stations_codes = list(set(all_stations_codes))
@@ -116,7 +116,7 @@ class DataDb(Data):
                     station_indices = np.where(all_stations_codes == station_code)[0]
                     # 0-th element should always reference to data values.
                     station_values = np.ma.MaskedArray([res[i][0] for i in station_indices])
-                    values = station_values if values is None else np.vstack((values, station_values))
+                    values = station_values if values is None else np.vstack((values, station_values))  
                     # Station location is taken from the first row in the query response corresponding this station.
                     station_location = res[station_indices[0]].location.replace('(', '').replace(')', '').split(' ')
                     longitudes.append(float(station_location[2]))
@@ -140,7 +140,7 @@ class DataDb(Data):
         meta['stations']['@elevations'] = np.array(elevations)
 
         self._add_metadata(longitude_grid=np.array(longitudes), latitude_grid=np.array(latitudes),
-                           grid_type=GRID_TYPE_STATION, fill_value=fill_value, dimensions=('time', 'station'), 
+                           grid_type=GRID_TYPE_STATION, fill_value=fill_value, dimensions=('time', 'station'),
                            description=self._data_info['data']['description'], meta=meta)
 
         print('(DataDb::read) Done!')
@@ -166,4 +166,4 @@ class DataDb(Data):
         print(options)
         print('(DataDb::write) Done!')
         raise NotImplementedError
-        
+

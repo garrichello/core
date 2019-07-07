@@ -44,6 +44,9 @@ class DataNetcdf(Data):
         self.file_name_wildcard = ''
         self.netcdf_root = None
 
+    def __del__(self):
+        self.netcdf_root.close()
+
     def _get_longitudes(self, nc_root):
         longitude_variable = unlistify(nc_root.get_variables_by_attributes(units=lambda v: v in LONGITUDE_UNITS))
         if longitude_variable.ndim == 1:

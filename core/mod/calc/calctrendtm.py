@@ -53,7 +53,6 @@ class cvcCalcTrendTM(Calc):
                 x += 1
             trend_values = (num_arr / den_arr) * 10.0
 
-            trend_values = None
             global_segment = self.make_global_segment(time_segments)
             self._data_helper.put(output_uids[0], values=trend_values, level=level, segment=global_segment,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],

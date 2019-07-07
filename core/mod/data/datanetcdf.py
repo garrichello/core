@@ -251,6 +251,7 @@ class DataNetcdf(Data):
         self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, dimensions=data_dim_names, 
                            description=self._data_info['data']['description'], fill_value=fill_value)
 
+        netcdf_root.close()
         print('(DataNetcdf::read) Done!')
 
         return self._get_result_data()

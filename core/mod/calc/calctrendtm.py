@@ -1,13 +1,14 @@
 """Class cvcCalcTrendTM provides methods for trend calculation"""
 
+import numpy as np
+
 from core.base.dataaccess import DataAccess
-
 from core.base.common import print  # pylint: disable=W0622
+from core.mod.calc.calc import Calc
 
-MAX_N_INPUT_ARGUMENTS = 2
-INPUT_PARAMETERS_INDEX = 1
+MAX_N_INPUT_ARGUMENTS = 1
 
-class cvcCalcTrendTM():
+class cvcCalcTrendTM(Calc):
     """ Performs calculation of trend of values.
 
     """
@@ -24,10 +25,6 @@ class cvcCalcTrendTM():
         input_uids = self._data_helper.input_uids()
         assert input_uids, '(cvcCalcTrendTM::run) No input arguments!'
 
-        # Get parameters
-        if len(input_uids) == MAX_N_INPUT_ARGUMENTS:
-            parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-
         # Get outputs
         output_uids = self._data_helper.output_uids()
         assert output_uids, '(cvcCalcTrendTM::run) No output arguments!'
@@ -38,10 +35,17 @@ class cvcCalcTrendTM():
         result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
 
         for level in vertical_levels:
+            sum_y = 0
+            cnt = 0
             for segment in time_segments:
+                sum_y += result['data'][level][segment['@name']]['values'].filled(0)  # Sum values
+                cnt += (~result['data'][level][segment['@name']]['values'].mask).astype(int)  # Count valid values
+            mean_y = np.ma.MaskedArray(sum_y, mask=~cnt.astype(bool))  # Count values are inverted to create a mask
+            mean_y /= cnt  # Calculate mean value only for valid values
 
-                trend_values = None
-                self._data_helper.put(output_uids[0], values=trend_values, level=level, segment=segment,
+            trend_values = None
+            global_segment = self.make_global_segment(time_segments)
+            self._data_helper.put(output_uids[0], values=trend_values, level=level, segment=global_segment,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
                                       fill_value=result['@fill_value'], meta=result['meta'])
 

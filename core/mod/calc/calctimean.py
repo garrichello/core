@@ -42,11 +42,11 @@ class cvcCalcTiMean():
         # Get data for all time segments and levels at once
         time_segments = self._data_helper.get_segments(input_uids[0])
         vertical_levels = self._data_helper.get_levels(input_uids[0])
-        result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
 
         for level in vertical_levels:
             all_segments_means = []
             for segment in time_segments:
+                result = self._data_helper.get(input_uids[0], segments=segment, levels=level)
                 # Let's calulate time averaged values
                 one_segment_mean = result['data'][level][segment['@name']]['@values'].mean(axis=0)
 

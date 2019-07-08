@@ -207,10 +207,11 @@ class DataAccess():
             var_tbl_info = \
                 session.query(units_tr_tbl.columns['name'].label('units_name'), 
                               par_tr_tbl.columns['name'].label('parameter_name')).select_from(
-                                  variable_tbl).join(units_tbl).join(units_tr_tbl).join(par_tbl).join(
+                                  data_tbl).join(variable_tbl).join(units_tbl).join(units_tr_tbl).join(par_tbl).join(
                                       par_tr_tbl).filter(variable_tbl.columns['name'] == variable_name).filter(
                                           units_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(
-                                              par_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).one()
+                                              par_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(
+                                                  data_tbl.columns['ds_id'] == dataset_tbl_info.id).one()
         except NoResultFound:
             print('{} variable {}'.format(
                 '(DataAccess::_get_metadata) No records found in MDDB for', variable_name))

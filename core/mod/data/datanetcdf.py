@@ -184,7 +184,7 @@ class DataNetcdf(Data):
             # TODO: Dataset DS131, T62 grid variables has a dimension 'forecast_time1'. Now I set it
             # to the first element (whatever it is), but in the future it somehow should be selected by a user
             # in the GUI (may be) and passed here through an XML task-file.
-            variable_indices['forecast_time1'] = 0
+            variable_indices['forecast_time1'] = [0]
 
             time_variable = unlistify(netcdf_root.get_variables_by_attributes(
                 units=lambda v: True in [tu in v for tu in TIME_UNITS] if v is not None else False))
@@ -209,6 +209,11 @@ class DataNetcdf(Data):
                 variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1])  # pylint: disable=W0212, E1101
                 time_values = time_variable[variable_indices[time_variable._name]]  # Raw time values.  # pylint: disable=W0212, E1101
                 time_grid = num2date(time_values, time_variable.units)  # Time grid as a datetime object.  # pylint: disable=E1101
+
+                # Unlistify one-element index lists
+                for k, v in variable_indices.items():
+                    if len(v) == 1:
+                        variable_indices[k] = v[0]
 
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
                 # And mask all points outside the ROI mask for all times.

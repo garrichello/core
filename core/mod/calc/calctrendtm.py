@@ -55,7 +55,7 @@ class cvcCalcTrendTM(Calc):
 
             global_segment = self.make_global_segment(time_segments)
             self._data_helper.put(output_uids[0], values=trend_values, level=level, segment=global_segment,
-                                      longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                      fill_value=result['@fill_value'], meta=result['meta'])
+                                  longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                  fill_value=result['@fill_value'], meta=result['meta'])
 
         print('(cvcCalcTrendTM::run) Finished!')

@@ -46,6 +46,8 @@ class DataHdfeos(Data):
 
         variable_indices = {}  # Contains lists of indices for each dimension of the data variable in the domain to read.
 
+        self._make_ROI()
+
         # Process each vertical level separately.
         for level_name in levels_to_read:
             print('(DataHdfeos::read)  Reading level: \'{0}\''.format(level_name))
@@ -87,7 +89,7 @@ class DataHdfeos(Data):
                 raise ValueError
 
             # Create ROI mask.
-            ROI_mask = self._create_ROI_mask(lons, lats)
+            ROI_mask = self._make_ROI_mask(lons, lats)
 
             # Determine index of the current vertical level to read data variable.
             if level_variable_name is not None:

@@ -43,6 +43,7 @@ class DataNetcdf(Data):
 
         self.file_name_wildcard = ''
         self.netcdf_root = None
+        self._make_ROI()
 
     def __del__(self):
         if self.netcdf_root is not None:

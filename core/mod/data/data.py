@@ -18,8 +18,6 @@ class Data:
         self._read_result['data'] = {}  # Contains data arrays read at each vertical level.
         self._data_by_segment = {}  # Data for each time segment for each vertical level.
 
-        self._make_ROI()
-
     def _make_ROI(self):
         """ Creates region of interest for a given set of points.
         """

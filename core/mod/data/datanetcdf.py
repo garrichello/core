@@ -184,7 +184,7 @@ class DataNetcdf(Data):
             # TODO: Dataset DS131, T62 grid variables has a dimension 'forecast_time1'. Now I set it
             # to the first element (whatever it is), but in the future it somehow should be selected by a user
             # in the GUI (may be) and passed here through an XML task-file.
-            variable_indices['forecast_time1'] = [0]
+            variable_indices['forecast_time1'] = 0
 
             time_variable = unlistify(netcdf_root.get_variables_by_attributes(
                 units=lambda v: True in [tu in v for tu in TIME_UNITS] if v is not None else False))

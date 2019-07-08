@@ -221,9 +221,8 @@ class DataAccess():
         info['data']['description']['@units'] = var_tbl_info.units_name
 
         # Each vertical level is processed separately because corresponding arrays can be stored in different files
-        info['levels'] = {}
         for level_name in levels_names:
-            info['levels'][level_name] = {}
+            info['data']['levels'][level_name] = {}
 
             level_name_pattern = '%:{0}:%'.format(level_name) # Pattern for LIKE in the following SQL-request
             # Get some info about the data array and file names template

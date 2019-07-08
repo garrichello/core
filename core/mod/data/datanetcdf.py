@@ -91,7 +91,7 @@ class DataNetcdf(Data):
                 raise
         else:
             level_index = None
-            
+
         return level_index
 
     def read(self, options):
@@ -146,20 +146,23 @@ class DataNetcdf(Data):
             else:
                 netcdf_root = self.netcdf_root  # Otherwise we take its "stored value".
 
-
             data_variable = netcdf_root.variables[self._data_info['data']['variable']['@name']]  # Data variable. pylint: disable=E1136
             data_variable.set_auto_mask(False)
             dd = data_variable.dimensions  # Names of dimensions of the data variable.
 
             # Determine indices of longitudes.
             lons, longitude_variable_name, lon_grid_type = self._get_longitudes(netcdf_root)
-            variable_indices[longitude_variable_name] = np.arange(lons.size)  # longitude_indices
-#            longitude_grid = lons[longitude_indices]
+            longitude_indices = np.nonzero([ge and le for ge, le in
+                                           zip(lons >= self._ROI_bounds['min_lon'], lons <= self._ROI_bounds['max_lon'])])[0]
+            variable_indices[longitude_variable_name] = longitude_indices  # np.arange(lons.size)  # longitude_indices
+            longitude_grid = lons[longitude_indices]
 
             # Determine indices of latitudes.
             lats, latitude_variable_name, lat_grid_type = self._get_latitudes(netcdf_root)
-            variable_indices[latitude_variable_name] = np.arange(lats.size)  # latitude_indices
-#            latitude_grid = lats[latitude_indices]
+            latitude_indices = np.nonzero([ge and le for ge, le in
+                                          zip(lats >= self._ROI_bounds['min_lat'], lats <= self._ROI_bounds['max_lat'])])[0]
+            variable_indices[latitude_variable_name] = latitude_indices  # np.arange(lats.size)  # latitude_indices
+            latitude_grid = lats[latitude_indices]
 
             if lon_grid_type == lat_grid_type:
                 grid_type = lon_grid_type
@@ -168,7 +171,7 @@ class DataNetcdf(Data):
                 raise ValueError
 
             # Create ROI mask.
-            ROI_mask = self._create_ROI_mask(lons, lats)
+            ROI_mask = self._make_ROI_mask(longitude_grid, latitude_grid)
 
             # Determine index of the current vertical level to read data variable.
             level_index = self._get_levels(netcdf_root, level_name, level_variable_name)
@@ -262,7 +265,7 @@ class DataNetcdf(Data):
         except ValueError:
             pass
 
-        self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, dimensions=data_dim_names, 
+        self._add_metadata(longitude_grid=longitude_grid, latitude_grid=latitude_grid, grid_type=grid_type, dimensions=data_dim_names, 
                            description=self._data_info['data']['description'], fill_value=fill_value)
 
         print('(DataNetcdf::read) Done!')

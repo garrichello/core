@@ -43,7 +43,6 @@ class DataNetcdf(Data):
 
         self.file_name_wildcard = ''
         self.netcdf_root = None
-        self._make_ROI()
 
     def __del__(self):
         if self.netcdf_root is not None:
@@ -124,6 +123,8 @@ class DataNetcdf(Data):
 
         variable_indices = {}  # Contains lists of indices for each dimension of the data variable in the domain to read.
 
+        self._make_ROI()
+            
         # Process each vertical level separately.
         for level_name in levels_to_read:
             print('(DataNetcdf::read)  Reading level: \'{0}\''.format(level_name))

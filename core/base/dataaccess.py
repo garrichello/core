@@ -8,6 +8,8 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from .common import load_module, make_module_name, listify, print
 
+ENGLISH_LANG_CODE = '409'
+
 class DataAccess():
     """Class-helper for accessing data.
     Provides access to data through unified API for processing modules.
@@ -43,7 +45,7 @@ class DataAccess():
             description -- dictionary describing data:
                 ['title'] -- general title of the data (e.g., Average)
                 ['name'] --  name of the data (e.g., Temperature)
-                ['units'] -- units of th data (e.g., K)
+                ['units'] -- units of the data (e.g., K)
             meta -- additional metadata passed from data readers to data writers through data processors
 
         ::output_uids():
@@ -158,6 +160,8 @@ class DataAccess():
         levels_variable_tbl = meta.tables['lvs_var']
         dataset_root_tbl = meta.tables['dsroot']
         time_span_tbl = meta.tables['timespan']
+        units_tbl = meta.tables['units']
+        units_tr_tbl = meta.tables['units_tr']
 
         # Values for SQL-conditions
         dataset_name = argument['data']['dataset']['@name']
@@ -206,11 +210,14 @@ class DataAccess():
                                   file_tbl.columns['name'].label('file_name_template'),
                                   file_tbl.columns['timestart'],
                                   file_tbl.columns['timeend'],
-                                  levels_variable_tbl.columns['name'].label('level_variable_name')).join(dataset_tbl).join(
-                                      variable_tbl).join(levels_tbl).join(file_tbl).join(levels_variable_tbl).filter(
-                                          dataset_tbl.columns['id'] == dataset_tbl_info.id).filter(
-                                              variable_tbl.columns['name'] == variable_name).filter(
-                                                  levels_tbl.columns['name'].like(level_name_pattern)).one()
+                                  levels_variable_tbl.columns['name'].label('level_variable_name'),
+                                  units_tr_tbl.columns['name'].label('units_name')).join(dataset_tbl).join(
+                                      variable_tbl).join(levels_tbl).join(file_tbl).join(levels_variable_tbl).join(
+                                          units_tbl).join(units_tr_tbl).filter(
+                                              dataset_tbl.columns['id'] == dataset_tbl_info.id).filter(
+                                                  variable_tbl.columns['name'] == variable_name).filter(
+                                                      levels_tbl.columns['name'].like(level_name_pattern)).filter(
+                                                          units_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).one()
             except NoResultFound:
                 print('{} collection: {}, scenario: {}, resolution: {}, time step: {}, variable: {}, level: {}'.format(
                     '(DataAccess::_get_metadata) No records found in MDDB for', dataset_name, scenario_name,
@@ -300,7 +307,7 @@ class DataAccess():
             description -- dictionary describing data:
                 ['title'] -- general title of the data (e.g., Average)
                 ['name'] --  name of the data (e.g., Temperature)
-                ['units'] -- units of th data (e.g., K)
+                ['units'] -- units of the data (e.g., K)
             meta -- additional metadata passed from data readers to data writers through data processors
         """
         options = {}

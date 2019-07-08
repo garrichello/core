@@ -139,6 +139,7 @@ class DataAccess():
 
         # If it is a dataset there is much to do
         info['data'] = argument['data'] # All the information about the dataset is passed to data-accessing modules
+        
         # Metadata database URL
         db_url = 'mysql://{0}@{1}/{2}'.format(metadb_info['@user'], metadb_info['@host'], metadb_info['@name'])
         engine = create_engine(db_url)
@@ -247,15 +248,15 @@ class DataAccess():
                     resolution_name, time_step_name, variable_name, level_name))
                 raise
 
-            info['levels'][level_name]['@scale'] = data_tbl_info.scale
-            info['levels'][level_name]['@offset'] = data_tbl_info.offset
+            info['data']['levels'][level_name]['@scale'] = data_tbl_info.scale
+            info['data']['levels'][level_name]['@offset'] = data_tbl_info.offset
             file_name_template = '{0}{1}{2}{3}{4}'.format(dataset_tbl_info.rootpath, dataset_tbl_info.subpath0,
                                                           dataset_tbl_info.subpath1, dataset_tbl_info.subpath2,
                                                           data_tbl_info.file_name_template)
-            info['levels'][level_name]['@file_name_template'] = file_name_template
-            info['levels'][level_name]['@time_start'] = data_tbl_info.timestart
-            info['levels'][level_name]['@time_end'] = data_tbl_info.timeend
-            info['levels'][level_name]['@level_variable_name'] = data_tbl_info.level_variable_name
+            info['data']['levels'][level_name]['@file_name_template'] = file_name_template
+            info['data']['levels'][level_name]['@time_start'] = data_tbl_info.timestart
+            info['data']['levels'][level_name]['@time_end'] = data_tbl_info.timeend
+            info['data']['levels'][level_name]['@level_variable_name'] = data_tbl_info.level_variable_name
 
         return info
 

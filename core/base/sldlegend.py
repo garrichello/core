@@ -125,7 +125,7 @@ class SLDLegend:
         sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['FeatureTypeStyle']['Rule']['RasterSymbolizer']['Opacity'] = 0.8
         sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['FeatureTypeStyle']['Rule']['RasterSymbolizer']['ColorMap'] = {}
         colormap_entry = [{'@color':'#000000', '@quantity':fill_value, '@label':'', '@opacity':'0.0'}]
-        for i, _ in enumerate(legend_values):
+        for i, _ in reversed(list(enumerate(legend_values))):
             colormap_entry.append({'@color':rgb_values[i], '@quantity': legend_values[i], '@label':legend_labels[i]})
         sld['StyledLayerDescriptor']['NamedLayer']['UserStyle']['FeatureTypeStyle']['Rule']['RasterSymbolizer']['ColorMap']['ColorMapEntry'] = colormap_entry
 

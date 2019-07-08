@@ -211,7 +211,7 @@ class DataAccess():
                                       par_tr_tbl).filter(variable_tbl.columns['name'] == variable_name).filter(
                                           units_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(
                                               par_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(
-                                                  data_tbl.columns['ds_id'] == dataset_tbl_info.id).one()
+                                                  data_tbl.columns['ds_id'] == dataset_tbl_info.id).distinct().one()
         except NoResultFound:
             print('{} variable {}'.format(
                 '(DataAccess::_get_metadata) No records found in MDDB for', variable_name))

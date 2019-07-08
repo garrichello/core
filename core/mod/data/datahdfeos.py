@@ -38,7 +38,7 @@ class DataHdfeos(Data):
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])
         if levels_to_read is None:
-            levels_to_read = self._data_info['levels']  # Read all levels if nothing specified.
+            levels_to_read = self._data_info['data']['levels']  # Read all levels if nothing specified.
         # Segments must be a list or None.
         segments_to_read = listify(options['segments'])
         if segments_to_read is None:
@@ -51,7 +51,7 @@ class DataHdfeos(Data):
         # Process each vertical level separately.
         for level_name in levels_to_read:
             print('(DataHdfeos::read)  Reading level: \'{0}\''.format(level_name))
-            file_name_template = self._data_info['levels'][level_name]['@file_name_template']  # Template as in MDDB.
+            file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']  # Template as in MDDB.
             # Create wildcard-ed template.
             file_name_template = re.sub(r'\%[a-z0-9\-]{2}\%', '??', file_name_template)  # Replace %mm% and %dd% with ??.
             file_name_template = re.sub(r'\%[a-z0-9\-]{3}\%', '???', file_name_template)  # Replace %doy% with ???.

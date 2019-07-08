@@ -52,7 +52,7 @@ class DataDb(Data):
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])
         if levels_to_read is None:
-            levels_to_read = self._data_info['levels']  # Read all levels if nothing specified.
+            levels_to_read = self._data_info['data']['levels']  # Read all levels if nothing specified.
         # Segments must be a list or None.
         segments_to_read = listify(options['segments'])
         if segments_to_read is None:
@@ -64,7 +64,7 @@ class DataDb(Data):
         # Process each vertical level separately.
         for level_name in levels_to_read:
             print('(DataDb::read)  Reading level: \'{0}\''.format(level_name))
-            file_name_template = self._data_info['levels'][level_name]['@file_name_template']
+            file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']
             (db_name, _, _, _, _) = file_name_template.split('/')
             db_url = 'postgresql://{}'.format(db_name.replace(':', '/'))
             engine = create_engine(db_url)

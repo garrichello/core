@@ -178,7 +178,7 @@ class DataNetcdf(Data):
             # Determine index of the current vertical level to read data variable.
             level_index = self._get_levels(netcdf_root, level_name, level_variable_name)
             if level_index is not None:
-                variable_indices[level_variable_name] = level_index
+                variable_indices[level_variable_name] = [level_index]
 
             # A small temporary hack.
             # TODO: Dataset DS131, T62 grid variables has a dimension 'forecast_time1'. Now I set it

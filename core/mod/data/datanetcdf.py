@@ -250,7 +250,7 @@ class DataNetcdf(Data):
                 # Create masked array using ROI mask.
                 print('(DataNetcdf::read)  Creating masked array...')
                 masked_data_slice = ma.MaskedArray(data_slice, mask=combined_mask, fill_value=fill_value)
-                print('(DataNetcdf::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
+                #print('(DataNetcdf::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
                 print('(DataNetcdf::read)  Done!')
 
                 self._add_segment_data(level_name=level_name, values=masked_data_slice, time_grid=time_grid, time_segment=segment)

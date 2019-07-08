@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
-from .common import load_module, make_module_name, listify, print
+from .common import load_module, make_module_name, listify, print  # pylint: disable=W0622
 
 ENGLISH_LANG_CODE = '409'
 
@@ -148,6 +148,7 @@ class DataAccess():
 
         # Tables in a metadata database
         collection_tbl = meta.tables['collection']
+        collection_tr_tbl = meta.tables['collection_tr']
         scenario_tbl = meta.tables['scenario']
         resolution_tbl = meta.tables['res']
         time_step_tbl = meta.tables['tstep']
@@ -162,6 +163,8 @@ class DataAccess():
         time_span_tbl = meta.tables['timespan']
         units_tbl = meta.tables['units']
         units_tr_tbl = meta.tables['units_tr']
+        par_tbl = meta.tables['par']
+        par_tr_tbl = meta.tables['par_tr']
 
         # Values for SQL-conditions
         dataset_name = argument['data']['dataset']['@name']
@@ -180,13 +183,15 @@ class DataAccess():
                               resolution_tbl.columns['subpath1'],
                               time_step_tbl.columns['subpath2'],
                               time_span_tbl.columns['name'].label('file_time_span'),
-                              dataset_root_tbl.columns['rootpath']).join(
-                                  collection_tbl).join(scenario_tbl).join(resolution_tbl).join(
+                              collection_tr_tbl.columns['name'].label('collection_name'),
+                              dataset_root_tbl.columns['rootpath']).select_from(dataset_tbl).join(
+                                  collection_tbl).join(collection_tr_tbl).join(scenario_tbl).join(resolution_tbl).join(
                                       time_step_tbl).join(file_type_tbl).join(dataset_root_tbl).join(time_span_tbl).filter(
                                           collection_tbl.columns['name'] == dataset_name).filter(
                                               scenario_tbl.columns['name'] == scenario_name).filter(
                                                   resolution_tbl.columns['name'] == resolution_name).filter(
-                                                      time_step_tbl.columns['name'] == time_step_name).one()
+                                                      time_step_tbl.columns['name'] == time_step_name).filter(
+                                                          collection_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).one()
         except NoResultFound:
             print('{} collection: {}, scenario: {}, resolution: {}, time step: {}'.format(
                 '(DataAccess::_get_metadata) No records found in MDDB for', dataset_name, scenario_name,
@@ -195,6 +200,24 @@ class DataAccess():
 
         info['@data_type'] = dataset_tbl_info.file_type_name
         info['@file_time_span'] = dataset_tbl_info.file_time_span
+
+        # Get units and full name of the variable
+        try:
+            var_tbl_info = \
+                session.query(units_tr_tbl.columns['name'].label('units_name'), 
+                              par_tr_tbl.columns['name'].label('parameter_name')).select_from(
+                                  variable_tbl).join(units_tbl).join(units_tr_tbl).join(par_tbl).join(
+                                      par_tr_tbl).filter(variable_tbl.columns['name'] == variable_name).filter(
+                                          units_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(
+                                              par_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).one()
+        except NoResultFound:
+            print('{} variable {}'.format(
+                '(DataAccess::_get_metadata) No records found in MDDB for', variable_name))
+            raise
+
+        info['data']['description']['@title'] = dataset_tbl_info.collection_name
+        info['data']['description']['@name'] = var_tbl_info.parameter_name
+        info['data']['description']['@units'] = var_tbl_info.units_name
 
         # Each vertical level is processed separately because corresponding arrays can be stored in different files
         info['levels'] = {}

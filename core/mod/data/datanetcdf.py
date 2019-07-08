@@ -128,8 +128,10 @@ class DataNetcdf(Data):
         # Process each vertical level separately.
         for level_name in levels_to_read:
             print('(DataNetcdf::read)  Reading level: \'{0}\''.format(level_name))
-            level_variable_name = self._data_info['levels'][level_name]['@level_variable_name']
-            file_name_template = self._data_info['levels'][level_name]['@file_name_template']  # Template as in MDDB.
+            level_variable_name = self._data_info['data']['levels'][level_name]['@level_variable_name']
+            file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']  # Template as in MDDB.
+            data_scale = self._data_info['data']['levels'][level_name]['@scale']
+            data_offset = self._data_info['data']['levels'][level_name]['@offset']
             percent_template = PercentTemplate(file_name_template)  # Custom string template %keyword%.
 
             file_name_wildcard = percent_template.substitute(WILDCARDS)  # Create wildcard-ed template
@@ -262,6 +264,9 @@ class DataNetcdf(Data):
                 masked_data_slice = ma.MaskedArray(data_slice, mask=combined_mask, fill_value=fill_value)
                 #print('(DataNetcdf::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
                 print('(DataNetcdf::read)  Done!')
+
+                # Apply scale/offset from the MDDB.
+                masked_data_slice = masked_data_slice * data_scale + data_offset
 
                 self._add_segment_data(level_name=level_name, values=masked_data_slice, time_grid=time_grid, time_segment=segment)
 

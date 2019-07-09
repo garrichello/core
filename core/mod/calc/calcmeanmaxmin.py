@@ -24,7 +24,7 @@ class CalcMeanMaxMin(Calc):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
         print('(cvcCalcMeanMaxMin::run) Started!')
-        print('(cvcCalcMeanMaxMin::run) Calculation mode is: {}'.format(calc_mode))
+        print('(cvcCalcMeanMaxMin::run) Calculation mode: {}'.format(calc_mode))
 
         # Get inputs
         input_uids = self._data_helper.input_uids()

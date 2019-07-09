@@ -56,7 +56,7 @@ class DataNetcdf(Data):
             if lons.max() > 180:
                 lons = ((lons + 180.0) % 360.0) - 180.0  # Switch from 0-360 to -180-180 grid
         else:
-            print('(DataNetcdf::_get_longitudes) 2-D longitude grid is not implemented yet. Aborting...')
+            print(' (DataNetcdf::_get_longitudes) 2-D longitude grid is not implemented yet. Aborting...')
             raise ValueError
 
         return (lons, longitude_variable.name, grid_type)
@@ -67,7 +67,7 @@ class DataNetcdf(Data):
             grid_type = GRID_TYPE_REGULAR
             lats = latitude_variable[:]
         else:
-            print('(DataNetcdf::_get_latitudes) 2-D latitude grid is not implemented yet. Aborting...')
+            print(' (DataNetcdf::_get_latitudes) 2-D latitude grid is not implemented yet. Aborting...')
             raise ValueError
 
         return (lats, latitude_variable.name, grid_type)
@@ -77,7 +77,7 @@ class DataNetcdf(Data):
             try:
                 level_variable = nc_root.variables[level_variable_name]  # pylint: disable=E1136
             except KeyError:
-                print('(DataNetcdf::read) Level variable \'{0}\' is not found in files. Aborting!'.format(
+                print(' (DataNetcdf::read) Level variable \'{0}\' is not found in files. Aborting!'.format(
                     level_variable_name))
                 raise
             try:
@@ -86,7 +86,7 @@ class DataNetcdf(Data):
                 # Level variable is also primarily converted to float to 'synchronize' types.
                 level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(level_name)))
             except KeyError:
-                print('(DataNetcdf::read) Level \'{0}\' is not found in level variable \'{1}\'. Aborting!'.format(
+                print(' (DataNetcdf::read) Level \'{0}\' is not found in level variable \'{1}\'. Aborting!'.format(
                     level_name, level_variable_name))
                 raise
         else:
@@ -106,8 +106,8 @@ class DataNetcdf(Data):
             result['array'] -- data array
         """
 
-        print('(DataNetcdf::read) Reading NetCDF data...')
-        print('(DataNetcdf::read) [Dataset: {}, resolution: {}, scenario: {}, time_step: {}]'.format(
+        print(' (DataNetcdf::read) Reading NetCDF data...')
+        print(' (DataNetcdf::read) [Dataset: {}, resolution: {}, scenario: {}, time_step: {}]'.format(
             self._data_info['data']['dataset']['@name'], self._data_info['data']['dataset']['@resolution'],
             self._data_info['data']['dataset']['@scenario'], self._data_info['data']['dataset']['@time_step']
         ))
@@ -127,7 +127,7 @@ class DataNetcdf(Data):
             
         # Process each vertical level separately.
         for level_name in levels_to_read:
-            print('(DataNetcdf::read)  Reading level: \'{0}\''.format(level_name))
+            print(' (DataNetcdf::read)  Reading level: \'{0}\''.format(level_name))
             level_variable_name = self._data_info['data']['levels'][level_name]['@level_variable_name']
             file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']  # Template as in MDDB.
             data_scale = self._data_info['data']['levels'][level_name]['@scale']
@@ -171,7 +171,7 @@ class DataNetcdf(Data):
             if lon_grid_type == lat_grid_type:
                 grid_type = lon_grid_type
             else:
-                print('(DataNetcdf::read) Error! Longitude and latitude grids are not match! Aborting.')
+                print(' (DataNetcdf::read) Error! Longitude and latitude grids are not match! Aborting.')
                 raise ValueError
 
             # Create ROI mask.
@@ -199,14 +199,14 @@ class DataNetcdf(Data):
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
-                print('(DataNetcdf::read)  Reading time segment \'{0}\''.format(segment['@name']))
+                print(' (DataNetcdf::read)  Reading time segment \'{0}\''.format(segment['@name']))
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')
                 time_idx_range = date2index([segment_start, segment_end], time_variable, select='nearest')
                 if time_idx_range[1] == 0:
-                    print('''(DataNetcdf::read) Error! The end of the time segment is before the first time in the dataset.
-                            Aborting!''')
+                    print(''' (DataNetcdf::read) Error! The end of the time segment is before the first time in the dataset.
+                              Aborting!''')
                     raise ValueError
                 variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1])  # pylint: disable=W0212, E1101
                 time_values = time_variable[variable_indices[time_variable._name]]  # Raw time values.  # pylint: disable=W0212, E1101
@@ -219,7 +219,7 @@ class DataNetcdf(Data):
 
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
                 # And mask all points outside the ROI mask for all times.
-                print('(DataNetcdf::read)  Actually reading...')
+                print(' (DataNetcdf::read)  Actually reading...')
                 if data_variable.ndim == 4:
                     data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
                                                variable_indices[dd[2]], variable_indices[dd[3]]]
@@ -228,7 +228,7 @@ class DataNetcdf(Data):
                                                variable_indices[dd[2]]]
                 if data_variable.ndim == 2:
                     data_slice = data_variable[:, :]
-                print('(DataNetcdf::read)  Done!')
+                print(' (DataNetcdf::read)  Done!')
 
                 data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
 
@@ -245,25 +245,25 @@ class DataNetcdf(Data):
                 elif 'missing_value' in var_attrs_list:
                     fill_value = data_variable.missing_value
                 elif 'units' in var_attrs_list:
-                    print('(DataNetcdf::read)  No missing value attribute. Trying to guess...')
+                    print(' (DataNetcdf::read)  No missing value attribute. Trying to guess...')
                     if data_slice.min() >= 0.0 - 1e12 and data_slice.min() <= 0.0 + 1e12 and data_variable.units == 'K':
                         fill_value = data_slice.min()
-                        print('(DataNetcdf::read)   Success! Set to {}'.format(fill_value))
+                        print(' (DataNetcdf::read)   Success! Set to {}'.format(fill_value))
                     else:
-                        print('(DataNetcdf::read)   Can\'t guess missing value. Set to 1E20.')
+                        print(' (DataNetcdf::read)   Can\'t guess missing value. Set to 1E20.')
                         fill_value = 1e20
                 else:
-                    print('(DataNetcdf::read)  Can\'t get or guess missing value. Set to 1E20.')
+                    print(' (DataNetcdf::read)  Can\'t get or guess missing value. Set to 1E20.')
                     fill_value = 1e20
 
                 fill_value_mask = data_slice == fill_value
                 combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time)
 
                 # Create masked array using ROI mask.
-                print('(DataNetcdf::read)  Creating masked array...')
+                print(' (DataNetcdf::read)  Creating masked array...')
                 masked_data_slice = ma.MaskedArray(data_slice, mask=combined_mask, fill_value=fill_value)
                 #print('(DataNetcdf::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
-                print('(DataNetcdf::read)  Done!')
+                print(' (DataNetcdf::read)  Done!')
 
                 # Apply scale/offset from the MDDB.
                 masked_data_slice = masked_data_slice * data_scale + data_offset
@@ -280,7 +280,7 @@ class DataNetcdf(Data):
         self._add_metadata(longitude_grid=longitude_grid, latitude_grid=latitude_grid, grid_type=grid_type, dimensions=data_dim_names, 
                            description=self._data_info['data']['description'], fill_value=fill_value)
 
-        print('(DataNetcdf::read) Done!')
+        print(' (DataNetcdf::read) Done!')
 
         return self._get_result_data()
 
@@ -297,14 +297,14 @@ class DataNetcdf(Data):
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
 
-        print('(DataNetcdf::write) Writing data to a netCDF file...')
+        print(' (DataNetcdf::write) Writing data to a netCDF file...')
 
         if values.ndim == 1:  # We have stations data.
             self.write_stations(values, options)
         else:
             self.write_array(values, options)
 
-        print('(DataNetcdf::write) Done!')
+        print(' (DataNetcdf::write) Done!')
 
     def write_array(self, values, options):
         """Writes data array into a netCDF file.
@@ -322,7 +322,7 @@ class DataNetcdf(Data):
         # Construct the file name
         filename = make_filename(self._data_info, options)
 
-        print('(DataNetcdf::write_array)  Writing netCDF file: {}'.format(filename))
+        print(' (DataNetcdf::write_array)  Writing netCDF file: {}'.format(filename))
 
         # Create netCDF file.
         root = Dataset(filename, 'w')  # , format='NETCDF3_64BIT_OFFSET')
@@ -374,7 +374,7 @@ class DataNetcdf(Data):
 
         root = None
 
-        print('(DataNetcdf::write_array)  Done!')
+        print(' (DataNetcdf::write_array)  Done!')
 
     def write_stations(self, values, options):
         """Writes stations data into a netCDF file.
@@ -459,4 +459,4 @@ class DataNetcdf(Data):
 
         root = None
 
-        print('(DataNetcdf::write_stations)  Done!')
+        print(' (DataNetcdf::write_stations)  Done!')

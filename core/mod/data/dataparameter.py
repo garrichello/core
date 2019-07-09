@@ -35,13 +35,13 @@ class DataParameter:
             result -- dictionary containing parameters from a task file
         """
 
-        print('(DataParameter::read) Reading parameters...')
+        print(' (DataParameter::read) Reading parameters...')
 
         parameters = listify(self._data_info['data']['param'])
         result = {}
         for parameter in parameters:
             result[parameter['@uid']] = self._type_cast(parameter['#text'], parameter['@type'])
 
-        print('(DataParameter::read) Done')
+        print(' (DataParameter::read) Done')
 
         return result

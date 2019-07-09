@@ -52,28 +52,28 @@ class DataArray(Data):
         # Process each vertical level separately.
         level_name = None
         for level_name in levels_to_read:
-            print('(DataArray::read)  Reading level: \'{0}\''.format(level_name))
+            print(' (DataArray::read)  Reading level: \'{0}\''.format(level_name))
 
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             segment = None
             for segment in segments_to_read:
-                print('(DataArray::read)  Reading time segment \'{0}\''.format(segment['@name']))
-                print('(DataArray::read)   Min data value: {}, max data value: {}'.format(
+                print(' (DataArray::read)  Reading time segment \'{0}\''.format(segment['@name']))
+                print(' (DataArray::read)   Min data value: {}, max data value: {}'.format(
                     self._data_info['data'][level_name][segment['@name']]['@values'].min(),
                     self._data_info['data'][level_name][segment['@name']]['@values'].max()))
                 self._add_segment_data(level_name=level_name,
                                        values=self._data_info['data'][level_name][segment['@name']]['@values'],
                                        time_grid=self._data_info['data']['time'].get('@grid'),
                                        time_segment=segment)
-                print('(DataArray::read)  Done!')
+                print(' (DataArray::read)  Done!')
 
         self._add_metadata(longitude_grid=self._data_info['data']['@longitudes'],
                            latitude_grid=self._data_info['data']['@latitudes'],
                            fill_value=self._data_info['data'][level_name][segment['@name']]['@values'].fill_value,
                            description=self._data_info['data']['description'], meta=self._data_info['meta'])
 
-        print('(DataArray::read) Done!')
+        print(' (DataArray::read) Done!')
 
         return self._get_result_data()
 
@@ -96,7 +96,7 @@ class DataArray(Data):
                 meta -- additional metadata passed from data readers to data writers through data processors
         """
 
-        print('(DataArray:write) Creating memory data array...')
+        print(' (DataArray:write) Creating memory data array...')
 
         level = options['level']
         segment = options['segment']
@@ -140,4 +140,4 @@ class DataArray(Data):
             self._data_info['data']['description'] = description
         self._data_info['meta'] = meta
 
-        print('(DataArray::write) Done!')
+        print(' (DataArray::write) Done!')

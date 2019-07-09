@@ -45,10 +45,10 @@ class DataImage:
 
         """
 
-        print('(DataImage::write) Writing image...')
+        print(' (DataImage::write) Writing image...')
 
         if values.ndim > 1:   # If it is a grid, check it for uniformity.
-            print('(DataImage::write)  Checking grid uniformity...')
+            print(' (DataImage::write)  Checking grid uniformity...')
             eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
 
             if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
@@ -62,13 +62,13 @@ class DataImage:
                     should_regrid = True
                 else:
                     should_regrid = False
-            print('(DataImage::write)  Done!')
+            print(' (DataImage::write)  Done!')
         else:
             should_regrid = False
 
         # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
         if should_regrid:
-            print('(DataImage::write)  Non-uniform grid. Regridding...')
+            print(' (DataImage::write)  Non-uniform grid. Regridding...')
             options_regular = options.copy()
 
             # Create a uniform grid
@@ -86,7 +86,7 @@ class DataImage:
                               (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
             values_regular.fill_value = values.fill_value
-            print('(DataImage::write)  Done!')
+            print(' (DataImage::write)  Done!')
         else:
             values_regular = values
             options_regular = options
@@ -99,11 +99,11 @@ class DataImage:
                 self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
             self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if values_regular.ndim == 1 else 'raster'
             legend = SLDLegend(self._data_info)
-            print('(DataImage::write)  Writing legend...')
+            print(' (DataImage::write)  Writing legend...')
             legend.write(values_regular, options_regular)
-            print('(DataImage::write)  Done!')
+            print(' (DataImage::write)  Done!')
 
-        print('(DataImage::write) Done!')
+        print(' (DataImage::write) Done!')
 
 
 class ImageGeotiff:
@@ -134,7 +134,7 @@ class ImageGeotiff:
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
 
-        print('(ImageGeotiff::write)  Writing geoTIFF...')
+        print(' (ImageGeotiff::write)  Writing geoTIFF...')
 
         # Prepare data array with masked values replaced with a fill value.
         data = np.ma.filled(values, fill_value=values.fill_value)
@@ -156,9 +156,9 @@ class ImageGeotiff:
 
         # Check if driver supports Create() method.
         if (gdal.DCAP_CREATE not in metadata) or (metadata[gdal.DCAP_CREATE] != 'YES'):
-            print('''(ImageGeotiff::write) Error!
-                     Driver {} does not support Create() method.
-                     Unable to write GeoTIFF.'''.format(fmt))
+            print(''' (ImageGeotiff::write) Error!
+                      Driver {} does not support Create() method.
+                      Unable to write GeoTIFF.'''.format(fmt))
             raise AssertionError
 
         # Write image.
@@ -188,7 +188,7 @@ class ImageGeotiff:
 
         dataset = None
 
-        print('(ImageGeotiff::write)  Done!')
+        print(' (ImageGeotiff::write)  Done!')
 
 
 class ImageShape:
@@ -228,7 +228,7 @@ class ImageShape:
                         ['@elevations'] -- elevations of stations
 
         """
-        print('(ImageShape::write)  Writing ESRI Shapefile...')
+        print(' (ImageShape::write)  Writing ESRI Shapefile...')
 
         filename = make_filename(self._data_info, options)
         with shapefile.Writer(filename) as shape_writer:
@@ -252,4 +252,4 @@ class ImageShape:
 
                 shape_writer.close()
 
-        print('(ImageShape::write)  Done!')
+        print(' (ImageShape::write)  Done!')

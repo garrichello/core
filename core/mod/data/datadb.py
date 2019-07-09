@@ -41,7 +41,7 @@ class DataDb(Data):
             result['array'] -- data array
         """
 
-        print('(DataDb::read) Accessing a PostGIS database...')
+        print(' (DataDb::read) Accessing a PostGIS database...')
 
         # Set default fill value here
         fill_value = -999
@@ -63,7 +63,7 @@ class DataDb(Data):
 
         # Process each vertical level separately.
         for level_name in levels_to_read:
-            print('(DataDb::read)  Reading level: \'{0}\''.format(level_name))
+            print(' (DataDb::read)  Reading level: \'{0}\''.format(level_name))
             file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']
             (db_name, _, _, _, _) = file_name_template.split('/')
             db_url = 'postgresql://{}'.format(db_name.replace(':', '/'))
@@ -79,7 +79,7 @@ class DataDb(Data):
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
-                print('(DataDb::read)  Reading time segment \'{0}\''.format(segment['@name']))
+                print(' (DataDb::read)  Reading time segment \'{0}\''.format(segment['@name']))
 
                 # Date is stored in the PostGIS DB as integers of form YYYYMMDD.
                 # So convert string dates into integers and cut off hours.
@@ -143,7 +143,7 @@ class DataDb(Data):
                            grid_type=GRID_TYPE_STATION, fill_value=fill_value, dimensions=('time', 'station'),
                            description=self._data_info['data']['description'], meta=meta)
 
-        print('(DataDb::read) Done!')
+        print(' (DataDb::read) Done!')
 
         return self._get_result_data()
 
@@ -161,9 +161,9 @@ class DataDb(Data):
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
 
-        print('(DataDB::write) Writing data to a PostGIS database...')
+        print(' (DataDB::write) Writing data to a PostGIS database...')
         print(values)
         print(options)
-        print('(DataDb::write) Done!')
+        print(' (DataDb::write) Done!')
         raise NotImplementedError
 

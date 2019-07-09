@@ -33,7 +33,7 @@ class DataHdfeos(Data):
             result['array'] -- data array
         """
 
-        print('(DataHdfeos::read) Reading HDF-EOS data...')
+        print(' (DataHdfeos::read) Reading HDF-EOS data...')
 
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])
@@ -50,7 +50,7 @@ class DataHdfeos(Data):
 
         # Process each vertical level separately.
         for level_name in levels_to_read:
-            print('(DataHdfeos::read)  Reading level: \'{0}\''.format(level_name))
+            print(' (DataHdfeos::read)  Reading level: \'{0}\''.format(level_name))
             file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']  # Template as in MDDB.
             # Create wildcard-ed template.
             file_name_template = re.sub(r'\%[a-z0-9\-]{2}\%', '??', file_name_template)  # Replace %mm% and %dd% with ??.
@@ -85,7 +85,7 @@ class DataHdfeos(Data):
             if lon_grid_type == lat_grid_type:
                 grid_type = lon_grid_type
             else:
-                print('(DataHdfeos::read) Error! Longitude and latitude grids are not match! Aborting.')
+                print(' (DataHdfeos::read) Error! Longitude and latitude grids are not match! Aborting.')
                 raise ValueError
 
             # Create ROI mask.
@@ -103,13 +103,13 @@ class DataHdfeos(Data):
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
-                print('(DataHdfeos::read)  Reading time segment \'{0}\''.format(segment['@name']))
+                print(' (DataHdfeos::read)  Reading time segment \'{0}\''.format(segment['@name']))
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')
                 time_idx_range = date2index([segment_start, segment_end], time_variable)
                 if time_idx_range[1] == 0:
-                    print('''(DataHdfeos::read) Error! The end of the time segment is before the first time in the dataset.
+                    print(''' (DataHdfeos::read) Error! The end of the time segment is before the first time in the dataset.
                             Aborting!''')
                     raise ValueError
                 variable_indices['Time'] = np.arange(time_idx_range[0], time_idx_range[1] + 1)
@@ -117,14 +117,14 @@ class DataHdfeos(Data):
 
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
                 # And mask all points outside the ROI mask for all times.
-                print('(DataHdfeos::read)  Actually reading...')
+                print(' (DataHdfeos::read)  Actually reading...')
                 if data_variable.ndim == 4:
                     data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
                                                variable_indices[dd[2]], variable_indices[dd[3]]]
                 if data_variable.ndim == 3:
                     data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
                                                variable_indices[dd[2]]]
-                print('(DataHdfeos::read)  Done!')
+                print(' (DataHdfeos::read)  Done!')
 
                 if data_slice.shape[-1] == 1:   # we expect last two dimensions are lat and lon
                     data_slice = data_slice[:, :, :, 0] 
@@ -137,10 +137,10 @@ class DataHdfeos(Data):
                 combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time)
 
                 # Create masked array using ROI mask.
-                print('(DataHdfeos::read)  Creating masked array...')
+                print(' (DataHdfeos::read)  Creating masked array...')
                 masked_data_slice = ma.MaskedArray(data_slice, mask=combined_mask, fill_value=fill_value)
-                print('(DataHdfeos::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
-                print('(DataHdfeos::read)  Done!')
+                print(' (DataHdfeos::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
+                print(' (DataHdfeos::read)  Done!')
 
                 self._add_segment_data(level_name=level_name, values=masked_data_slice,
                                        time_grid=time_grid, time_segment=segment)
@@ -162,7 +162,7 @@ class DataHdfeos(Data):
         self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, dimensions=data_dim_names, 
                            description=self._data_info['data']['description'], fill_value=fill_value, meta=meta)
 
-        print('(DataHdfeos::read) Done!')
+        print(' (DataHdfeos::read) Done!')
 
         return self._get_result_data()
 
@@ -179,8 +179,8 @@ class DataHdfeos(Data):
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
 
-        print('(DataHdfeos::write) Writing data to a HDF-EOS file...')
+        print(' (DataHdfeos::write) Writing data to a HDF-EOS file...')
         print(values)
         print(options)
-        print('(DataHdfeos::write) Done!')
+        print(' (DataHdfeos::write) Done!')
         raise NotImplementedError

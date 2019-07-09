@@ -35,7 +35,7 @@ class DataArray(Data):
             result['array'] -- data array
         """
 
-        print('(DataArray::read) Reading memory data array {}...'.format(self._data_info['data']['@uid']))
+        print(' (DataArray::read) Reading memory data array {}...'.format(self._data_info['data']['@uid']))
 
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])

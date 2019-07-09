@@ -1,4 +1,4 @@
-""" Base class CalcMeanMaxMin provides methods for time mean, maximum and minimum calculation
+""" Base class CalcBasicStat provides basic statistical methods methods for time sets analysis
 """
 
 from copy import copy
@@ -12,33 +12,35 @@ MAX_N_INPUT_ARGUMENTS = 2
 INPUT_PARAMETERS_INDEX = 1
 DEFAULT_MODE = 'data'
 
-class CalcMeanMaxMin(Calc):
-    """ Performs calculation of time averaged values.
+class CalcBasicStat(Calc):
+    """ Provides basic statistical analysis.
 
     """
 
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
 
-    def _run_common(self, calc_mode):
+    def _run(self, calc_mode):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(cvcCalcMeanMaxMin::run) Started!')
-        print('(cvcCalcMeanMaxMin::run) Calculation mode: {}'.format(calc_mode))
+        print('(CalcBasicStat::run) Started!')
+        print('(CalcBasicStat::run) Calculation mode: {}'.format(calc_mode))
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(cvcCalcMeanMaxMin::run) No input arguments!'
+        assert input_uids, '(CalcBasicStat::run) No input arguments!'
 
         # Get parameters
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
             if parameters.get(calc_mode) is None:  # If the calculation mode is not set...
                 parameters[calc_mode] = DEFAULT_MODE  # give it a default value.
+        else:
+            parameters[calc_mode] = DEFAULT_MODE
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(cvcCalcMeanMaxMin::run) No output arguments!'
+        assert output_uids, '(CalcBasicStat::run) No output arguments!'
 
         # Get time segments and levels
         time_segments = self._data_helper.get_segments(input_uids[0])
@@ -85,4 +87,4 @@ class CalcMeanMaxMin(Calc):
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
                                       fill_value=result['@fill_value'], meta=result['meta'])
 
-        print('(cvcCalcMeanMaxMin::run) Finished!')
+        print('(CalcBasicStat::run) Finished!')

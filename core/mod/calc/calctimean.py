@@ -3,11 +3,11 @@
 
 from core.base.dataaccess import DataAccess
 from core.base.common import print  # pylint: disable=W0622
-from core.mod.calc.calcmeanmaxmin import CalcMeanMaxMin
+from core.mod.calc.calcbasicstat import CalcBasicStat
 
 CALC_MODE = 'timeMean'
 
-class cvcCalcTiMean(CalcMeanMaxMin):
+class cvcCalcTiMean(CalcBasicStat):
     """ Performs calculation of time averaged values.
 
     """
@@ -21,6 +21,6 @@ class cvcCalcTiMean(CalcMeanMaxMin):
 
         print('(cvcCalcTiMean::run) Started!')
 
-        self._run_common(CALC_MODE)
+        self._run(CALC_MODE)
 
         print('(cvcCalcTiMean::run) Finished!')

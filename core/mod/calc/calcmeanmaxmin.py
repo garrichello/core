@@ -50,7 +50,12 @@ class CalcMeanMaxMin(Calc):
                 result = self._data_helper.get(input_uids[0], segments=segment, levels=level)
 
                 # Calulate time averaged values for a current time segment
-                one_segment_mean = result['data'][level][segment['@name']]['@values'].mean(axis=0)
+                if calc_mode == 'timeMean':
+                    one_segment_mean = result['data'][level][segment['@name']]['@values'].mean(axis=0)
+                elif calc_mode == 'timeMin':
+                    one_segment_mean = result['data'][level][segment['@name']]['@values'].min(axis=0)
+                elif calc_mode == 'timeMax':
+                    one_segment_mean = result['data'][level][segment['@name']]['@values'].max(axis=0)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
@@ -63,7 +68,12 @@ class CalcMeanMaxMin(Calc):
 
             # For data-wise averaging average segments averages :)
             if parameters[calc_mode] == 'data':
-                data_mean = ma.stack(all_segments_means).mean(axis=0)
+                if calc_mode == 'timeMean':
+                    data_mean = ma.stack(all_segments_means).mean(axis=0)
+                elif calc_mode == 'timeMin':
+                    data_mean = ma.stack(all_segments_means).min(axis=0)
+                elif calc_mode == 'timeMax':
+                    data_mean = ma.stack(all_segments_means).max(axis=0)
 
                 # Make a global segment covering all input time segments
                 full_range_segment = copy(time_segments[0])  # Take the beginning of the first segment...

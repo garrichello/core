@@ -30,6 +30,10 @@ class cvcOutput:
         result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
 
         output_uids = self._data_helper.output_uids()
+        if output_uids is None:
+            print("""(cvcOutput::run) No output is specified! Check the task file, may be you are using the old template?
+                     Destination description should be passed as _output_ argument to process cvcOutput""")
+            raise ValueError('No output dataset specified. Aborting!')
 
         description = result['data']['description']
 

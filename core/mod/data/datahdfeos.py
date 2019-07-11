@@ -108,14 +108,20 @@ class DataHdfeos(Data):
                 lons = longitude_variable[:]
                 if lons.max() > 180:
                     lons = ((lons + 180.0) % 360.0) - 180.0  # Switch from 0-360 to -180-180 grid
-            variable_indices['XDim'] = np.arange(lons.size)  # longitude_indices
+            longitude_indices = np.nonzero([ge and le for ge, le in
+                                            zip(lons >= self._ROI_bounds['min_lon'], lons <= self._ROI_bounds['max_lon'])])[0]
+            variable_indices['XDim'] = longitude_indices  # longitude_indices
+            longitude_grid = lons[longitude_indices]
 
             # Determine indices of latitudes.
             latitude_variable = hdf_root.get_latitude_variable()
             if latitude_variable.ndim == 1:
                 lat_grid_type = GRID_TYPE_REGULAR
                 lats = latitude_variable[:]
-            variable_indices['YDim'] = np.arange(lats.size)  # latitude_indices
+            latitude_indices = np.nonzero([ge and le for ge, le in
+                                           zip(lats >= self._ROI_bounds['min_lat'], lats <= self._ROI_bounds['max_lat'])])[0]
+            variable_indices['YDim'] = latitude_indices  # latitude_indices
+            latitude_grid = lats[latitude_indices]
 
             if lon_grid_type == lat_grid_type:
                 grid_type = lon_grid_type
@@ -196,7 +202,7 @@ class DataHdfeos(Data):
         except ValueError:
             pass
 
-        self._add_metadata(longitude_grid=lons, latitude_grid=lats, grid_type=grid_type, dimensions=data_dim_names, 
+        self._add_metadata(longitude_grid=longitude_grid, latitude_grid=latitude_grid, grid_type=grid_type, dimensions=data_dim_names, 
                            description=self._data_info['data']['description'], fill_value=fill_value, meta=meta)
 
         print(' (DataHdfeos::read) Done!')

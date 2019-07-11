@@ -219,9 +219,9 @@ class DataNetcdf(Data):
                 time_grid = num2date(time_values, time_variable.units)  # Time grid as a datetime object.  # pylint: disable=E1101
 
                 # Unlistify one-element index lists
-                for k, v in variable_indices.items():
-                    if len(v) == 1:
-                        variable_indices[k] = v[0]
+                #for k, v in variable_indices.items():
+                #    if len(v) == 1:
+                #        variable_indices[k] = v[0]
 
                 # Searching for a gap in longitude indices. Normally all steps should be equal to 1.
                 # If there is a step longer than 1, we suupose it's a gap due to a shift from 0-360 to -180-180 grid.

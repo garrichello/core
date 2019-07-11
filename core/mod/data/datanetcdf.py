@@ -225,13 +225,10 @@ class DataNetcdf(Data):
                 # So we search for the gap's position and prepare to read two parts of data. 
                 # Then we stack them reversely (left to the right) and correct longitude grid. 
                 # Thus we will have a single data patch with the uniform logitude grid. 
-                lon_index_steps = [
-                    variable_indices[longitude_variable_name][i+1] - variable_indices[longitude_variable_name][i] 
-                    for i in range(len(variable_indices[longitude_variable_name])-1)]  # Steps between indices.
-                max_lon_index_gap = max(lon_index_steps)
-                if max_lon_index_gap > 1:  # Gap is a step longer than 1 (there should be only one gap).
+                lon_index_steps = np.diff(variable_indices[longitude_variable_name])  # Steps between indices.
+                if lon_index_steps.max() > 1:  # Gap is a step longer than 1 (there should be only one gap).
                     lon_gap_mode = True  # Gap mode! Set the flag! :)
-                    lon_gap_position = lon_index_steps.index(max_lon_index_gap)  # Add 1 to get index starting the second data part.
+                    lon_gap_position = lon_index_steps.argmax()  # Index of the gap.
                 else:
                     lon_gap_mode = False  # Normal mode.
 
@@ -251,34 +248,12 @@ class DataNetcdf(Data):
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
                 # And mask all points outside the ROI mask for all times.
                 print(' (DataNetcdf::read)  Actually reading...')
-                if data_variable.ndim == 4:
-                    data_slice = data_variable[start_index[0]:stop_index[0], 
-                                               start_index[1]:stop_index[1], 
-                                               start_index[2]:stop_index[2],
-                                               start_index[3]:stop_index[3]]
-                    if lon_gap_mode:
-                        print(' (DataNetcdf::read)  [Gap mode] Reading the second data part...')
-                        data_slice_2 = data_variable[start_index_2[0]:stop_index_2[0], 
-                                                     start_index_2[1]:stop_index_2[1], 
-                                                     start_index_2[2]:stop_index_2[2],
-                                                     start_index_2[3]:stop_index_2[3]]
-                if data_variable.ndim == 3:
-                    data_slice = data_variable[start_index[0]:stop_index[0], 
-                                               start_index[1]:stop_index[1], 
-                                               start_index[2]:stop_index[2]]
-                    if lon_gap_mode:
-                        print(' (DataNetcdf::read)  [Gap mode] Reading the second data part...')
-                        data_slice_2 = data_variable[start_index_2[0]:stop_index_2[0], 
-                                                     start_index_2[1]:stop_index_2[1], 
-                                                     start_index_2[2]:stop_index_2[2]]
-                if data_variable.ndim == 2:
-                    data_slice = data_variable[start_index[0]:stop_index[0], 
-                                               start_index[1]:stop_index[1]]
-                    if lon_gap_mode:
-                        print(' (DataNetcdf::read)  [Gap mode] Reading the second data part...')
-                        data_slice_2 = data_variable[start_index_2[0]:stop_index_2[0], 
-                                                     start_index_2[1]:stop_index_2[1]]
-                    
+                slices = [slice(start_index[i], stop_index[i]) for i in range(data_variable.ndim)]
+                data_slice = data_variable[slices]
+                if lon_gap_mode:
+                    print(' (DataNetcdf::read)  [Gap mode] Reading the second data part...')
+                    slices_2 = [slice(start_index_2[i], stop_index_2[i]) for i in range(data_variable.ndim)]
+                    data_slice_2 = data_variable[slices_2]
                 print(' (DataNetcdf::read)  Done!')
 
                 if lon_gap_mode:

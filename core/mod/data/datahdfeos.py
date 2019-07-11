@@ -141,7 +141,7 @@ class DataHdfeos(Data):
             print(' (DataHdfeos::read)  Done!')
 
             # Create ROI mask.
-            ROI_mask = self._make_ROI_mask(lons, lats)
+            ROI_mask = self._make_ROI_mask(longitude_grid, latitude_grid)
 
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.

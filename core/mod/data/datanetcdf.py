@@ -130,11 +130,12 @@ class DataNetcdf(Data):
         for level_name in levels_to_read:
             print(' (DataNetcdf::read)  Vertical level: \'{0}\''.format(level_name))
             level_variable_name = self._data_info['data']['levels'][level_name]['@level_variable_name']
-            file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']  # Template as in MDDB.
+
             data_scale = self._data_info['data']['levels'][level_name]['@scale']
             data_offset = self._data_info['data']['levels'][level_name]['@offset']
-            percent_template = PercentTemplate(file_name_template)  # Custom string template %keyword%.
 
+            file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']  # Template as in MDDB.
+            percent_template = PercentTemplate(file_name_template)  # Custom string template %keyword%.
             file_name_wildcard = percent_template.substitute(WILDCARDS)  # Create wildcard-ed template
 
             # Kind of a caching for netcdf_root to save time working at the same vertical level.
@@ -178,9 +179,6 @@ class DataNetcdf(Data):
                 print(' (DataNetcdf::read)  Error! Longitude and latitude grids are not match! Aborting.')
                 raise ValueError
 
-            # Create ROI mask.
-            ROI_mask = self._make_ROI_mask(longitude_grid, latitude_grid)
-
             # Determine index of the current vertical level to read data variable.
             level_index = self._get_levels(netcdf_root, level_name, level_variable_name)
             if level_index is not None:
@@ -202,6 +200,9 @@ class DataNetcdf(Data):
 
             print(' (DataNetcdf::read)  Done!')
 
+            # Create ROI mask.
+            ROI_mask = self._make_ROI_mask(longitude_grid, latitude_grid)
+
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
@@ -217,11 +218,6 @@ class DataNetcdf(Data):
                 variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1])  # pylint: disable=W0212, E1101
                 time_values = time_variable[variable_indices[time_variable._name]]  # Raw time values.  # pylint: disable=W0212, E1101
                 time_grid = num2date(time_values, time_variable.units)  # Time grid as a datetime object.  # pylint: disable=E1101
-
-                # Unlistify one-element index lists
-                #for k, v in variable_indices.items():
-                #    if len(v) == 1:
-                #        variable_indices[k] = v[0]
 
                 # Searching for a gap in longitude indices. Normally all steps should be equal to 1.
                 # If there is a step longer than 1, we suupose it's a gap due to a shift from 0-360 to -180-180 grid.
@@ -275,7 +271,6 @@ class DataNetcdf(Data):
 
                 # Create masked array using ROI mask.
                 print(' (DataNetcdf::read)  Creating masked array...')
-
                 # TODO: Are we sure that the last two dimensions are lat and lon correspondingly?
                 if data_slice.ndim > 2:  # When time dimension is present.
                     ROI_mask_time = np.tile(ROI_mask, (time_grid.size, 1, 1))  # Propagate ROI mask along the time dimension.

@@ -273,6 +273,9 @@ class DataNetcdf(Data):
 
                 data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
 
+                # Create masked array using ROI mask.
+                print(' (DataNetcdf::read)  Creating masked array...')
+
                 # TODO: Are we sure that the last two dimensions are lat and lon correspondingly?
                 if data_slice.ndim > 2:  # When time dimension is present.
                     ROI_mask_time = np.tile(ROI_mask, (time_grid.size, 1, 1))  # Propagate ROI mask along the time dimension.
@@ -300,14 +303,14 @@ class DataNetcdf(Data):
                 fill_value_mask = data_slice == fill_value
                 combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time)
 
-                # Create masked array using ROI mask.
-                print(' (DataNetcdf::read)  Creating masked array...')
                 masked_data_slice = ma.MaskedArray(data_slice, mask=combined_mask, fill_value=fill_value)
                 #print('(DataNetcdf::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
                 print(' (DataNetcdf::read)  Done!')
 
                 # Apply scale/offset from the MDDB.
+                print(' (DataNetcdf::read)  Applying scale/offset from the MDDB....')
                 masked_data_slice = masked_data_slice * data_scale + data_offset
+                print(' (DataNetcdf::read)  Done!')
 
                 self._add_segment_data(level_name=level_name, values=masked_data_slice, time_grid=time_grid, time_segment=segment)
 

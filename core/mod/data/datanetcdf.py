@@ -125,7 +125,7 @@ class DataNetcdf(Data):
         variable_indices = {}  # Contains lists of indices for each dimension of the data variable in the domain to read.
 
         self._make_ROI()
-            
+
         # Process each vertical level separately.
         for level_name in levels_to_read:
             print(' (DataNetcdf::read)  Vertical level: \'{0}\''.format(level_name))
@@ -161,14 +161,14 @@ class DataNetcdf(Data):
             # Determine indices of longitudes.
             lons, longitude_variable_name, lon_grid_type = self._get_longitudes(netcdf_root)
             longitude_indices = np.nonzero([ge and le for ge, le in
-                                           zip(lons >= self._ROI_bounds['min_lon'], lons <= self._ROI_bounds['max_lon'])])[0]
+                                            zip(lons >= self._ROI_bounds['min_lon'], lons <= self._ROI_bounds['max_lon'])])[0]
             variable_indices[longitude_variable_name] = longitude_indices  # np.arange(lons.size)  # longitude_indices
             longitude_grid = lons[longitude_indices]
 
             # Determine indices of latitudes.
             lats, latitude_variable_name, lat_grid_type = self._get_latitudes(netcdf_root)
             latitude_indices = np.nonzero([ge and le for ge, le in
-                                          zip(lats >= self._ROI_bounds['min_lat'], lats <= self._ROI_bounds['max_lat'])])[0]
+                                           zip(lats >= self._ROI_bounds['min_lat'], lats <= self._ROI_bounds['max_lat'])])[0]
             variable_indices[latitude_variable_name] = latitude_indices  # np.arange(lats.size)  # latitude_indices
             latitude_grid = lats[latitude_indices]
 
@@ -199,7 +199,7 @@ class DataNetcdf(Data):
             except AttributeError:
                 calendar = 'standard'
             time_variable = MFTime(time_variable, calendar=calendar)  # Apply multi-file support to the time variable
-            
+
             print(' (DataNetcdf::read)  Done!')
 
             # Process each time segment separately.
@@ -223,13 +223,13 @@ class DataNetcdf(Data):
                     if len(v) == 1:
                         variable_indices[k] = v[0]
 
-                # Searching for a gap in longitude indices. Normally all steps should be equal to 1. 
+                # Searching for a gap in longitude indices. Normally all steps should be equal to 1.
                 # If there is a step longer than 1, we suupose it's a gap due to a shift from 0-360 to -180-180 grid.
                 # So instead of a sigle patch in a 0-360 longitude space we should deal with two patches
                 # in a -180-180 longitude space: one to the left of the 0 meridian, and the other to the right of it.
-                # So we search for the gap's position and prepare to read two parts of data. 
-                # Then we stack them reversely (left to the right) and correct longitude grid. 
-                # Thus we will have a single data patch with the uniform logitude grid. 
+                # So we search for the gap's position and prepare to read two parts of data.
+                # Then we stack them reversely (left to the right) and correct longitude grid.
+                # Thus we will have a single data patch with the uniform logitude grid.
                 lon_index_steps = np.diff(variable_indices[longitude_variable_name])  # Steps between indices.
                 if lon_index_steps.max() > 1:  # Gap is a step longer than 1 (there should be only one gap).
                     lon_gap_mode = True  # Gap mode! Set the flag! :)
@@ -321,7 +321,7 @@ class DataNetcdf(Data):
         except ValueError:
             pass
 
-        self._add_metadata(longitude_grid=longitude_grid, latitude_grid=latitude_grid, grid_type=grid_type, dimensions=data_dim_names, 
+        self._add_metadata(longitude_grid=longitude_grid, latitude_grid=latitude_grid, grid_type=grid_type, dimensions=data_dim_names,
                            description=self._data_info['data']['description'], fill_value=fill_value)
 
         print(' (DataNetcdf::read) Done!')

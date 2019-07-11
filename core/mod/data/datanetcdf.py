@@ -262,12 +262,14 @@ class DataNetcdf(Data):
                 print(' (DataNetcdf::read)  Done!')
 
                 if lon_gap_mode:
+                    print(' (DataNetcdf::read)  [Gap mode] Swapping data and longitude grid...')
                     # Swap data parts.
                     data_slice = np.concatenate([data_slice_2, data_slice], axis=lon_index_pos)
                     # Swap longitude grid parts.
                     l_1 = lons[start_index[lon_index_pos]:stop_index[lon_index_pos]]
                     l_2 = lons[start_index_2[lon_index_pos]:stop_index_2[lon_index_pos]]
                     longitude_grid = np.concatenate([l_2, l_1])
+                    print(' (DataNetcdf::read)  Done!')
 
                 data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
 

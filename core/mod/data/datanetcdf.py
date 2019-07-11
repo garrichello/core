@@ -239,6 +239,7 @@ class DataNetcdf(Data):
                 start_index = [variable_indices[dd[i]][0] for i in range(len(dd))]
                 stop_index = [variable_indices[dd[i]][-1]+1 for i in range(len(dd))]
                 if lon_gap_mode:  # For gap mode we need start and stop indices for the second data part.
+                    print(' (DataNetcdf::read)  Longitude gap detected. Gap mpde activated!')
                     lon_index_pos = dd.index(longitude_variable_name)  # Position of the longitude indices in dimensions list.
                     start_index_2 = copy(start_index)
                     stop_index_2 = copy(stop_index)
@@ -264,6 +265,7 @@ class DataNetcdf(Data):
                 print(' (DataNetcdf::read)  Done!')
 
                 if lon_gap_mode:
+                    print(' (DataNetcdf::read)  Actually reading the second data part...')
                     # Swap data parts.
                     data_slice_2 = data_variable[start_index_2[0]:stop_index_2[0], 
                                                  start_index_2[1]:stop_index_2[1], 
@@ -274,6 +276,7 @@ class DataNetcdf(Data):
                     l_1 = lons[start_index[lon_index_pos]:stop_index[lon_index_pos]]
                     l_2 = lons[start_index_2[lon_index_pos]:stop_index_2[lon_index_pos]]
                     longitude_grid = np.concatenate([l_2, l_1])
+                    print(' (DataNetcdf::read)  Done!')
 
                 data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
 

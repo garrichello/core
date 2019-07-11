@@ -128,7 +128,7 @@ class DataNetcdf(Data):
             
         # Process each vertical level separately.
         for level_name in levels_to_read:
-            print(' (DataNetcdf::read)  Reading level: \'{0}\''.format(level_name))
+            print(' (DataNetcdf::read)  Vertical level: \'{0}\''.format(level_name))
             level_variable_name = self._data_info['data']['levels'][level_name]['@level_variable_name']
             file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']  # Template as in MDDB.
             data_scale = self._data_info['data']['levels'][level_name]['@scale']
@@ -138,6 +138,7 @@ class DataNetcdf(Data):
             file_name_wildcard = percent_template.substitute(WILDCARDS)  # Create wildcard-ed template
 
             # Kind of a caching for netcdf_root to save time working at the same vertical level.
+            print(' (DataNetcdf::read)  Open files...')
             if self.file_name_wildcard != file_name_wildcard:  # If this is the first time we see this wildcard...
                 try:
                     netcdf_root = MFDataset(file_name_wildcard, check=True)
@@ -150,11 +151,13 @@ class DataNetcdf(Data):
                 self.netcdf_root = netcdf_root                # and netcdf_root.
             else:
                 netcdf_root = self.netcdf_root  # Otherwise we take its "stored value".
+            print(' (DataNetcdf::read)  Done!')
 
             data_variable = netcdf_root.variables[self._data_info['data']['variable']['@name']]  # Data variable. pylint: disable=E1136
             data_variable.set_auto_mask(False)
             dd = data_variable.dimensions  # Names of dimensions of the data variable.
 
+            print(' (DataNetcdf::read)  Get grids...')
             # Determine indices of longitudes.
             lons, longitude_variable_name, lon_grid_type = self._get_longitudes(netcdf_root)
             longitude_indices = np.nonzero([ge and le for ge, le in
@@ -172,7 +175,7 @@ class DataNetcdf(Data):
             if lon_grid_type == lat_grid_type:
                 grid_type = lon_grid_type
             else:
-                print(' (DataNetcdf::read) Error! Longitude and latitude grids are not match! Aborting.')
+                print(' (DataNetcdf::read)  Error! Longitude and latitude grids are not match! Aborting.')
                 raise ValueError
 
             # Create ROI mask.
@@ -196,11 +199,13 @@ class DataNetcdf(Data):
             except AttributeError:
                 calendar = 'standard'
             time_variable = MFTime(time_variable, calendar=calendar)  # Apply multi-file support to the time variable
+            
+            print(' (DataNetcdf::read)  Done!')
 
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
-                print(' (DataNetcdf::read)  Reading time segment \'{0}\''.format(segment['@name']))
+                print(' (DataNetcdf::read)  Time segment \'{0}\''.format(segment['@name']))
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')

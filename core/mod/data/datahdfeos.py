@@ -1,17 +1,34 @@
 """Provides classes
     DataHdfeos
 """
-
+from string import Template
 from datetime import datetime
-import re
+
+from copy import copy
 import numpy as np
 import numpy.ma as ma
-from core.base.common import listify, print  # , make_filename
+
+from core.base.common import listify, print  # pylint: disable=W0622
 from .data import Data, GRID_TYPE_REGULAR
 from .mfhdf import MFDataset, date2index
 
 NO_LEVEL_NAME = 'none'
 CLASS_UNITS = ['class number']
+WILDCARDS = {'year': '????', 'mm': '??', 'year1': '????', 'year2': '????', 'year1s-4': '????', 'year2s-4': '????'}
+
+class PercentTemplate(Template):
+    """ Custom template for the string substitute method.
+        It changes the template delimiter to %<template>%
+    """
+    delimiter = '%'
+    pattern = r'''
+    \%(?:
+        (?P<escaped>%) |
+        (?P<named>[_a-z][_a-z0-9\-]*)% |
+        \b\B(?P<braced>) |
+        (?P<invalid>)
+    )
+    '''
 
 
 class DataHdfeos(Data):
@@ -20,6 +37,9 @@ class DataHdfeos(Data):
     def __init__(self, data_info):
         self._data_info = data_info
         super().__init__(data_info)
+
+        self.file_name_wildcard = ''
+        self.netcdf_root = None
 
     def read(self, options):
         """Reads HDF-EOS file into an array.
@@ -34,6 +54,10 @@ class DataHdfeos(Data):
         """
 
         print(' (DataHdfeos::read) Reading HDF-EOS data...')
+        print(' (DataNetcdf::read) [Dataset: {}, resolution: {}, scenario: {}, time_step: {}]'.format(
+            self._data_info['data']['dataset']['@name'], self._data_info['data']['dataset']['@resolution'],
+            self._data_info['data']['dataset']['@scenario'], self._data_info['data']['dataset']['@time_step']
+        ))
 
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])
@@ -50,18 +74,29 @@ class DataHdfeos(Data):
 
         # Process each vertical level separately.
         for level_name in levels_to_read:
-            print(' (DataHdfeos::read)  Reading level: \'{0}\''.format(level_name))
-            file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']  # Template as in MDDB.
-            # Create wildcard-ed template.
-            file_name_template = re.sub(r'\%[a-z0-9\-]{2}\%', '??', file_name_template)  # Replace %mm% and %dd% with ??.
-            file_name_template = re.sub(r'\%[a-z0-9\-]{3}\%', '???', file_name_template)  # Replace %doy% with ???.
-            file_name_wildcard = re.sub(r'\%[a-z0-9\-]*\%', '????', file_name_template)  # Replace %year...% with ????.
+            print(' (DataHdfeos::read)  Vertical level: \'{0}\''.format(level_name))
 
-            hdf_root = MFDataset(file_name_wildcard)
+            data_scale = self._data_info['data']['levels'][level_name]['@scale']
+            data_offset = self._data_info['data']['levels'][level_name]['@offset']
+
+            file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']  # Template as in MDDB.
+            percent_template = PercentTemplate(file_name_template)  # Custom string template %keyword%.
+            file_name_wildcard = percent_template.substitute(WILDCARDS)  # Create wildcard-ed template
+
+            # Kind of a caching for netcdf_root to save time working at the same vertical level.
+            print(' (DataHdfeos::read)  Open files...')
+            if self.file_name_wildcard != file_name_wildcard:  # If this is the first time we see this wildcard...
+                hdf_root = MFDataset(file_name_wildcard)
+                self.file_name_wildcard = file_name_wildcard  # we store wildcard...
+                self.hdf_root = hdf_root                # and netcdf_root.
+            else:
+                hdf_root = self.hdf_root  # Otherwise we take its "stored value".
+            print(' (DataHdfeos::read)  Done!')
 
             data_variable = hdf_root.variables[self._data_info['data']['variable']['@name']]  # Data variable.
             dd = data_variable.dimensions  # Names of dimensions of the data variable.
 
+            print(' (DataHdfeos::read)  Get grids...')
             # Get level variable.
             level_variable = data_variable.get_level_variable()
             level_variable_name = data_variable.get_level_variable_name()
@@ -88,9 +123,6 @@ class DataHdfeos(Data):
                 print(' (DataHdfeos::read) Error! Longitude and latitude grids are not match! Aborting.')
                 raise ValueError
 
-            # Create ROI mask.
-            ROI_mask = self._make_ROI_mask(lons, lats)
-
             # Determine index of the current vertical level to read data variable.
             if level_variable_name is not None:
                 variable_indices[level_variable_name] = [level_variable.tolist().index(level_name)]
@@ -100,10 +132,15 @@ class DataHdfeos(Data):
             # Get time variable
             time_variable = hdf_root.get_time_variable()
 
+            print(' (DataHdfeos::read)  Done!')
+
+            # Create ROI mask.
+            ROI_mask = self._make_ROI_mask(lons, lats)
+
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
-                print(' (DataHdfeos::read)  Reading time segment \'{0}\''.format(segment['@name']))
+                print(' (DataHdfeos::read)  Time segment \'{0}\''.format(segment['@name']))
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')

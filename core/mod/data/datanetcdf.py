@@ -252,31 +252,42 @@ class DataNetcdf(Data):
                 # And mask all points outside the ROI mask for all times.
                 print(' (DataNetcdf::read)  Actually reading...')
                 if data_variable.ndim == 4:
-                    data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
-                                               variable_indices[dd[2]], variable_indices[dd[3]]]
+                    data_slice = data_variable[start_index[0]:stop_index[0], 
+                                               start_index[1]:stop_index[1], 
+                                               start_index[2]:stop_index[2],
+                                               start_index[3]:stop_index[3]]
+                    if lon_gap_mode:
+                        print(' (DataNetcdf::read)  [Gap mode] Reading the second data part...')
+                        data_slice_2 = data_variable[start_index_2[0]:stop_index_2[0], 
+                                                     start_index_2[1]:stop_index_2[1], 
+                                                     start_index_2[2]:stop_index_2[2],
+                                                     start_index_2[3]:stop_index_2[3]]
                 if data_variable.ndim == 3:
                     data_slice = data_variable[start_index[0]:stop_index[0], 
                                                start_index[1]:stop_index[1], 
                                                start_index[2]:stop_index[2]]
-#                    data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
-#                                               variable_indices[dd[2]]]
+                    if lon_gap_mode:
+                        print(' (DataNetcdf::read)  [Gap mode] Reading the second data part...')
+                        data_slice_2 = data_variable[start_index_2[0]:stop_index_2[0], 
+                                                     start_index_2[1]:stop_index_2[1], 
+                                                     start_index_2[2]:stop_index_2[2]]
                 if data_variable.ndim == 2:
-                    data_slice = data_variable[:, :]
+                    data_slice = data_variable[start_index[0]:stop_index[0], 
+                                               start_index[1]:stop_index[1]]
+                    if lon_gap_mode:
+                        print(' (DataNetcdf::read)  [Gap mode] Reading the second data part...')
+                        data_slice_2 = data_variable[start_index_2[0]:stop_index_2[0], 
+                                                     start_index_2[1]:stop_index_2[1]]
+                    
                 print(' (DataNetcdf::read)  Done!')
 
                 if lon_gap_mode:
-                    print(' (DataNetcdf::read)  Actually reading the second data part...')
                     # Swap data parts.
-                    data_slice_2 = data_variable[start_index_2[0]:stop_index_2[0], 
-                                                 start_index_2[1]:stop_index_2[1], 
-                                                 start_index_2[2]:stop_index_2[2]]
                     data_slice = np.concatenate([data_slice_2, data_slice], axis=lon_index_pos)
-
                     # Swap longitude grid parts.
                     l_1 = lons[start_index[lon_index_pos]:stop_index[lon_index_pos]]
                     l_2 = lons[start_index_2[lon_index_pos]:stop_index_2[lon_index_pos]]
                     longitude_grid = np.concatenate([l_2, l_1])
-                    print(' (DataNetcdf::read)  Done!')
 
                 data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
 

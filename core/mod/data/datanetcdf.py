@@ -4,6 +4,7 @@
 from string import Template
 from datetime import datetime
 
+from copy import copy
 from netCDF4 import MFDataset, date2index, num2date, Dataset, MFTime
 import numpy as np
 import numpy.ma as ma
@@ -217,6 +218,35 @@ class DataNetcdf(Data):
                     if len(v) == 1:
                         variable_indices[k] = v[0]
 
+                # Searching for a gap in longitude indices. Normally all steps should be equal to 1. 
+                # If there is a step longer than 1, we suupose it's a gap due to a shift from 0-360 to -180-180 grid.
+                # So instead of a sigle patch in a 0-360 longitude space we should deal with two patches
+                # in a -180-180 longitude space: one to the left of the 0 meridian, and the other to the right of it.
+                # So we search for the gap's position and prepare to read two parts of data. 
+                # Then we stack them reversely (left to the right) and correct longitude grid. 
+                # Thus we will have a single data patch with the uniform logitude grid. 
+                lon_index_steps = [
+                    variable_indices[longitude_variable_name][i+1] - variable_indices[longitude_variable_name][i] 
+                    for i in range(len(variable_indices[longitude_variable_name])-1)]  # Steps between indices.
+                max_lon_index_gap = max(lon_index_steps)
+                if max_lon_index_gap > 1:  # Gap is a step longer than 1 (there should be only one gap).
+                    lon_gap_mode = True  # Gap mode! Set the flag! :)
+                    lon_gap_position = lon_index_steps.index(max_lon_index_gap)  # Add 1 to get index starting the second data part.
+                else:
+                    lon_gap_mode = False  # Normal mode.
+
+                # Get start (first) and stop (last) indices for each dimension.
+                start_index = [variable_indices[dd[i]][0] for i in range(len(dd))]
+                stop_index = [variable_indices[dd[i]][-1]+1 for i in range(len(dd))]
+                if lon_gap_mode:  # For gap mode we need start and stop indices for the second data part.
+                    lon_index_pos = dd.index(longitude_variable_name)  # Position of the longitude indices in dimensions list.
+                    start_index_2 = copy(start_index)
+                    stop_index_2 = copy(stop_index)
+                    stop_index[lon_index_pos] = \
+                        variable_indices[longitude_variable_name][lon_gap_position]+1  # First part ends here.
+                    start_index_2[lon_index_pos] = \
+                        variable_indices[longitude_variable_name][lon_gap_position+1]  # Second part starts here.
+
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
                 # And mask all points outside the ROI mask for all times.
                 print(' (DataNetcdf::read)  Actually reading...')
@@ -224,11 +254,26 @@ class DataNetcdf(Data):
                     data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
                                                variable_indices[dd[2]], variable_indices[dd[3]]]
                 if data_variable.ndim == 3:
-                    data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
-                                               variable_indices[dd[2]]]
+                    data_slice = data_variable[start_index[0]:stop_index[0], 
+                                               start_index[1]:stop_index[1], 
+                                               start_index[2]:stop_index[2]]
+#                    data_slice = data_variable[variable_indices[dd[0]], variable_indices[dd[1]],
+#                                               variable_indices[dd[2]]]
                 if data_variable.ndim == 2:
                     data_slice = data_variable[:, :]
                 print(' (DataNetcdf::read)  Done!')
+
+                if lon_gap_mode:
+                    # Swap data parts.
+                    data_slice_2 = data_variable[start_index_2[0]:stop_index_2[0], 
+                                                 start_index_2[1]:stop_index_2[1], 
+                                                 start_index_2[2]:stop_index_2[2]]
+                    data_slice = np.concatenate([data_slice_2, data_slice], axis=lon_index_pos)
+
+                    # Swap longitude grid parts.
+                    l_1 = lons[start_index[lon_index_pos]:stop_index[lon_index_pos]]
+                    l_2 = lons[start_index_2[lon_index_pos]:stop_index_2[lon_index_pos]]
+                    longitude_grid = np.concatenate([l_2, l_1])
 
                 data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
 

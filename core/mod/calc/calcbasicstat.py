@@ -62,7 +62,7 @@ class CalcBasicStat(Calc):
                     one_segment_time_grid = []
                     data_time_iter = itertools.zip_longest(result['data'][level][segment['@name']]['@values'],
                                                            result['data'][level][segment['@name']]['@time_grid'])
-                    for key, group in itertools.groupby(data_time_iter, key=_data_time_key):
+                    for key, group in itertools.groupby(data_time_iter, key=self._data_time_key):
                         group_data = []
                         for data, _ in group:
                             group_data.append(data)

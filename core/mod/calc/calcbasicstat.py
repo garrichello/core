@@ -57,6 +57,7 @@ class CalcBasicStat(Calc):
                 # Get data
                 result = self._data_helper.get(input_uids[0], segments=segment, levels=level)
 
+                # Daily statistics.
                 if parameters[calc_mode] == 'day':
                     one_segment_data = []
                     one_segment_time_grid = []

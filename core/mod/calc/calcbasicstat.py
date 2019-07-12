@@ -78,10 +78,9 @@ class CalcBasicStat(Calc):
                             one_segment_data.append(group_data.max(axis=0))
 
                     # For day-wise statistics send to the output current time segment results with a new time grid
-                    if parameters[calc_mode] == 'segment': 
-                        self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
-                                              longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                              times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'])
+                    self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
+                                          longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                          times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'])
 
                 # Calulate time statistics for a current time segment
                 if (parameters[calc_mode] == 'data') or (parameters[calc_mode] == 'segment'):

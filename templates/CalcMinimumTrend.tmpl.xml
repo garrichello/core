@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE task SYSTEM "ctdl.dtd">
+<task uid='Task1' owner='Owner1' description='' root_path='/opt/gcoret/' data_module_path=''>
+    <service processingClass='' calculationParameter='' trend='' isBaseLayer=''><!-- GUI service params -->
+      <timePeriod type=''>
+        <dateStart year='' month='' day=''/>
+        <dateEnd year='' month='' day=''/>
+      </timePeriod>
+    </service>
+    <metadb host='localhost' name='cvcdatadb' user='dbuser' password=''/>
+    <computing system="calculator" type="LOCAL" ip="127.0.0.1"/>
+<!-- Data segment. Order is not important. -->
+
+    <data uid='Data_1' type='dataset'> <!-- type: dataset, array -->
+    	<description title='Collection long name' name='Temperature' units='K'/>
+	<dataset name='ERA40' resolution='2.5x2.5' time_step='6h' scenario='-'/>  <!-- ERAINT -->
+    	<variable name='2t' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
+	<region units='degrees'>
+	    <!-- <point lon=[/LU_LON/] lat=[/LU_LAT/]/> -->
+            <point lon='-180' lat='88'/>
+            <point lon='180' lat='88'/>
+            <point lon='180' lat='-88'/>
+            <point lon='-180' lat='-88'/>	    
+	</region>
+	<levels values="2m"/>
+	<time uid='Input_1' template='YYYYMMDDHH'>
+	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
+	    <segment name='Seg1' beginning='1961010100' ending='1961123118'/>
+	    <segment name='Seg2' beginning='1962010100' ending='1962123118'/>
+	    <segment name='Seg3' beginning='1963010100' ending='1963123118'/>
+	</time>
+    </data>
+    
+    <destination uid='Image_1' type='image'> <!-- type: 'image', 'raw' -->
+	<file name='output/MinimumTrend.tiff' type='geotiff'/> <!-- type for graphics kind='shape': 'eps', 'geotiff'; kind='contour'/'station': 'eps', 'shape'; for kind=='multiline': 'eps'; for kind=='tile' : 'geotiff24' -->
+	<projection name='cylindrical'> <!-- 'azimuthal equidistant, 'cylindrical',... -->
+	    <limits units='degrees'>
+		<limit role='left'>-180</limit>
+		<limit role='right'>180</limit>
+		<limit role='top'>90</limit>
+		<limit role='bottom'>-90</limit>
+	    </limits>
+	</projection>
+	<graphics title='' kind='shaded'> <!-- kind: 'shaded', 'vector' (replaces 'contour', 'station', and 'vector'); 'tile'; 'multiline', 'regress2d' -->
+	    <width units='pixels'>3072</width>
+	    <height units='pixels'>2304</height>
+	    <legend title='Temperature trend' kind='file' type='continuous' position='none'> <!-- kind: 'embedded', 'file', 'none'; position: 'right', 'left', 'top', 'bottom' (only for kind=='embedded') -->
+		<units>K</units> <!-- added after legend's title -->
+		<nlabels>11</nlabels> <!-- !!! number of labels in legend -->
+		<ncolors>10</ncolors> <!-- number of discrete colors in legend -->
+		<limited>no</limited> <!-- fixed legend limits: yes/no -->
+		<minimum>-15.0</minimum> <!-- ignored if limited == no -->
+		<maximum>15.0</maximum> <!-- ignored if limited == no -->
+		<file name='output/MinimumTrend.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
+	    </legend>
+	    <colortable>RAINBOW</colortable>  <!-- only for graphics kind=='shaded', e.g.: RAINBOW --> 
+	    <colorscale>linear</colorscale> <!-- only for graphics kind=='shaded', linear/log -->
+	    <blackbg>no</blackbg> <!-- black background -->
+    	    <smoothing>yes</smoothing> <!-- only for graphics kind=='shaded': yes/no -->
+	    <steps>30</steps> <!-- only for graphics kind == 'contour' or for file type == 'shape' -->
+	</graphics>
+    </destination>    
+
+    <destination uid='File_1' type='raw'><!-- uid to be generated, then used in processing -->
+	<file name='output/MinimumTrend.nc' type='netcdf'/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
+    </destination>
+              
+    <data uid='Result_1' type='array'>
+    	<description title='Minimum' name='Temperature' units='K' source='Data_1'/>
+	<time uid='Input_1' template='YYYYMMDDHH'>
+	    <!-- <segment name='' beginning='1961010100' ending='1961123118'/> -->
+	    <segment name='Seg1' beginning='1961010100' ending='1961123118'/>
+	</time>
+    </data>
+
+    <data uid='Result_2' type='array'>
+    	<description title='Trend of minimum temperature' name='Result name' units='ResUnits' units_sfx='/10yr' source='Data_1'/>
+	<time uid='Output_1' template='YYYYMMDDHH'>
+	    <!-- <segment name='' beginning='1961010100' ending='1961123118'/> -->
+	    <segment name='Seg1' beginning='1961010100' ending='1961123118'/>
+	    <segment name='Seg2' beginning='1962010100' ending='1962123118'/>
+	    <segment name='Seg3' beginning='1963010100' ending='1963123118'/>
+    </time>
+    </data>
+
+    <data uid='ModuleParameters_1' type='parameter'>
+    	<param uid='timeMin' type='string'>segment</param> <!-- data, day, seg -->
+    </data>
+
+<!-- End of data segment -->
+
+<!-- Code segment. Order is IMPORTANT! -->
+
+    <processing uid='Process_1' class='cvcCalcMinimum' module_path=''>
+    	<input uid='P1Input1' data='Data_1'/>
+    	<input uid='P1Parameter1' data ='ModuleParameters_1'/>
+    	<output uid='P1Output1' data='Result_1'/>
+    </processing>
+    
+    <processing uid='Process_2' class='cvcCalcTrendTM' module_path=''>
+    	<input uid='P2Input1' data='Result_1'/>
+    	<input uid='P2Parameter1' data ='ModuleParameters_1'/>
+    	<output uid='P2Output1' data='Result_2'/>
+    </processing>
+
+    <processing uid='Visualization_1' class='cvcOutput'>
+	    <input uid='V1Data1' data='Result_2'/>
+	    <output uid='V1Destination1' data='Image_1'/>
+    </processing>
+
+    <processing uid="Output_1" class="cvcOutput">
+	    <input uid="O1Data1" data="Result_2"/>
+        <output uid="O1Destination1" data="File_1"/>
+    </processing>
+
+<!-- End of code segment -->
+
+</task>

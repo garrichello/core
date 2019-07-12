@@ -168,7 +168,7 @@ class ImageGeotiff:
         dataset = drv.Create(filename, dims[1], dims[0], 1, gdal.GDT_Float32)
         if dataset is None:
             print(' (ImageGeotiff::write)  Error creating file: {}. Check the output path! Aborting...'.format(filename))
-            raise FileNotFoundError
+            raise FileNotFoundError("Can't write file!")
         dataset.GetRasterBand(1).WriteArray(data)
 
         # Prepare geokeys.

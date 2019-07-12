@@ -3,6 +3,7 @@
 
 from copy import copy
 import numpy.ma as ma
+import itertools
 
 from core.base.dataaccess import DataAccess
 from core.base.common import print  # pylint: disable=W0622
@@ -19,6 +20,9 @@ class CalcBasicStat(Calc):
 
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
+
+    def _data_time_key(self, data_time):
+        return data_time[1].date()
 
     def _run(self, calc_mode):
         """ Main method of the class. Reads data arrays, process them and returns results. """
@@ -53,13 +57,40 @@ class CalcBasicStat(Calc):
                 # Get data
                 result = self._data_helper.get(input_uids[0], segments=segment, levels=level)
 
-                # Calulate time averaged values for a current time segment
-                if calc_mode == 'timeMean':
-                    one_segment_data = result['data'][level][segment['@name']]['@values'].mean(axis=0)
-                elif calc_mode == 'timeMin':
-                    one_segment_data = result['data'][level][segment['@name']]['@values'].min(axis=0)
-                elif calc_mode == 'timeMax':
-                    one_segment_data = result['data'][level][segment['@name']]['@values'].max(axis=0)
+                if parameters[calc_mode] == 'day':
+                    one_segment_data = []
+                    one_segment_time_grid = []
+                    data_time_iter = itertools.zip_longest(result['data'][level][segment['@name']]['@values'],
+                                                           result['data'][level][segment['@name']]['@time_grid'])
+                    for key, group in itertools.groupby(data_time_iter, key=_data_time_key):
+                        group_data = []
+                        for data, _ in group:
+                            group_data.append(data)
+                        group_data = ma.stack(group_data)
+                        one_segment_time_grid.append(key)
+
+                        # Calulate time statistics for a current time group
+                        if calc_mode == 'timeMean':
+                            one_segment_data.append(group_data.mean(axis=0))
+                        elif calc_mode == 'timeMin':
+                            one_segment_data.append(group_data.min(axis=0))
+                        elif calc_mode == 'timeMax':
+                            one_segment_data.append(group_data.max(axis=0))
+
+                    # For day-wise statistics send to the output current time segment results with a new time grid
+                    if parameters[calc_mode] == 'segment': 
+                        self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
+                                              longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                              times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'])
+
+                # Calulate time statistics for a current time segment
+                if (parameters[calc_mode] == 'data') or (parameters[calc_mode] == 'segment'):
+                    if calc_mode == 'timeMean':
+                        one_segment_data = result['data'][level][segment['@name']]['@values'].mean(axis=0)
+                    elif calc_mode == 'timeMin':
+                        one_segment_data = result['data'][level][segment['@name']]['@values'].min(axis=0)
+                    elif calc_mode == 'timeMax':
+                        one_segment_data = result['data'][level][segment['@name']]['@values'].max(axis=0)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

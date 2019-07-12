@@ -36,6 +36,7 @@ class CalcBasicStat(Calc):
             if parameters.get(calc_mode) is None:  # If the calculation mode is not set...
                 parameters[calc_mode] = DEFAULT_MODE  # give it a default value.
         else:
+            parameters = {}
             parameters[calc_mode] = DEFAULT_MODE
 
         # Get outputs

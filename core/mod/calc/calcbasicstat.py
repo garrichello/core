@@ -82,6 +82,8 @@ class CalcBasicStat(Calc):
 
                         # Calulate time statistics for a current time group (day)
                         one_segment_data.append(stat_func(group_data, axis=0))
+                    
+                    one_segment_data = ma.stack(one_segment_data)
 
                 # Calulate time statistics for a current time segment
                 if (parameters[calc_mode] == 'data') or (parameters[calc_mode] == 'segment'):
@@ -94,7 +96,7 @@ class CalcBasicStat(Calc):
                     self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
                                           longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
                                           times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'])
-                elif parameters[calc_mode] == 'data':
+                elif parameters[calc_mode] == 'data': 
                     all_segments_data.append(one_segment_data)
 
             # For data-wise analysis analyse segments analyses :)

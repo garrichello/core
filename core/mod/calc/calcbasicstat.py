@@ -51,6 +51,15 @@ class CalcBasicStat(Calc):
         time_segments = self._data_helper.get_segments(input_uids[0])
         vertical_levels = self._data_helper.get_levels(input_uids[0])
 
+        # Make desired statistical function shortcut.
+        if calc_mode == 'timeMean':
+            stat_func = ma.mean
+        elif calc_mode == 'timeMin':
+            stat_func = ma.min
+        elif calc_mode == 'timeMax':
+            stat_func = ma.max
+
+
         for level in vertical_levels:
             all_segments_data = []
             for segment in time_segments:
@@ -70,13 +79,8 @@ class CalcBasicStat(Calc):
                         group_data = ma.stack(group_data)
                         one_segment_time_grid.append(key)
 
-                        # Calulate time statistics for a current time group
-                        if calc_mode == 'timeMean':
-                            one_segment_data.append(group_data.mean(axis=0))
-                        elif calc_mode == 'timeMin':
-                            one_segment_data.append(group_data.min(axis=0))
-                        elif calc_mode == 'timeMax':
-                            one_segment_data.append(group_data.max(axis=0))
+                        # Calulate time statistics for a current time group (day)
+                        one_segment_data.append(stat_func(group_data, axis=0))
 
                     # For day-wise statistics send to the output current time segment results with a new time grid
                     data_out = ma.stack(one_segment_data)
@@ -86,12 +90,7 @@ class CalcBasicStat(Calc):
 
                 # Calulate time statistics for a current time segment
                 if (parameters[calc_mode] == 'data') or (parameters[calc_mode] == 'segment'):
-                    if calc_mode == 'timeMean':
-                        one_segment_data = result['data'][level][segment['@name']]['@values'].mean(axis=0)
-                    elif calc_mode == 'timeMin':
-                        one_segment_data = result['data'][level][segment['@name']]['@values'].min(axis=0)
-                    elif calc_mode == 'timeMax':
-                        one_segment_data = result['data'][level][segment['@name']]['@values'].max(axis=0)
+                    one_segment_data = stat_func(result['data'][level][segment['@name']]['@values'], axis=0)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
@@ -102,14 +101,9 @@ class CalcBasicStat(Calc):
                 else:
                     all_segments_data.append(one_segment_data)
 
-            # For data-wise averaging average segments averages :)
-            if parameters[calc_mode] == 'data':
-                if calc_mode == 'timeMean':
-                    data_out = ma.stack(all_segments_data).mean(axis=0)
-                elif calc_mode == 'timeMin':
-                    data_out = ma.stack(all_segments_data).min(axis=0)
-                elif calc_mode == 'timeMax':
-                    data_out = ma.stack(all_segments_data).max(axis=0)
+            # For data-wise analysis analyse segments analyses :)
+            if parameters[calc_mode] == 'data': 
+                data_out = stat_func(ma.stack(all_segments_data), axis=0)
 
                 # Make a global segment covering all input time segments
                 full_range_segment = copy(time_segments[0])  # Take the beginning of the first segment...

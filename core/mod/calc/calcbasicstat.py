@@ -59,7 +59,6 @@ class CalcBasicStat(Calc):
         elif calc_mode == 'timeMax':
             stat_func = ma.max
 
-
         for level in vertical_levels:
             all_segments_data = []
             for segment in time_segments:

@@ -2,8 +2,8 @@
 """
 
 from copy import copy
-import numpy.ma as ma
 import itertools
+import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
 from core.base.common import print  # pylint: disable=W0622
@@ -64,7 +64,7 @@ class CalcBasicStat(Calc):
             all_segments_data = []
             for segment in time_segments:
                 one_segment_time_grid = []
-                
+
                 # Get data
                 result = self._data_helper.get(input_uids[0], segments=segment, levels=level)
 
@@ -82,7 +82,7 @@ class CalcBasicStat(Calc):
 
                         # Calulate time statistics for a current time group (day)
                         one_segment_data.append(stat_func(group_data, axis=0))
-                    
+
                     one_segment_data = ma.stack(one_segment_data)
 
                 # Calulate time statistics for a current time segment
@@ -92,15 +92,15 @@ class CalcBasicStat(Calc):
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
-                if (parameters[calc_mode] == 'day') or (parameters[calc_mode] == 'segment'): 
+                if (parameters[calc_mode] == 'day') or (parameters[calc_mode] == 'segment'):
                     self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
                                           longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
                                           times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'])
-                elif parameters[calc_mode] == 'data': 
+                elif parameters[calc_mode] == 'data':
                     all_segments_data.append(one_segment_data)
 
             # For data-wise analysis analyse segments analyses :)
-            if parameters[calc_mode] == 'data': 
+            if parameters[calc_mode] == 'data':
                 data_out = stat_func(ma.stack(all_segments_data), axis=0)
 
                 # Make a global segment covering all input time segments

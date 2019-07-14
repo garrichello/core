@@ -30,7 +30,7 @@
     </data>
     
     <destination uid='Image_1' type='image'> <!-- type: 'image', 'raw' -->
-	<file name='output/calcMinimum.tiff' type='geotiff'/> <!-- if graphics.kind=='shaded', then file.type='eps' OR 'geotiff'; graphics.kind=='vector': file.type='shape'; graphics.kind=='multiline': file.type='eps'; for kind=='tile' : 'geotiff24' -->
+	<file name='output/Minimum.tiff' type='geotiff'/> <!-- if graphics.kind=='shaded', then file.type='eps' OR 'geotiff'; graphics.kind=='vector': file.type='shape'; graphics.kind=='multiline': file.type='eps'; for kind=='tile' : 'geotiff24' -->
 	<projection name='cylindrical'> <!-- 'azimuthal equidistant, 'cylindrical',... -->
 	    <p0lon units='degrees'>0</p0lon>
 	    <p0lat units='degrees'>0</p0lat>
@@ -52,7 +52,7 @@
 		<limited>no</limited> <!-- fixed legend limits: yes/no -->
 		<minimum>-15.0</minimum> <!-- ignored if limited == no -->
 		<maximum>15.0</maximum> <!-- ignored if limited == no -->
-		<file name='output/calcMinimum.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
+		<file name='output/Minimum.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
 	    </legend>
 	    <colortable>RAINBOW</colortable>  <!-- only for graphics kind=='shaded', e.g.: RAINBOW --> 
 	    <colorscale>linear</colorscale> <!-- only for graphics kind=='shaded', linear/log -->
@@ -63,7 +63,7 @@
     </destination>    
 
     <destination uid="File_1" type="raw"><!-- uid to be generated, then used in processing -->
-      <file name='output/calcMinimim.nc' type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
+      <file name='output/Minimim.nc' type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
     </destination>
     
     <data uid='Result_1' type='array'>

@@ -30,7 +30,7 @@
     </data>
     
     <destination uid='Image_1' type='image'> <!-- type: 'image', 'raw' -->
-	<file name='output/output.tiff' type='geotiff'/> <!-- if graphics.kind=='shaded', then file.type='eps' OR 'geotiff'; graphics.kind=='vector': file.type='shape'; graphics.kind=='multiline': file.type='eps'; for kind=='tile' : 'geotiff24' -->
+	<file name='output/MinMin_output.tiff' type='geotiff'/> <!-- if graphics.kind=='shaded', then file.type='eps' OR 'geotiff'; graphics.kind=='vector': file.type='shape'; graphics.kind=='multiline': file.type='eps'; for kind=='tile' : 'geotiff24' -->
 	<projection name='cylindrical'> <!-- 'azimuthal equidistant, 'cylindrical',... -->
 	    <p0lon units='degrees'>0</p0lon>
 	    <p0lat units='degrees'>0</p0lat>
@@ -52,7 +52,7 @@
 		<limited>no</limited> <!-- fixed legend limits: yes/no -->
 		<minimum>-15.0</minimum> <!-- ignored if limited == no -->
 		<maximum>15.0</maximum> <!-- ignored if limited == no -->
-		<file name='output/output.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
+		<file name='output/MinMin_output.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
 	    </legend>
 	    <colortable>RAINBOW</colortable>  <!-- only for graphics kind=='shaded', e.g.: RAINBOW --> 
 	    <colorscale>linear</colorscale> <!-- only for graphics kind=='shaded', linear/log -->
@@ -63,27 +63,19 @@
     </destination>    
 
     <destination uid="File_1" type="raw"><!-- uid to be generated, then used in processing -->
-      <file name='output/output.nc' type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
+      <file name='output/MinMin_output.nc' type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
     </destination>
     
     <data uid='Result_1' type='array'>
     	<description title='Min of daily min' name='Temperature' units='K' source='Data_1'/>
-	<time uid='Input_1' template='YYYYMMDDHH'>
-	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
-	    <segment name='Seg1' beginning='1961010100' ending='1961123118'/>
-	</time>
-    </data>
-    
-    <data uid='Result_2' type='array'>
-    	<description title='Trend of min of daily min' name='Result name' units='ResUnits' units_sfx='/10yr' source='Data_1'/>
 	<time uid='Output_1' template='YYYYMMDDHH'>
-	    <!-- <segment name='' beginning='1961010100' ending='1961123118'/> -->
+	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
 	    <segment name='Seg1' beginning='1961010100' ending='1961123118'/>
 	</time>
     </data>
 
     <data uid='ModuleParameters_1' type='parameter'>
-    	<param uid='timeMin' type='string'>segment</param> <!-- data, day, segment -->
+    	<param uid='timeMin' type='string'>data</param> <!-- data, day, segment -->
     </data>
 
 <!-- End of data segment -->
@@ -96,19 +88,13 @@
     	<output uid='P1Output1' data='Result_1'/>
     </processing>
     
-    <processing uid='Process_2' class='cvcCalcTrendTM' module_path=''>
-    	<input uid='P2Input1' data='Result_1'/>
-    	<input uid='P2Parameter1' data ='ModuleParameters_1'/>
-    	<output uid='P2Output1' data='Result_2'/>
-    </processing>
-    
     <processing uid='Visualization_1' class='cvcOutput'>
-	<input uid='V1Data1' data='Result_2'/>
+	<input uid='V1Data1' data='Result_1'/>
 	<output uid='V1Destination1' data='Image_1'/>
     </processing>
 
     <processing uid="Output_1" class="cvcOutput">
-      <input uid="O1Data1" data="Result_2"/>
+      <input uid="O1Data1" data="Result_1"/>
       <output uid="O1Destination1" data="File_1"/>
     </processing>
             

@@ -28,19 +28,12 @@
 	<segment name="Seg1"  beginning="1979010100" ending="1979123123"/>
 	<segment name="Seg2"  beginning="1980010100" ending="1980123123"/>
 	<segment name="Seg3"  beginning="1981010100" ending="1981123123"/>
-	<segment name="Seg4"  beginning="1982010100" ending="1982123123"/>
-	<segment name="Seg5"  beginning="1983010100" ending="1983123123"/>
-	<segment name="Seg6"  beginning="1984010100" ending="1984123123"/>
-	<segment name="Seg7"  beginning="1985010100" ending="1985123123"/>
-	<segment name="Seg8"  beginning="1986010100" ending="1986123123"/>
-	<segment name="Seg9"  beginning="1987010100" ending="1987123123"/>
-	<segment name="Seg10" beginning="1988010100" ending="1988123123"/>
 
 </time>
     </data>
     
     <destination uid="Image_1" type="image"> <!-- type: 'image', 'raw' -->
-	<file name="output/layer_20190701_155314.TIFF" type="geotiff"/> <!-- if graphics.kind=='shaded', then file.type='eps' OR 'geotiff'; graphics.kind=='vector': file.type='shape'; graphics.kind=='multiline': file.type='eps'; for kind=='tile' : 'geotiff24' -->
+	<file name="output/Timean_output.TIFF" type="geotiff"/> <!-- if graphics.kind=='shaded', then file.type='eps' OR 'geotiff'; graphics.kind=='vector': file.type='shape'; graphics.kind=='multiline': file.type='eps'; for kind=='tile' : 'geotiff24' -->
 	<projection name="cylindrical"> <!-- 'azimuthal equidistant, 'cylindrical',... -->
 	    <p0lon units="degrees">0</p0lon>
 	    <p0lat units="degrees">0</p0lat>
@@ -62,7 +55,7 @@
 		<limited>no</limited> <!-- fixed legend limits: yes/no -->
 		<minimum>-15.0</minimum> <!-- ignored if limited == no -->
 		<maximum>15.0</maximum> <!-- ignored if limited == no -->
-		<file name="output/oig_layer_20190701_155314_style.sld" type="xml"/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
+		<file name="output/Timean_output.sld" type="xml"/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
 	    </legend>
 	    <colortable>RAINBOW</colortable>  <!-- only for graphics kind=='shaded', e.g.: RAINBOW --> 
 	    <colorscale>linear</colorscale> <!-- only for graphics kind=='shaded', linear/log -->
@@ -73,7 +66,7 @@
     </destination>    
 
     <destination uid="File_1" type="raw"><!-- uid to be generated, then used in processing -->
-      <file name="output/netcdf_20190701_155314.nc" type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
+      <file name="output/Timean_output.nc" type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
     </destination>
     
     <data uid="Result_1" type="array">

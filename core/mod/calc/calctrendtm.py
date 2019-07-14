@@ -33,7 +33,7 @@ class cvcCalcTrendTM(Calc):
         time_segments = self._data_helper.get_segments(input_uids[0])
         if len(time_segments) < 2:
             print("(cvcCalcTrendTM::run) Error! Don't know how to calculate trend: only one input time segment is given. Aborting...")
-            raise AssertionError('Input data contain only one time segment!')
+            raise AssertionError('Input data contains only one time segment!')
 
         vertical_levels = self._data_helper.get_levels(input_uids[0])
         result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)

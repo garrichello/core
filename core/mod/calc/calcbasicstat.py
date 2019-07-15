@@ -51,13 +51,19 @@ class CalcBasicStat(Calc):
         time_segments = self._data_helper.get_segments(input_uids[0])
         vertical_levels = self._data_helper.get_levels(input_uids[0])
 
-        # Make desired statistical function shortcut.
+        # Make desired statistical function shortcut for segment and final processing .
         if calc_mode == 'timeMean':
-            stat_func = ma.mean
+            seg_stat_func = ma.mean
+            final_stat_func = ma.mean
         elif calc_mode == 'timeMin':
-            stat_func = ma.min
+            seg_stat_func = ma.min
+            final_stat_func = ma.min
         elif calc_mode == 'timeMax':
-            stat_func = ma.max
+            seg_stat_func = ma.max
+            final_stat_func = ma.max
+        elif calc_mode == 'timeMeanPrec':
+            seg_stat_func = ma.sum
+            final_stat_func = ma.mean
 
         for level in vertical_levels:
             all_segments_data = []
@@ -80,13 +86,13 @@ class CalcBasicStat(Calc):
                         one_segment_time_grid.append(date_key)
 
                         # Calulate time statistics for a current time group (day)
-                        one_segment_data.append(stat_func(group_data, axis=0))
+                        one_segment_data.append(seg_stat_func(group_data, axis=0))
 
                     one_segment_data = ma.stack(one_segment_data)
 
                 # Calulate time statistics for a current time segment
                 if (parameters[calc_mode] == 'data') or (parameters[calc_mode] == 'segment'):
-                    one_segment_data = stat_func(result['data'][level][segment['@name']]['@values'], axis=0)
+                    one_segment_data = seg_stat_func(result['data'][level][segment['@name']]['@values'], axis=0)
                     one_segment_time_grid.append(result['data'][level][segment['@name']]['@time_grid'][0])
 
                 # For segment-wise averaging send to the output current time segment results
@@ -100,7 +106,7 @@ class CalcBasicStat(Calc):
 
             # For data-wise analysis analyse segments analyses :)
             if parameters[calc_mode] == 'data':
-                data_out = stat_func(ma.stack(all_segments_data), axis=0)
+                data_out = final_stat_func(ma.stack(all_segments_data), axis=0)
 
                 # Make a global segment covering all input time segments
                 full_range_segment = copy(time_segments[0])  # Take the beginning of the first segment...

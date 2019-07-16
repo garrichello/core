@@ -48,7 +48,10 @@ class cvcCalcUpPDFtailnew(Calc):
         vertical_levels = self._data_helper.get_levels(input_uids[0])
 
         # Get data
-        result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
+        from copy import copy
+        sss = copy(time_segments)
+        for s in sss: s['@ending'] = str((int(s['@ending'])-1000000)//1000000*1000000+10323)
+        result = self._data_helper.get(input_uids[0], segments=sss, levels=vertical_levels)
 
         for level in vertical_levels:
             sum_y = 0

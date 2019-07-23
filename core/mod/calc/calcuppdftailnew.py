@@ -3,7 +3,6 @@ of daily maximum temperature values for 5 consecutive days window of the 30-year
 """
 
 import datetime
-import calendar
 import numpy as np
 
 from core.base.dataaccess import DataAccess
@@ -59,6 +58,7 @@ class cvcCalcUpPDFtailnew(Calc):
             dates_delta = segment_end - segment_start + datetime.timedelta(days=1)  # Days in the segment.
             days = [segment_start + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Days of the segment.
 
+            percentile = []
             for day in days:
                 time_segments = []
                 for year in years:
@@ -69,6 +69,12 @@ class cvcCalcUpPDFtailnew(Calc):
                     five_days['@name'] = 'Year {}'.format(year)
                     time_segments.append(five_days)
                 result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
+                data = np.ma.concatenate(
+                    [result['data'][level]['Year {}'.format(year)]['@values'] for year in years], axis=0)
+                data = data.filled(np.nan)
+                percentile.append(np.nanpercentile(data, parameters[THRESHOLD_UID], axis=0))
+
+
 
         for level in vertical_levels:
             sum_y = 0

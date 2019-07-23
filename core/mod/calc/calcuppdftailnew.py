@@ -48,10 +48,23 @@ class cvcCalcUpPDFtailnew(Calc):
         vertical_levels = self._data_helper.get_levels(input_uids[0])
 
         # Get data
-        from copy import copy
-        sss = copy(time_segments)
-        for s in sss: s['@ending'] = str((int(s['@ending'])-1000000)//1000000*1000000+10323)
-        result = self._data_helper.get(input_uids[0], segments=sss, levels=vertical_levels)
+        import datetime
+
+        start_date = datetime.datetime(1961, 1, 1, 0, 0)  # Start of the segment.
+        end_date = datetime.datetime(1961, 12, 31, 23, 59)  # End of the segment.
+        dates_delta = end_date - start_date + datetime.timedelta(days=1)  # Days in the segment.
+        list_date = [start_date + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Days of the segment.
+        try:
+            feb29 = datetime.datetime(start_date.year, 2, 29)  # Try to create a Feb 29 day.
+        except ValueError:
+            feb29 = None  # If current year is NOT a leap year.
+        if feb29 is not None:
+            _ = list_date.remove(feb29)  # If current year IS a leap year.
+        five_days = {}  # Five-day segment to read.
+        five_days['@beginning'] = (list_date[0]-datetime.timedelta(days=2)).strftime('%Y%m%d%H')
+        five_days['@ending'] = (list_date[0]+datetime.timedelta(days=2, hours=23)).strftime('%Y%m%d%H')
+        five_days['@name'] = '5-day segment'
+        result = self._data_helper.get(input_uids[0], segments=five_days, levels=vertical_levels)
 
         for level in vertical_levels:
             sum_y = 0

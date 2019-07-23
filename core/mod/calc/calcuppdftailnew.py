@@ -62,9 +62,9 @@ class cvcCalcUpPDFtailnew(Calc):
             for day in days:
                 time_segments = []
                 for year in years:
-                    day0 = day+datetime.timedelta(years=year-1)
+                    day_i = datetime.datetime(year, day.month, day.day, day.hour)
                     five_days = {}  # Five-day segment to read.
-                    five_days['@beginning'] = (day0-datetime.timedelta(days=2)).strftime('%Y%m%d%H')
+                    five_days['@beginning'] = (day_i-datetime.timedelta(days=2)).strftime('%Y%m%d%H')
                     five_days['@ending'] = (day0+datetime.timedelta(days=2, hours=23)).strftime('%Y%m%d%H')
                     five_days['@name'] = 'Segment for year {}'.format(year)
                     time_segments.append(five_days)

@@ -2,6 +2,8 @@
 of daily maximum temperature values for 5 consecutive days window of the 30-years Base period.
 """
 
+import datetime
+import calendar
 import numpy as np
 
 from core.base.dataaccess import DataAccess
@@ -48,23 +50,25 @@ class cvcCalcUpPDFtailnew(Calc):
         vertical_levels = self._data_helper.get_levels(input_uids[0])
 
         # Get data
-        import datetime
+        for level in vertical_levels:
+            start_date = datetime.datetime.strptime(time_segments[0]['@beginning'], '%Y%m%d%H')
+            end_date = datetime.datetime.strptime(time_segments[0]['@ending'], '%Y%m%d%H')
+            years = [start_date.year + i for i in range(end_date.year - start_date.year + 1)]
+            segment_start = datetime.datetime(1, start_date.month, start_date.day, start_date.hour)
+            segment_end = datetime.datetime(1, end_date.month, end_date.day, end_date.hour)
+            dates_delta = segment_end - segment_start + datetime.timedelta(days=1)  # Days in the segment.
+            days = [segment_start + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Days of the segment.
 
-        start_date = datetime.datetime(1961, 1, 1, 0, 0)  # Start of the segment.
-        end_date = datetime.datetime(1961, 12, 31, 23, 59)  # End of the segment.
-        dates_delta = end_date - start_date + datetime.timedelta(days=1)  # Days in the segment.
-        list_date = [start_date + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Days of the segment.
-        try:
-            feb29 = datetime.datetime(start_date.year, 2, 29)  # Try to create a Feb 29 day.
-        except ValueError:
-            feb29 = None  # If current year is NOT a leap year.
-        if feb29 is not None:
-            _ = list_date.remove(feb29)  # If current year IS a leap year.
-        five_days = {}  # Five-day segment to read.
-        five_days['@beginning'] = (list_date[0]-datetime.timedelta(days=2)).strftime('%Y%m%d%H')
-        five_days['@ending'] = (list_date[0]+datetime.timedelta(days=2, hours=23)).strftime('%Y%m%d%H')
-        five_days['@name'] = '5-day segment'
-        result = self._data_helper.get(input_uids[0], segments=five_days, levels=vertical_levels)
+            for day in days:
+                time_segments = []
+                for year in years:
+                    day0 = day+datetime.timedelta(year=year-1)
+                    five_days = {}  # Five-day segment to read.
+                    five_days['@beginning'] = (day0-datetime.timedelta(days=2)).strftime('%Y%m%d%H')
+                    five_days['@ending'] = (day0+datetime.timedelta(days=2, hours=23)).strftime('%Y%m%d%H')
+                    five_days['@name'] = 'Segment for year {}'.format(year)
+                    time_segments.append(five_days)
+                result = self._data_helper.get(input_uids[0], segments=five_days, levels=vertical_levels)
 
         for level in vertical_levels:
             sum_y = 0

@@ -71,8 +71,7 @@ class cvcCalcUpPDFtailnew(Calc):
                 result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
                 data = np.ma.concatenate(
                     [result['data'][level]['Year {}'.format(year)]['@values'] for year in years], axis=0)
-                data = data.filled(np.nan)
-                percentile.append(np.nanpercentile(data, parameters[THRESHOLD_UID], axis=0))
+                percentile.append(np.percentile(data, parameters[THRESHOLD_UID], axis=0))
 
 
 

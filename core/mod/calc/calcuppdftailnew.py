@@ -60,43 +60,27 @@ class cvcCalcUpPDFtailnew(Calc):
 
             percentile = []
             for day in days:
-                time_segments = []
+                segments = []
                 for year in years:
                     day_i = datetime.datetime(year, day.month, day.day, day.hour)
                     five_days = {}  # Five-day segment to read.
                     five_days['@beginning'] = (day_i - datetime.timedelta(days=2)).strftime('%Y%m%d%H')
                     five_days['@ending'] = (day_i + datetime.timedelta(days=2, hours=23)).strftime('%Y%m%d%H')
                     five_days['@name'] = 'Year {}'.format(year)
-                    time_segments.append(five_days)
-                result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
+                    segments.append(five_days)
+                result = self._data_helper.get(input_uids[0], segments=segments, levels=vertical_levels)
                 data = np.ma.concatenate(
                     [result['data'][level]['Year {}'.format(year)]['@values'] for year in years], axis=0)
                 percentile.append(np.percentile(data, parameters[THRESHOLD_UID], axis=0))
+            percentile = np.stack(percentile, axis=0)  # Stack to array.
+            mask_0 = result['data'][level]['Year {}'.format(years[0])]['@values'].mask[0]  # lon-lat mask.
+            mask_shape = [1] * (mask_0.ndim + 1)  # New shape of the mask.
+            mask_shape[0] = len(days)  # Set it to be (n_days, 1, 1) or (n_days, 1).
+            mask = np.tile(mask_0, mask_shape)  # Generate a mask to conform data dimensions.
+            percentile = np.ma.MaskedArray(percentile, mask=mask, fill_value=result['@fill_value'])
 
-
-
-        for level in vertical_levels:
-            sum_y = 0
-            cnt = 0
-            for segment in time_segments:
-                sum_y += result['data'][level][segment['@name']]['@values'].filled(0)  # Sum values
-                cnt += (~result['data'][level][segment['@name']]['@values'].mask).astype(int)  # Count valid values
-            mean_y = np.ma.MaskedArray(sum_y, mask=~cnt.astype(bool))  # Count values are inverted to create a mask
-            mean_y /= cnt  # Calculate mean value only for valid values
-            mean_x = np.mean(range(len(time_segments)))  # Just a simple mean of a simple x-axis
-
-            num_arr = 0
-            den_arr = 0
-            x = 0
-            for segment in time_segments:
-                num_arr += (result['data'][level][segment['@name']]['@values'] - mean_y) * (x - mean_x)
-                den_arr += (x - mean_x)**2
-                x += 1
-            trend_values = (num_arr / den_arr) * 10.0
-
-            global_segment = self.make_global_segment(time_segments)
-            self._data_helper.put(output_uids[0], values=trend_values, level=level, segment=global_segment,
+            self._data_helper.put(output_uids[0], values=percentile, level=level, segment=time_segments[0],
                                   longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                  fill_value=result['@fill_value'], meta=result['meta'])
+                                  times=days, fill_value=result['@fill_value'], meta=result['meta'])
 
         print('(cvcCalcUpPDFtailnew::run) Finished!')

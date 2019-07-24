@@ -10,7 +10,9 @@ from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2
-THRESHOLDS = [10, 90]
+START_THRESHOLD = 5
+END_THRESHOLD = 95
+STEP_THRESHOLD = 5
 
 class CalcPDFtails(Calc):
     """ Performs calculation of n-th percentile of daily maximum temperatures.
@@ -20,7 +22,7 @@ class CalcPDFtails(Calc):
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
 
-    def _calc_percentile(self, uid, threshold):
+    def _calc_percentile(self, uid):
         """ Calculates given percentile at given vertical levels for a given time period.
         Arguments:
             uid -- UID of input dataset.
@@ -48,7 +50,10 @@ class CalcPDFtails(Calc):
         # Calculate percentile along time axis for each cell of the grid to get 2-D grid of percentiles.
         # Make a Masked array on the base of the percentile grid using mask from one of the 5-day arrays.
         # We suppose that the mask is the same for all lon-lat grids along the time axis.
-        percentile = []
+        percentile = {}
+        percentile['data'] = {}
+        for threshold in range(START_THRESHOLD, END_THRESHOLD, STEP_THRESHOLD):
+            percentile['data'][threshold] = []
         for day in days:
             segments = []
             for year in years:
@@ -61,25 +66,26 @@ class CalcPDFtails(Calc):
             result = self._data_helper.get(uid, segments=segments, levels=level)
             data = np.ma.concatenate(
                 [result['data'][level]['Year {}'.format(year)]['@values'] for year in years], axis=0)
-            percentile.append(np.percentile(data, threshold, axis=0))
-        percentile = np.stack(percentile, axis=0)  # Stack to array.
-        mask_0 = result['data'][level]['Year {}'.format(years[0])]['@values'].mask[0]  # lon-lat mask.
-        mask_shape = [1] * (mask_0.ndim + 1)  # New shape of the mask.
-        mask_shape[0] = len(days)  # Set it to be (n_days, 1, 1) or (n_days, 1).
-        mask = np.tile(mask_0, mask_shape)  # Generate a mask to conform data dimensions.
-        all_percentiles['data'][level] = np.ma.MaskedArray(percentile, mask=mask, fill_value=result['@fill_value'])
+            for threshold in range(START_THRESHOLD, END_THRESHOLD, STEP_THRESHOLD):
+                percentile['data'][threshold].append(np.percentile(data, threshold, axis=0))
+        for threshold in range(START_THRESHOLD, END_THRESHOLD, STEP_THRESHOLD):
+            percentile_data = np.stack(percentile['data'][threshold], axis=0)  # Stack to array.
+            mask_0 = result['data'][level]['Year {}'.format(years[0])]['@values'].mask[0]  # lon-lat mask.
+            mask_shape = [1] * (mask_0.ndim + 1)  # New shape of the mask.
+            mask_shape[0] = len(days)  # Set it to be (n_days, 1, 1) or (n_days, 1).
+            mask = np.tile(mask_0, mask_shape)  # Generate a mask to conform data dimensions.
+            percentile['data'][threshold] = np.ma.MaskedArray(percentile_data, mask=mask, fill_value=result['@fill_value'])
 
-        all_percentiles['@base_period'] = time_segment
-        all_percentiles['@day_grid'] = days
-        all_percentiles['@longitude_grid'] = result['@longitude_grid']
-        all_percentiles['@latitude_grid'] = result['@latitude_grid']
-        all_percentiles['@fill_value'] = result['@fill_value']
-        all_percentiles['meta'] = result['meta']
+        percentile['@base_period'] = time_segment
+        percentile['@day_grid'] = days
+        percentile['@longitude_grid'] = result['@longitude_grid']
+        percentile['@latitude_grid'] = result['@latitude_grid']
+        percentile['@fill_value'] = result['@fill_value']
+        percentile['meta'] = result['meta']
         if 'max' in result['data']['description']['@name'].lower():
-            varname = 'maxday'
+            percentile['meta']['varname'] = 'maxday'
         elif 'min' in result['data']['description']['@name'].lower():
-            varname = 'minday'
-        all_percentiles['meta']['varname'] = '{}{}p'.format(varname, threshold)
+            percentile['meta']['varname'] = 'minday'
 
         return all_percentiles
 
@@ -99,14 +105,13 @@ class CalcPDFtails(Calc):
         # Calculate percentiles
         out_uid = 0
         for in_uid in input_uids:
-            for threshold in THRESHOLDS:
-                percentile = self._calc_percentile(in_uid, threshold)
-                for level, data in percentile['data']:
-                    self._data_helper.put(output_uids[out_uid], values=data, level=level,
-                                          segment=percentile['@base_period'],
-                                          longitudes=percentile['@longitude_grid'], latitudes=percentile['@latitude_grid'],
-                                          times=percentile['@day_grid'], fill_value=percentile['@fill_value'],
-                                          meta=percentile['meta'])
+            percentile = self._calc_percentile(in_uid)
+            for level, data in percentile['data']:
+                self._data_helper.put(output_uids[out_uid], values=data, level=str(level),
+                                      segment=percentile['@base_period'],
+                                      longitudes=percentile['@longitude_grid'], latitudes=percentile['@latitude_grid'],
+                                      times=percentile['@day_grid'], fill_value=percentile['@fill_value'],
+                                      meta=percentile['meta'])
                 out_uid += 1
 
         print('(CalcPDFtails::run) Finished!')

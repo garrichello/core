@@ -1,4 +1,4 @@
-"""Class cvcCalcUpPDFtailnew provides methods for calculation of 10th and 90th percentile
+"""Class CalcPDFtails provides methods for calculation of 10th and 90th percentile
 of daily maximum temperature values for 5 consecutive days window of the 30-year Base period.
 """
 
@@ -12,7 +12,7 @@ from core.mod.calc.calc import Calc
 MAX_N_INPUT_ARGUMENTS = 2
 THRESHOLDS = [10, 90]
 
-class cvcCalcUpPDFtailnew(Calc):
+class CalcPDFtails(Calc):
     """ Performs calculation of n-th percentile of daily maximum temperatures.
 
     """
@@ -82,15 +82,15 @@ class cvcCalcUpPDFtailnew(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(cvcCalcUpPDFtailnew::run) Started!')
+        print('(CalcPDFtails::run) Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(cvcCalcUpPDFtailnew::run) No input arguments!'
+        assert input_uids, '(CalcPDFtails::run) No input arguments!'
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(cvcCalcUpPDFtailnew::run) No output arguments!'
+        assert output_uids, '(CalcPDFtails::run) No output arguments!'
 
         # Calculate percentiles
         input_varname = ''
@@ -100,9 +100,11 @@ class cvcCalcUpPDFtailnew(Calc):
                 percentile = self._calc_percentile(in_uid, threshold)
                 percentile['meta']['varname'] = '{}{}p'.format(input_varname, threshold)
                 for level, data in percentile['data']:
-                    self._data_helper.put(output_uids[out_uid], values=data, level=level, segment=percentile['@base_period'],
-                                        longitudes=percentile['@longitude_grid'], latitudes=percentile['@latitude_grid'],
-                                        times=percentile['@day_grid'], fill_value=percentile['@fill_value'], meta=percentile['meta'])
+                    self._data_helper.put(output_uids[out_uid], values=data, level=level,
+                                          segment=percentile['@base_period'],
+                                          longitudes=percentile['@longitude_grid'], latitudes=percentile['@latitude_grid'],
+                                          times=percentile['@day_grid'], fill_value=percentile['@fill_value'],
+                                          meta=percentile['meta'])
                 out_uid += 1
 
-        print('(cvcCalcUpPDFtailnew::run) Finished!')
+        print('(CalcPDFtails::run) Finished!')

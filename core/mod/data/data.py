@@ -81,7 +81,7 @@ class Data:
         self._data_by_segment[level_name][time_segment['@name']]['@time_grid'] = time_grid
         self._data_by_segment[level_name][time_segment['@name']]['segment'] = time_segment
 
-    def _add_metadata(self, longitude_grid, latitude_grid, fill_value, description, grid_type=None, dimensions=None, meta=None):
+    def _add_metadata(self, longitude_grid, latitude_grid, fill_value, description, grid_type=None, dimensions=None, meta={}):
         """ Stores main metadata for a read data array in a unified dictionary.
 
         Arguments:

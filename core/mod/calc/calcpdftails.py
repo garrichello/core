@@ -10,9 +10,9 @@ from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2
-START_THRESHOLD = 5
-END_THRESHOLD = 95
-STEP_THRESHOLD = 5
+START_THRESHOLD = 10
+END_THRESHOLD = 100
+STEP_THRESHOLD = 80
 
 class CalcPDFtails(Calc):
     """ Performs calculation of n-th percentile of daily maximum temperatures.
@@ -35,8 +35,6 @@ class CalcPDFtails(Calc):
         time_segment = self._data_helper.get_segments(uid)[0]  # Only the first time segment is taken.
         level = self._data_helper.get_levels(uid)[0]  # Only the first vertical level is taken.
 
-        all_percentiles = {}
-        all_percentiles['data'] = {}
         start_date = datetime.datetime.strptime(time_segment['@beginning'], '%Y%m%d%H')
         end_date = datetime.datetime.strptime(time_segment['@ending'], '%Y%m%d%H')
         years = [start_date.year + i for i in range(end_date.year - start_date.year + 1)]
@@ -87,7 +85,7 @@ class CalcPDFtails(Calc):
         elif 'min' in result['data']['description']['@name'].lower():
             percentile['meta']['varname'] = 'minday'
 
-        return all_percentiles
+        return percentile
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
@@ -106,8 +104,8 @@ class CalcPDFtails(Calc):
         out_uid = 0
         for in_uid in input_uids:
             percentile = self._calc_percentile(in_uid)
-            for level, data in percentile['data']:
-                self._data_helper.put(output_uids[out_uid], values=data, level=str(level),
+            for threshold, data in percentile['data']:
+                self._data_helper.put(output_uids[out_uid], values=data, level=str(threshold),
                                       segment=percentile['@base_period'],
                                       longitudes=percentile['@longitude_grid'], latitudes=percentile['@latitude_grid'],
                                       times=percentile['@day_grid'], fill_value=percentile['@fill_value'],

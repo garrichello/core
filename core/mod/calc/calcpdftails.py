@@ -73,7 +73,7 @@ class CalcPDFtails(Calc):
         all_percentiles['@base_period'] = time_segment
         all_percentiles['@day_grid'] = days
         all_percentiles['@longitude_grid'] = result['@longitude_grid']
-        all_percentiles['@latitude_grid'] = result['latitude_grid']
+        all_percentiles['@latitude_grid'] = result['@latitude_grid']
         all_percentiles['@fill_value'] = result['@fill_value']
         all_percentiles['meta'] = result['meta']
 

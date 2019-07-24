@@ -5,7 +5,7 @@ import collections
 import xmltodict
 
 from .proc import Proc
-from .common import print
+from .common import print, listify  # pylint: disable=W0622
 
 class MainApp:
     """Main application class. It does everything the application does."""
@@ -93,7 +93,7 @@ class MainApp:
             task = self._task[task_name]
             metadb_info = task['metadb'] # Location of the metadata database and user credentials to access it.
             self._data_uid_list = [data['@uid'] for data in task['data']] # List of all data UIDs.
-            self._destination_uid_list = [destination['@uid'] for destination in task['destination']] # List of all destination UIDs.
+            self._destination_uid_list = [destination['@uid'] for destination in listify(task['destination'])] # List of all destination UIDs.
 
             # Run processings one by one as specified in a task file.
             for proc in task['processing']:

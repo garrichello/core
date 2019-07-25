@@ -47,6 +47,11 @@ class MainApp:
             with open(self._task_file_name, encoding='windows-1251') as file_descriptor:
                 self._task = xmltodict.parse(file_descriptor.read())
 
+        # Make them lists!
+        self._task['task']['data'] = listify(self._task['task']['data'])
+        self._task['task']['destination'] = listify(self._task['task']['destination'])
+        self._task['task']['processing'] = listify(self._task['task']['processing'])
+
         print("(MainApp::read_task) Done!")
 
     def _prepare_proc_arguments(self, task, proc_uid, proc_args):
@@ -93,7 +98,7 @@ class MainApp:
             task = self._task[task_name]
             metadb_info = task['metadb'] # Location of the metadata database and user credentials to access it.
             self._data_uid_list = [data['@uid'] for data in task['data']] # List of all data UIDs.
-            self._destination_uid_list = [destination['@uid'] for destination in listify(task['destination'])] # List of all destination UIDs.
+            self._destination_uid_list = [destination['@uid'] for destination in task['destination']] # List of all destination UIDs.
 
             # Run processings one by one as specified in a task file.
             for proc in task['processing']:

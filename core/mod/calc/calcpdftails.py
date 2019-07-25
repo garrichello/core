@@ -81,9 +81,10 @@ class CalcPDFtails(Calc):
         percentile['@fill_value'] = result['@fill_value']
         percentile['meta'] = result['meta']
         if 'max' in result['data']['description']['@name'].lower():
-            percentile['meta']['varname'] = 'maxday'
+            percentile['meta']['varname'] = 'maxday_percentile'
         elif 'min' in result['data']['description']['@name'].lower():
-            percentile['meta']['varname'] = 'minday'
+            percentile['meta']['varname'] = 'minday_percentile'
+        percentile['meta']['time_long_name'] = 'Calendar day of the year'
 
         return percentile
 

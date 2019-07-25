@@ -2,6 +2,7 @@
     DataAccess
 """
 
+from copy import copy
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
@@ -139,7 +140,7 @@ class DataAccess():
 
         # If it is a dataset there is much to do
         info['data'] = argument['data'] # All the information about the dataset is passed to data-accessing modules
-        
+
         # Metadata database URL
         db_url = 'mysql://{0}@{1}/{2}'.format(metadb_info['@user'], metadb_info['@host'], metadb_info['@name'])
         engine = create_engine(db_url)
@@ -205,7 +206,7 @@ class DataAccess():
         # Get units and full name of the variable
         try:
             var_tbl_info = \
-                session.query(units_tr_tbl.columns['name'].label('units_name'), 
+                session.query(units_tr_tbl.columns['name'].label('units_name'),
                               par_tr_tbl.columns['name'].label('parameter_name')).select_from(
                                   data_tbl).join(variable_tbl).join(units_tbl).join(units_tr_tbl).join(par_tbl).join(
                                       par_tr_tbl).filter(variable_tbl.columns['name'] == variable_name).filter(
@@ -336,14 +337,14 @@ class DataAccess():
         """
         options = {}
         options['level'] = level
-        options['segment'] = segment
-        options['times'] = times
-        options['longitudes'] = longitudes
-        options['latitudes'] = latitudes
+        options['segment'] = copy(segment)
+        options['times'] = copy(times)
+        options['longitudes'] = copy(longitudes)
+        options['latitudes'] = copy(latitudes)
         if fill_value is not None:
             values.fill_value = fill_value
-        options['description'] = description
-        options['meta'] = meta
+        options['description'] = copy(description)
+        options['meta'] = copy(meta)
         self._data_objects[uid].write(values, options)
 
     def output_uids(self):

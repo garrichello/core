@@ -56,6 +56,7 @@ class cvcOutput:
 
                 self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                      times=result['data'][level_name][segment['@name']]['@time_grid'],
                                       description=description, meta=result['meta'])
 
         print('(cvcOutput::run) Finished!')

@@ -296,7 +296,7 @@ class DataNetcdf(Data):
                     fill_value = 1e20
 
                 fill_value_mask = data_slice == fill_value
-                combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time)
+                combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time, shrink=False)
 
                 masked_data_slice = ma.MaskedArray(data_slice, mask=combined_mask, fill_value=fill_value)
                 #print('(DataNetcdf::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))

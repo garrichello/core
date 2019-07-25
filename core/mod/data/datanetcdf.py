@@ -2,7 +2,7 @@
     DataNetcdf
 """
 from string import Template
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from copy import copy
 from netCDF4 import MFDataset, date2index, num2date, Dataset, MFTime
@@ -370,22 +370,23 @@ class DataNetcdf(Data):
         lon = root.createDimension('lon', options['longitudes'].size)  # pylint: disable=W0612
         lat = root.createDimension('lat', options['latitudes'].size)  # pylint: disable=W0612
 
-        times_long_name = 'time'
-
         if options['times'] is not None:
-            time = root.createDimension('time', options['times'].size)  # pylint: disable=W0612
+            time = root.createDimension('time', len(options['times']))  # pylint: disable=W0612
             times = root.createVariable('time', 'f8', ('time'))
-            times.units = 'days since 1970-1-1 00:00:0.0'
-            times.long_name = times_long_name
+            times.units = 'days since {}-1-1 00:00:0.0'.format(options['times'][0].year)
+            times_long_name = options['meta'].get('time_long_name')
+            times.long_name = 'time' if times_long_name is None else times_long_name
 
         # Define variables.
         latitudes = root.createVariable('lat', 'f4', ('lat'))
         longitudes = root.createVariable('lon', 'f4', ('lon'))
 
+        varname = options['meta'].get('varname')
+        varname = 'data' if varname is None else varname
         if options['times'] is not None:
-            data = root.createVariable('data', 'f4', ('time', 'lat', 'lon'), fill_value=values.fill_value)
+            data = root.createVariable(varname, 'f4', ('time', 'lat', 'lon'), fill_value=values.fill_value)
         else:
-            data = root.createVariable('data', 'f4', ('lat', 'lon'), fill_value=values.fill_value)
+            data = root.createVariable(varname, 'f4', ('lat', 'lon'), fill_value=values.fill_value)
 
         # Set global attributes.
         root.Title = options['description']['@title']
@@ -405,7 +406,8 @@ class DataNetcdf(Data):
         # Write variables.
         # TODO: May be in the future we will write time grid into a file. If needed.
         if options['times'] is not None:
-            pass
+            start_date = datetime(options['times'][0].year, 1, 1)
+            times[:] = [(cur_date - start_date).days for cur_date in options['times']]
 
         longitudes[:] = options['longitudes']
         latitudes[:] = options['latitudes']

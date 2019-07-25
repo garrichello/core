@@ -104,12 +104,12 @@ class CalcPDFtails(Calc):
         out_uid = 0
         for in_uid in input_uids:
             percentile = self._calc_percentile(in_uid)
-            for threshold, data in percentile['data']:
+            for threshold, data in percentile['data'].items():
                 self._data_helper.put(output_uids[out_uid], values=data, level=str(threshold),
                                       segment=percentile['@base_period'],
                                       longitudes=percentile['@longitude_grid'], latitudes=percentile['@latitude_grid'],
                                       times=percentile['@day_grid'], fill_value=percentile['@fill_value'],
                                       meta=percentile['meta'])
-                out_uid += 1
+            out_uid += 1
 
         print('(CalcPDFtails::run) Finished!')

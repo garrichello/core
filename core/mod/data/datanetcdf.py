@@ -384,7 +384,7 @@ class DataNetcdf(Data):
         # Define variables.
         latitudes = root.createVariable('lat', 'f4', ('lat'))
         longitudes = root.createVariable('lon', 'f4', ('lon'))
-        levels = root.createVariable('level', str, ('lev'))
+        levels = root.createVariable('level', str, ('level'))
 
         varname = options['meta'].get('varname')
         varname = 'data' if varname is None else varname

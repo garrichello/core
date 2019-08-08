@@ -387,8 +387,10 @@ class DataNetcdf(Data):
         varname = 'data' if varname is None else varname
         if options['times'] is not None:
             data = root.createVariable(varname, 'f4', ('time', 'level', 'lat', 'lon'), fill_value=values.fill_value)
+            values = values.reshape((len(options['times']), 1, options['latitudes'].size, options['longitudes'].size))
         else:
             data = root.createVariable(varname, 'f4', ('level', 'lat', 'lon'), fill_value=values.fill_value)
+            values = values.reshape((1, options['latitudes'].size, options['longitudes'].size))
 
         # Set global attributes.
         root.Title = options['description']['@title']

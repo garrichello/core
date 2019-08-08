@@ -22,10 +22,6 @@ class cvcOutput:
 
         input_uids = self._data_helper.input_uids()
 
-        time_segments = self._data_helper.get_segments(input_uids[0])
-
-        vertical_levels = self._data_helper.get_levels(input_uids[0])
-
         output_uids = self._data_helper.output_uids()
         if output_uids is None:
             print("""(cvcOutput::run) No output is specified! Check the task file, may be you are using the old template?
@@ -33,6 +29,9 @@ class cvcOutput:
             raise ValueError('No output dataset specified. Aborting!')
 
         for in_uid in input_uids:
+            time_segments = self._data_helper.get_segments(in_uid)
+            vertical_levels = self._data_helper.get_levels(in_uid)
+            
             # Get data for all time segments and levels at once
             result = self._data_helper.get(in_uid, segments=time_segments, levels=vertical_levels)
             description = result['data']['description']

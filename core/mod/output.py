@@ -2,7 +2,7 @@
 
 from core.base.dataaccess import DataAccess
 
-from core.base.common import print, kelvin_to_celsius, celsius_to_kelvin
+from core.base.common import print, kelvin_to_celsius, celsius_to_kelvin  # pylint: disable=W0622
 
 MINIMUM_POSSIBLE_TEMPERATURE_K = celsius_to_kelvin(-90.0)  # -89.2 degC is the minimum registered temperature on Earth
 MAXIMUM_POSSIBLE_TEMPERATURE_K = celsius_to_kelvin(60.0)  # 56.7 degC is the maximum registered temperature on Earth
@@ -31,31 +31,31 @@ class cvcOutput:
         for in_uid in input_uids:
             time_segments = self._data_helper.get_segments(in_uid)
             vertical_levels = self._data_helper.get_levels(in_uid)
-            
+
             # Get data for all time segments and levels at once
             result = self._data_helper.get(in_uid, segments=time_segments, levels=vertical_levels)
             description = result['data']['description']
 
             # Check if data are in K and we need to convert them to C.
-            CONVERT_K2C = False
+            convert_k2c = False
             if ('@tempk2c' in description) & ('@units' in description):
                 if (description['@tempk2c'] == 'yes') & (description['@units'] == 'K'):
     #                & (values.min() > MINIMUM_POSSIBLE_TEMPERATURE_K) \
     #                & (values.max() < MAXIMUM_POSSIBLE_TEMPERATURE_K):
                     description['@units'] = 'C'
-                    CONVERT_K2C = True
+                    convert_k2c = True
 
             for level_name in vertical_levels:
                 for segment in time_segments:
                     values = result['data'][level_name][segment['@name']]['@values']
 
                     # Convert Kelvin to Celsius if asked and appropriate
-                    if CONVERT_K2C:
+                    if convert_k2c:
                         values = kelvin_to_celsius(values)
 
                     self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
-                                        longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                        times=result['data'][level_name][segment['@name']]['@time_grid'],
-                                        description=description, meta=result['meta'])
+                                          longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                          times=result['data'][level_name][segment['@name']]['@time_grid'],
+                                          description=description, meta=result['meta'])
 
         print('(cvcOutput::run) Finished!')

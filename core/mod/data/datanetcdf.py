@@ -412,14 +412,14 @@ class DataNetcdf(Data):
                 times[:] = [(cur_date - start_date).days for cur_date in options['times']]
             longitudes[:] = options['longitudes']
             latitudes[:] = options['latitudes']
-            levels[0] = options['level']
         else:  # Existing file.
             levels = root.variables['level']  # Get level variable (let's suppose it exists).
-            # Check if the written level is present in the file.
-            level_idx = levels.get(options['level'])
-            if level_idx is None:  # If the level is not found...
-                level_idx = levels.size
-                levels[level_idx] = options['level']  # ... add the new one.
+            
+        # Check if the current level is present in the file.
+        level_idx = levels.get(options['level'])
+        if level_idx is None:  # If the level is not found...
+            level_idx = levels.size
+            levels[level_idx] = options['level']  # ... add the new one.
 
         # Check if variable is present in the file.
         data = root.variables.get(varname)
@@ -432,7 +432,7 @@ class DataNetcdf(Data):
                 values = values.reshape((1, options['latitudes'].size, options['longitudes'].size))
             data.units = options['description']['@units']
             data.long_name = '{} {}'.format(options['description']['@title'], options['description']['@name'])
-        
+
         # Write values.
         data[:, level_idx, :, :] = ma.filled(values, fill_value=values.fill_value)
 

@@ -416,8 +416,9 @@ class DataNetcdf(Data):
             levels = root.variables['level']  # Get level variable (let's suppose it exists).
 
         # Check if the current level is present in the file.
-        if options['level'] in levels[:].tolist():
-            level_idx = levels[:].index(options['level'])
+        levels_list = levels[:].tolist()
+        if options['level'] in levels_list:
+            level_idx = levels_list.index(options['level'])
         else:
             level_idx = levels.size
             levels[level_idx] = options['level']  # ... add the new one.

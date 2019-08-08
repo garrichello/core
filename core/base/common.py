@@ -117,7 +117,7 @@ def list_remove_all(list_, item_to_remove):
     return [item for item in list_ if item != item_to_remove]
 
 
-def print(*args, **kwargs):
+def print(*args, **kwargs):  # pylint: disable=W0622
     """Prints out to a standard output a string prefixed with current date and time
 
     Arguments:
@@ -130,10 +130,10 @@ def print(*args, **kwargs):
     builtins.print(date_time, end='')
     return builtins.print(*args, **kwargs)
 
-
 def make_filename(data_info, options):
-    """Constructs a file name for writing output.
+    """Constructs a file name for writing raw output.
     It's used in write-methods of various data-access classes.
+    Names of vertical levels are included into the filename.
 
     Arguments:
         data_info -- dictionary describing dataset, usually it's a self._data.info in a data-access module.
@@ -147,5 +147,25 @@ def make_filename(data_info, options):
     (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
     filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], options['segment']['@beginning'],
                                       options['segment']['@ending'], file_ext)
+    return filename
+
+
+def make_raw_filename(data_info, options):
+    """Constructs a file name for writing raw output.
+    It's used in write-methods of various data-access classes.
+    Names of vertical levels are NOT included into the filename.
+
+    Arguments:
+        data_info -- dictionary describing dataset, usually it's a self._data.info in a data-access module.
+        options -- dictionary containing metadata of the data array to be written, usually it's an options
+        argument of the write method.
+
+    Returns:
+        filename -- constructed filename which includes level name and time segment.
+
+    """
+    (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
+    filename = '{}_{}-{}{}'.format(file_root, options['segment']['@beginning'],
+                                   options['segment']['@ending'], file_ext)
 
     return filename

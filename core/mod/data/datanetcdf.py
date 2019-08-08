@@ -364,7 +364,10 @@ class DataNetcdf(Data):
         print(' (DataNetcdf::write_array)  Writing netCDF file: {}'.format(filename))
 
         # Create netCDF file.
-        root = Dataset(filename, 'a')  # , format='NETCDF3_64BIT_OFFSET')
+        try:
+            root = Dataset(filename, 'w', clobber=False)  # , format='NETCDF3_64BIT_OFFSET')
+        except OSError:
+            root = Dataset(filename, 'a')
 
         # Define dimensions.
         lon = root.createDimension('lon', options['longitudes'].size)  # pylint: disable=W0612

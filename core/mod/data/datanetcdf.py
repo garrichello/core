@@ -414,10 +414,11 @@ class DataNetcdf(Data):
             latitudes[:] = options['latitudes']
         else:  # Existing file.
             levels = root.variables['level']  # Get level variable (let's suppose it exists).
-            
+
         # Check if the current level is present in the file.
-        level_idx = levels.get(options['level'])
-        if level_idx is None:  # If the level is not found...
+        if options['level'] in levels[:].tolist():
+            level_idx = levels[:].index(options['level'])
+        else:
             level_idx = levels.size
             levels[level_idx] = options['level']  # ... add the new one.
 

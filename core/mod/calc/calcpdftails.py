@@ -111,6 +111,6 @@ class CalcPDFtails(Calc):
                                       longitudes=percentile['@longitude_grid'], latitudes=percentile['@latitude_grid'],
                                       times=percentile['@day_grid'], fill_value=percentile['@fill_value'],
                                       meta=percentile['meta'])
-            out_uid += 1
+#            out_uid += 1
 
         print('(CalcPDFtails::run) Finished!')

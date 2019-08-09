@@ -85,6 +85,8 @@ class CalcPDFtails(Calc):
         elif 'min' in result['data']['description']['@name'].lower():
             percentile['meta']['varname'] = 'minday_percentile'
         percentile['meta']['time_long_name'] = 'Calendar day of the year'
+        percentile['meta']['level_units'] = 'percentile'
+        percentile['meta']['level_long_name'] = 'Percentile'
 
         return percentile
 

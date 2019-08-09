@@ -366,16 +366,16 @@ class DataNetcdf(Data):
         # Create netCDF file.
         try:
             root = Dataset(filename, 'w', clobber=False)  # , format='NETCDF3_64BIT_OFFSET')
-            NEW_FILE = True
+            new_file = True
         except OSError:
             root = Dataset(filename, 'a')
-            NEW_FILE = False
+            new_file = False
 
         varname = options['meta'].get('varname')
         varname = 'data' if varname is None else varname
 
         # Define dimensions and variables.
-        if NEW_FILE:
+        if new_file:
             lon = root.createDimension('lon', options['longitudes'].size)  # pylint: disable=W0612
             longitudes = root.createVariable('lon', 'f4', ('lon'))
             lat = root.createDimension('lat', options['latitudes'].size)  # pylint: disable=W0612
@@ -397,8 +397,10 @@ class DataNetcdf(Data):
 
             # Set variables attributes.
             levels.standard_name = 'level'
-            levels.units = 'string'
-            levels.long_name = 'level'
+            levels_units = options['meta']['level_units']
+            levels.units = 'string' if levels_units is None else levels_units
+            levels_long_name = options['meta']['level_long_name']
+            levels.long_name = 'level' if levels_units is None else levels_long_name
             latitudes.standard_name = 'latitude'
             latitudes.units = 'degrees_north'
             latitudes.long_name = 'latitude'
@@ -433,7 +435,7 @@ class DataNetcdf(Data):
                 data = root.createVariable(varname, 'f4', ('level', 'lat', 'lon'), fill_value=values.fill_value)
                 values = values.reshape((1, options['latitudes'].size, options['longitudes'].size))
             data.units = options['description']['@units']
-            data.long_name = '{} {}'.format(options['description']['@title'], options['description']['@name'])
+            data.long_name = options['description']['@name']
 
         # Write values.
         data[:, level_idx, :, :] = ma.filled(values, fill_value=values.fill_value)

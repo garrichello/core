@@ -1,7 +1,7 @@
 """Contains classes:
     MainApp
 """
-from copy import copy
+from copy import deepcopy
 
 import collections
 import xmltodict
@@ -75,27 +75,25 @@ class MainApp:
                 data_idx = self._data_uid_list.index(argument_uid) # Search for a 'data' element.
                 arg['data'] = task['data'][data_idx] # Add a new dictionary item with a description.
                 base_uid = arg['data'].get('@base')  # UID of the base data (which argument is based on).
-                group_name = arg['data'].get('@group')  # Overrides scenario of the base data.
-                product_name = arg['data'].get('@product')  # Suffix for the base variable name.
-                levels = copy(arg['data']['levels'])  # Store original levels.
                 if base_uid:
                     try:
                         base_idx = self._data_uid_list.index(base_uid) # Search for a base 'data' element.
                     except ValueError:
                         print('(MainApp::process) Can\'t find base data UID \'{}\' in child data \'{}\''.format(
                             base_uid, argument_uid))
-                    arg['data'] = copy(task['data'][base_idx]) # Copy base description.
-                    if group_name:
-                        arg['data']['dataset']['@scenario'] = group_name
-                    if product_name:
-                        arg['data']['variable']['@name'] += '_' + product_name
+                    orig_data = deepcopy(arg['data'])  # Store original argument data.
+                    arg['data'] = deepcopy(task['data'][base_idx]) # Copy base description.
+                    if orig_data.get('@group'):
+                        arg['data']['dataset']['@scenario'] = orig_data.get('@group')  # Overrides scenario of the base data.
+                    if orig_data.get('@product'):
+                        arg['data']['variable']['@name'] += '_' + orig_data.get('@product')  # Suffix for the base variable name.
                     arg['data']['@uid'] = argument_uid
-                    arg['data']['levels'] = levels
+                    arg['data']['levels'] = orig_data.get(['levels'])  # Store original levels.
                 arg_description = arg['data'].get('description')  # Get arguments description.
                 source_uid = None
-                if arg_description is not None:
+                if arg_description:
                     source_uid = arg_description.get('@source')  # Check if the arguments description has 'source' attribute.
-                if source_uid is not None:
+                if source_uid:
                     source_idx = self._data_uid_list.index(source_uid)
                     arg['data']['description']['@name'] = task['data'][source_idx]['description']['@name']  # Get name from source UID.
                     arg['data']['description']['@units'] = task['data'][source_idx]['description']['@units']  # Get units from source UID.

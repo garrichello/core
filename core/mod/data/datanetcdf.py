@@ -365,7 +365,7 @@ class DataNetcdf(Data):
 
         # Create netCDF file.
         try:
-            root = Dataset(filename, 'w', clobber=False, format='NETCDF4_CLASSIC')  # , format='NETCDF3_64BIT_OFFSET')
+            root = Dataset(filename, 'w', clobber=False, format='NETCDF3_64BIT_OFFSET')  # , format='NETCDF3_64BIT_OFFSET')
             new_file = True
         except OSError:
             root = Dataset(filename, 'a')

@@ -116,7 +116,7 @@ class DataNetcdf(Data):
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])
         if levels_to_read is None:
-            levels_to_read = self._data_info['data']['levels']  # Read all levels if nothing specified.
+            levels_to_read = listify(self._data_info['data']['levels'])  # Read all levels if nothing specified.
         # Segments must be a list or None.
         segments_to_read = listify(options['segments'])
         if segments_to_read is None:

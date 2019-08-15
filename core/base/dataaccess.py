@@ -317,6 +317,23 @@ class DataAccess():
             levels = None
         return levels
 
+    def get_data(self, uid):
+        """Returns full data info
+
+        Arguments:
+            uid -- UID of a processing module's input (as in a task file)
+        """
+        if self._input_uids is not None:
+            try:
+                input_idx = self._input_uids.index(uid)
+            except ValueError:
+                print('(DataAccess::get_segments) No such input UID: ' + uid)
+                raise
+            data = self._inputs[input_idx]['data']
+        else:
+            data = None
+        return data
+
     def put(self, uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None, fill_value=None,
             description=None, meta=None):
         """Writes data and metadata to an output data storage (array).

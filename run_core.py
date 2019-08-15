@@ -16,10 +16,10 @@ def main(args):
     print(core.__prog__ + ' v.' + core.__version__)
 
     start_time = time.time()
-    app = core.MainApp(args)
+    app = core.MainApp()
 
     try:
-        app.run()
+        app.run(args)
         print('SUCCESS!')
     except:
         print("ERROR!")

@@ -10,41 +10,41 @@ from .common import print, listify  # pylint: disable=W0622
 class MainApp:
     """Main application class. It does everything the application does."""
 
-    def __init__(self, args=None):
+    def __init__(self):
         """Parses command line arguments, extracts a task file name."
 
         Arguments:
             args - argparse's Namespace with command line arguments of the application.
         """
 
-        self._task_file_name = args.task_file_name
         self._task = {}
         self._data_uid_list = []
         self._destination_uid_list = []
 
-    def run(self):
+    def run(self, args):
         """Run this function to run the Core."""
 
         print('(MainApp::run) Let\'s do it!')
 
-        self._read_task()
+        task_file_name = args.task_file_name
+        self._read_task(task_file_name)
         self._process()
 
         print('(MainApp::run) Job is done. Exiting.')
 
-    def _read_task(self):
+    def _read_task(self, task_file_name):
         """Reads the task file and creates all necessary structures."""
 
         print("(MainApp::read_task) Read the task file...")
 
         try:
-            with open(self._task_file_name) as file_descriptor:
+            with open(task_file_name) as file_descriptor:
                 self._task = xmltodict.parse(file_descriptor.read())
         except FileNotFoundError:
-            print('(MainApp::_read_task) Task file not found: ' + self._task_file_name)
+            print('(MainApp::_read_task) Task file not found: ' + task_file_name)
             raise
         except UnicodeDecodeError:
-            with open(self._task_file_name, encoding='windows-1251') as file_descriptor:
+            with open(task_file_name, encoding='windows-1251') as file_descriptor:
                 self._task = xmltodict.parse(file_descriptor.read())
 
         # Make them lists!

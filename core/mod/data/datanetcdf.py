@@ -371,7 +371,9 @@ class DataNetcdf(Data):
             root = Dataset(filename, 'a')
             new_file = False
 
-        varname = options['meta'].get('varname')
+        meta = options.get('meta')
+
+        varname = None if meta is None else meta.get('varname')
         varname = 'data' if varname is None else varname
 
         # Define dimensions and variables.
@@ -387,7 +389,7 @@ class DataNetcdf(Data):
                 time = root.createDimension('time', len(options['times']))  # pylint: disable=W0612
                 times = root.createVariable('time', 'f8', ('time'))
                 times.units = 'days since {}-1-1 00:00:0.0'.format(options['times'][0].year)
-                times_long_name = options['meta'].get('time_long_name')
+                times_long_name = None if meta is None else meta.get('time_long_name')
                 times.long_name = 'time' if times_long_name is None else times_long_name
 
             # Set global attributes.
@@ -397,9 +399,9 @@ class DataNetcdf(Data):
 
             # Set variables attributes.
             levels.standard_name = 'level'
-            levels_units = options['meta'].get('level_units')
+            levels_units = None if meta is None else meta.get('level_units')
             levels.units = 'string' if levels_units is None else levels_units
-            levels_long_name = options['meta'].get('level_long_name')
+            levels_long_name = None if meta is None else meta.get('level_long_name')
             levels.long_name = 'level' if levels_units is None else levels_long_name
             latitudes.standard_name = 'latitude'
             latitudes.units = 'degrees_north'

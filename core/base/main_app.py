@@ -88,7 +88,7 @@ class MainApp:
                     if orig_data.get('@product'):
                         arg['data']['variable']['@name'] += '_' + orig_data.get('@product')  # Suffix for the base variable name.
                     arg['data']['@uid'] = argument_uid
-                    arg['data']['levels'] = orig_data.get(['levels'])  # Store original levels.
+                    arg['data']['levels'] = orig_data['levels']  # Restore original levels.
                 arg_description = arg['data'].get('description')  # Get arguments description.
                 source_uid = None
                 if arg_description:

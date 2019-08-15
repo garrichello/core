@@ -31,9 +31,10 @@ class CalcPDFtails(Calc):
             percentile -- 2-D masked array of percentiles.
         """
 
-        # Get time segments and levels
+        # Get time segments and levels and data info.
         time_segment = self._data_helper.get_segments(uid)[0]  # Only the first time segment is taken.
         level = self._data_helper.get_levels(uid)[0]  # Only the first vertical level is taken.
+        data_info = self._data_helper.get_data(uid)
 
         start_date = datetime.datetime.strptime(time_segment['@beginning'], '%Y%m%d%H')
         end_date = datetime.datetime.strptime(time_segment['@ending'], '%Y%m%d%H')

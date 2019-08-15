@@ -397,7 +397,7 @@ class DataNetcdf(Data):
 
             # Set variables attributes.
             levels.standard_name = 'level'
-            levels_units = options['meta']['level_units']
+            levels_units = options['meta'].get('level_units')
             levels.units = 'string' if levels_units is None else levels_units
             levels_long_name = options['meta']['level_long_name']
             levels.long_name = 'level' if levels_units is None else levels_long_name

@@ -81,10 +81,7 @@ class CalcPDFtails(Calc):
         percentile['@latitude_grid'] = result['@latitude_grid']
         percentile['@fill_value'] = result['@fill_value']
         percentile['meta'] = result['meta']
-        if 'max' in result['data']['description']['@name'].lower():
-            percentile['meta']['varname'] = 'maxday_percentile'
-        elif 'min' in result['data']['description']['@name'].lower():
-            percentile['meta']['varname'] = 'minday_percentile'
+        percentile['meta']['varname'] = data_info['variable']['@name'] + '_percentile'
         percentile['meta']['time_long_name'] = 'Calendar day of the year'
         percentile['meta']['level_units'] = 'percentile'
         percentile['meta']['level_long_name'] = 'Percentile'

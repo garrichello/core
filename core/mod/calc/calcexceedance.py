@@ -51,9 +51,9 @@ class CalcExceedance(Calc):
                           THRESHOLD_PARAMETER_NAME: DEFAULT_THRESHOLD,
                           MODE_PARAMETER_NAME: DEFAULT_MODE}
 
-        print('(CalcExceedance::run) Calculation type {}'.format(parameters[TYPE_PARAMETER_NAME]))
-        print('(CalcExceedance::run) Exceedance threshold {}'.format(parameters[THRESHOLD_PARAMETER_NAME]))
-        print('(CalcExceedance::run) Calculation mode {}'.format(parameters[MODE_PARAMETER_NAME]))
+        print('(CalcExceedance::run) Calculation type: {}'.format(parameters[TYPE_PARAMETER_NAME]))
+        print('(CalcExceedance::run) Exceedance threshold: {}'.format(parameters[THRESHOLD_PARAMETER_NAME]))
+        print('(CalcExceedance::run) Calculation mode: {}'.format(parameters[MODE_PARAMETER_NAME]))
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
@@ -69,8 +69,8 @@ class CalcExceedance(Calc):
             segment['@ending'] = '0001' + segment['@ending'][4:]
 
         # Read normals data
-        normals_data = self._data_helper.get(NORMALS_UID, segments=normals_time_segments)
-        study_data = self._data_helper.get(STUDY_UID, segments=study_time_segments)
+        normals_data = self._data_helper.get(input_uids[NORMALS_UID], segments=normals_time_segments)
+        study_data = self._data_helper.get(inputs_uids[STUDY_UID], segments=study_time_segments)
 
         # Make desired statistical function shortcut for segment and final processing .
         if calc_mode == 'timeMean':

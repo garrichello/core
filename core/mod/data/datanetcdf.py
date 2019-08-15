@@ -196,7 +196,8 @@ class DataNetcdf(Data):
                 calendar = time_variable.calendar
             except AttributeError:
                 calendar = 'standard'
-            time_variable = MFTime(time_variable, calendar=calendar)  # Apply multi-file support to the time variable
+            if len(netcdf_root._files) > 1:
+                time_variable = MFTime(time_variable, calendar=calendar)  # Apply multi-file support to the time variable
 
             print(' (DataNetcdf::read)  Done!')
 

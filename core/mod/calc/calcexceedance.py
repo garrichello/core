@@ -1,7 +1,7 @@
 """ CalcExceedance implements calculation of a spatial field of cold/warm nights/days values for time series of data.
 """
 
-from copy import copy
+from copy import deepcopy
 import itertools
 import numpy.ma as ma
 
@@ -63,7 +63,7 @@ class CalcExceedance(Calc):
         study_time_segments = self._data_helper.get_segments(input_uids[STUDY_UID])
         study_vertical_levels = self._data_helper.get_levels(input_uids[STUDY_UID])
         # Normals time segments should be set for year 1 (as set in a pdftails file)
-        normals_time_segments = copy(study_time_segments)
+        normals_time_segments = deepcopy(study_time_segments)
         for segment in normals_time_segments:
             segment['@beginning'] = '0001' + segment['@beginning'][4:]
             segment['@ending'] = '0001' + segment['@ending'][4:]

@@ -70,7 +70,7 @@ class CalcExceedance(Calc):
 
         # Read normals data
         normals_data = self._data_helper.get(input_uids[NORMALS_UID], segments=normals_time_segments)
-        study_data = self._data_helper.get(inputs_uids[STUDY_UID], segments=study_time_segments)
+        study_data = self._data_helper.get(input_uids[STUDY_UID], segments=study_time_segments)
 
         # Make desired statistical function shortcut for segment and final processing .
         if calc_mode == 'timeMean':

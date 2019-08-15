@@ -1,6 +1,8 @@
 """Contains classes:
     MainApp
 """
+from copy import copy
+
 import collections
 import xmltodict
 
@@ -75,17 +77,20 @@ class MainApp:
                 base_uid = arg['data'].get('@base')  # UID of the base data (which argument is based on).
                 group_name = arg['data'].get('@group')  # Overrides scenario of the base data.
                 product_name = arg['data'].get('@product')  # Suffix for the base variable name.
-                if base_uid is not None:
+                levels = copy(arg['data']['levels'])  # Store original levels.
+                if base_uid:
                     try:
                         base_idx = self._data_uid_list.index(base_uid) # Search for a base 'data' element.
                     except ValueError:
                         print('(MainApp::process) Can\'t find base data UID \'{}\' in child data \'{}\''.format(
                             base_uid, argument_uid))
-                    arg['data'] = task['data'][base_idx] # Copy base description.
+                    arg['data'] = copy(task['data'][base_idx]) # Copy base description.
                     if group_name:
                         arg['data']['dataset']['@scenario'] = group_name
                     if product_name:
                         arg['data']['variable']['@name'] += '_' + product_name
+                    arg['data']['@uid'] = argument_uid
+                    arg['data']['levels'] = levels
                 arg_description = arg['data'].get('description')  # Get arguments description.
                 source_uid = None
                 if arg_description is not None:

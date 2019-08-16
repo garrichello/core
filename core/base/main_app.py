@@ -100,7 +100,7 @@ class MainApp:
             argument_uid = arg['@data'] # UID of the data/destination argument.
             if argument_uid in self._data_uid_list:
                 data_idx = self._data_uid_list.index(argument_uid) # Search for a 'data' element.
-                parent_uid = task['data'][data_idx].get('@base')  # UID of the parent data (which properties it should inherit).
+                parent_uid = task['data'][data_idx].get('@parent')  # UID of the parent data (which properties it should inherit).
                 if parent_uid:
                     arg['data'] = self._inherit_properties(task, parent_uid, argument_uid)
                 else:

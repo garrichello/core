@@ -433,14 +433,18 @@ class DataNetcdf(Data):
         if data is None:  # # Define data variable if it is not present.
             if options['times'] is not None:
                 data = root.createVariable(varname, 'f4', ('time', 'level', 'lat', 'lon'), fill_value=values.fill_value)
+            else:
+                data = root.createVariable(varname, 'f4', ('level', 'lat', 'lon'), fill_value=values.fill_value)
+            data.units = options['description']['@units']
+            data.long_name = options['description']['@name']
+        else:
+            if options['times'] is not None:
                 values = values.reshape((len(options['times']), 1, options['latitudes'].size, options['longitudes'].size))
                 data[:, level_idx, :, :] = ma.filled(values, fill_value=values.fill_value)  # Write values.
             else:
-                data = root.createVariable(varname, 'f4', ('level', 'lat', 'lon'), fill_value=values.fill_value)
                 values = values.reshape((1, options['latitudes'].size, options['longitudes'].size))
                 data[level_idx, :, :] = ma.filled(values, fill_value=values.fill_value)  # Write values.
-            data.units = options['description']['@units']
-            data.long_name = options['description']['@name']
+
 
         root = None
 

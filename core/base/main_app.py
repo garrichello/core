@@ -56,6 +56,33 @@ class MainApp:
 
         print("(MainApp::read_task) Done!")
 
+    def _inherit_properties(self, task, parent_uid, child_uid):
+        """Allows to inherit properties of a parent data element conserving existing properties of a child.
+
+        Arguments:
+            task -- current task dictionary
+            parent_uid -- parent data UID
+            child_uid -- child data UID
+
+        Returns: 
+            'data' dictionary with properties of the parent data overridden with existing properties of a child.
+        """
+        child_idx = self._data_uid_list.index(child_uid)
+        try:
+            parent_idx = self._data_uid_list.index(parent_uid) # Search for a parent 'data' element.
+        except ValueError:
+            print('(MainApp::_inherit_properties) Can\'t find parent data UID \'{}\' in child data \'{}\''.format(
+                parent_uid, child_uid))
+        child_data = task['data'][child_idx]
+        parent_data = task['data'][parent_idx]
+        for k, v in parent_data.items():
+            if k not in child_data.keys():
+                child_data[k] = v
+        if child_data.get('@product'):
+            child_data['variable']['@name'] += '_' + child_data.get('@product')  # Suffix for the base variable name.
+
+        return child_data
+
     def _prepare_proc_arguments(self, task, proc_uid, proc_args):
         """Adds a new 'data' element into the argument's dictionary
         containing a full description of the data/destination argument.
@@ -73,22 +100,11 @@ class MainApp:
             argument_uid = arg['@data'] # UID of the data/destination argument.
             if argument_uid in self._data_uid_list:
                 data_idx = self._data_uid_list.index(argument_uid) # Search for a 'data' element.
-                arg['data'] = task['data'][data_idx] # Add a new dictionary item with a description.
-                base_uid = arg['data'].get('@base')  # UID of the base data (which argument is based on).
-                if base_uid:
-                    try:
-                        base_idx = self._data_uid_list.index(base_uid) # Search for a base 'data' element.
-                    except ValueError:
-                        print('(MainApp::process) Can\'t find base data UID \'{}\' in child data \'{}\''.format(
-                            base_uid, argument_uid))
-                    orig_data = deepcopy(arg['data'])  # Store original argument data.
-                    arg['data'] = deepcopy(task['data'][base_idx]) # Copy base description.
-                    if orig_data.get('@group'):
-                        arg['data']['dataset']['@scenario'] = orig_data.get('@group')  # Overrides scenario of the base data.
-                    if orig_data.get('@product'):
-                        arg['data']['variable']['@name'] += '_' + orig_data.get('@product')  # Suffix for the base variable name.
-                    arg['data']['@uid'] = argument_uid
-                    arg['data']['levels'] = orig_data['levels']  # Restore original levels.
+                parent_uid = task['data'][data_idx].get('@base')  # UID of the parent data (which properties it should inherit).
+                if parent_uid:
+                    arg['data'] = self._inherit_properties(task, parent_uid, argument_uid)
+                else:
+                    arg['data'] = task['data'][data_idx]  # Add a new dictionary item with a description.
                 arg_description = arg['data'].get('description')  # Get arguments description.
                 source_uid = None
                 if arg_description:

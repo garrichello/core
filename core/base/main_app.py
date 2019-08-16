@@ -56,6 +56,14 @@ class MainApp:
 
         print("(MainApp::read_task) Done!")
 
+    def _dict_append(self, source, destination):
+        if isinstance(source, dict):
+            for k, v in source.items():
+                if k not in destination.keys():
+                    destination[k] = deepcopy(v)
+                else:
+                    self._dict_append(source[k], destination[k])
+
     def _inherit_properties(self, task, parent_uid, child_uid):
         """Allows to inherit properties of a parent data element conserving existing properties of a child.
 
@@ -75,9 +83,7 @@ class MainApp:
                 parent_uid, child_uid))
         child_data = task['data'][child_idx]
         parent_data = task['data'][parent_idx]
-        for k, v in parent_data.items():
-            if k not in child_data.keys():
-                child_data[k] = deepcopy(v)
+        self._dict_append(parent_data, child_data)
         if child_data.get('@product'):
             child_data['variable']['@name'] += '_' + child_data.get('@product')  # Suffix for the base variable name.
 

@@ -77,7 +77,7 @@ class MainApp:
         parent_data = task['data'][parent_idx]
         for k, v in parent_data.items():
             if k not in child_data.keys():
-                child_data[k] = v
+                child_data[k] = deepcopy(v)
         if child_data.get('@product'):
             child_data['variable']['@name'] += '_' + child_data.get('@product')  # Suffix for the base variable name.
 

@@ -428,23 +428,23 @@ class DataNetcdf(Data):
             level_idx = levels.size
             levels[level_idx] = int(options['level'])  # ... add the new one.
 
+        dim_list = ['level', 'lat', 'lon']
+        if options['times'] is not None:
+            dim_list.insert(0, 'time')
+
         # Check if variable is present in the file.
         data = root.variables.get(varname)
         if data is None:  # # Define data variable if it is not present.
-            if options['times'] is not None:
-                data = root.createVariable(varname, 'f4', ('time', 'level', 'lat', 'lon'), fill_value=values.fill_value)
-            else:
-                data = root.createVariable(varname, 'f4', ('level', 'lat', 'lon'), fill_value=values.fill_value)
+            data = root.createVariable(varname, 'f4', dim_list, fill_value=values.fill_value)
             data.units = options['description']['@units']
             data.long_name = options['description']['@name']
-        else:
-            if options['times'] is not None:
-                values = values.reshape((len(options['times']), 1, options['latitudes'].size, options['longitudes'].size))
-                data[:, level_idx, :, :] = ma.filled(values, fill_value=values.fill_value)  # Write values.
-            else:
-                values = values.reshape((1, options['latitudes'].size, options['longitudes'].size))
-                data[level_idx, :, :] = ma.filled(values, fill_value=values.fill_value)  # Write values.
 
+        if options['times'] is not None:
+            values = values.reshape((len(options['times']), 1, options['latitudes'].size, options['longitudes'].size))
+            data[:, level_idx, :, :] = ma.filled(values, fill_value=values.fill_value)  # Write values.
+        else:
+            values = values.reshape((1, options['latitudes'].size, options['longitudes'].size))
+            data[level_idx, :, :] = ma.filled(values, fill_value=values.fill_value)  # Write values.
 
         root = None
 

@@ -53,7 +53,7 @@ class Data:
         points = np.vstack((lon_coords, lat_coords)).T
 
         path = Path(self._ROI)
-        mask = path.contains_points(points, radius=1e-5) # True is for the points inside the ROI
+        mask = path.contains_points(points, radius=-1e-5) # True is for the points inside the ROI
         mask = ~mask.reshape((lats.size, lons.size)) # True is masked so we need to inverse the mask
 
         return mask

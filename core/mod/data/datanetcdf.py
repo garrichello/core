@@ -112,6 +112,7 @@ class DataNetcdf(Data):
             self._data_info['data']['dataset']['@name'], self._data_info['data']['dataset']['@resolution'],
             self._data_info['data']['dataset']['@scenario'], self._data_info['data']['dataset']['@time_step']
         ))
+        print(' (DataNetcdf::read) [Variable: {}]'.format(self._data_info['data']['variable']['@name']))
 
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])
@@ -207,7 +208,8 @@ class DataNetcdf(Data):
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
-                print(' (DataNetcdf::read)  Time segment \'{0}\''.format(segment['@name']))
+                print(' (DataNetcdf::read)  Time segment \'{0}\' ({}-{})'.format(
+                    segment['@name'], segment['@beginning'], segment('@ending')))
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')

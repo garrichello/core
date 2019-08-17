@@ -218,7 +218,7 @@ class DataNetcdf(Data):
                     print(''' (DataNetcdf::read)  Error! The end of the time segment is before the first time in the dataset.
                                            Aborting!''')
                     raise ValueError
-                variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1])  # pylint: disable=W0212, E1101
+                variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1]+1)  # pylint: disable=W0212, E1101
                 time_values = time_variable[variable_indices[time_variable._name]]  # Raw time values.  # pylint: disable=W0212, E1101
                 time_grid = num2date(time_values, time_variable.units)  # Time grid as a datetime object.  # pylint: disable=E1101
 

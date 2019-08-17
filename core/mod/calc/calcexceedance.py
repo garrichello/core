@@ -2,7 +2,7 @@
 """
 
 from copy import deepcopy
-import itertools
+import operator
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
@@ -18,7 +18,7 @@ THRESHOLD_PARAMETER_NAME = 'Threshold'
 MODE_PARAMETER_NAME = 'Mode'
 DEFAULT_TYPE = 'frequency'
 DEFAULT_THRESHOLD = 'low'
-DEFAULT_MODE = 'single'
+DEFAULT_MODE = 'data'
 
 class CalcExceedance(Calc):
     """ Provides calculation of a spatial field of cold/warm nights/days values for time series of data.
@@ -62,8 +62,10 @@ class CalcExceedance(Calc):
         # Get time segments and levels
         study_time_segments = self._data_helper.get_segments(input_uids[STUDY_UID])
         study_vertical_levels = self._data_helper.get_levels(input_uids[STUDY_UID])
+
         # Normals time segments should be set for year 1 (as set in a pdftails file)
         normals_time_segments = deepcopy(study_time_segments)
+        percentile = self._data_helper.get_levels(input_uids[NORMALS_UID])[0]  # There should be only one level - percentile.
         for segment in normals_time_segments:
             segment['@beginning'] = '0001' + segment['@beginning'][4:]
             segment['@ending'] = '0001' + segment['@ending'][4:]
@@ -72,39 +74,50 @@ class CalcExceedance(Calc):
         normals_data = self._data_helper.get(input_uids[NORMALS_UID], segments=normals_time_segments)
         study_data = self._data_helper.get(input_uids[STUDY_UID], segments=study_time_segments)
 
+        if parameters[THRESHOLD_PARAMETER_NAME] == 'low':
+            comparison_func = operator.lt
+        elif parameters[THRESHOLD_PARAMETER_NAME] == 'high':
+            comparison_func = operator.gt
+        else:
+            print('(CalcExceedance::run) Error! Unknown threshold parameter value: \'{}\''.format(
+                parameters[THRESHOLD_PARAMETER_NAME]))
+            raise ValueError
+        
+        final_func = ma.max
+
         for level in study_vertical_levels:
             all_segments_data = []
             for segment in study_time_segments:
-                one_segment_time_grid = []
+                normals_values = normals_data['data'][percentile][segment['@name']]['@values']
+                study_values = study_data['data'][level][segment['@name']]['@values']
 
-
-
-
-                # Calulate time statistics for a current time segment
-                if (parameters[calc_mode] == 'data') or (parameters[calc_mode] == 'segment'):
-                    one_segment_data = seg_stat_func(result['data'][level][segment['@name']]['@values'], axis=0)
-                    one_segment_time_grid.append(result['data'][level][segment['@name']]['@time_grid'][0])
-
+                # Calulate time statistics for the current time segment
+                if parameters[TYPE_PARAMETER_NAME] == 'frequency':
+                    one_segment_data = ma.mean(comparison_func(study_values, normals_values), axis=0) * 100
+                
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
-                if (parameters[calc_mode] == 'day') or (parameters[calc_mode] == 'segment'):
+                if (parameters[MODE_PARAMETER_NAME] == 'segment'):
+                    one_segment_time_grid = study_data['data'][level][segment['@name']]['@time_grid']
                     self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
-                                          longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                          times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'])
-                elif parameters[calc_mode] == 'data':
+                                          longitudes=study_data['@longitude_grid'], 
+                                          latitudes=study_data['@latitude_grid'],
+                                          times=one_segment_time_grid, fill_value=study_data['@fill_value'], 
+                                          meta=study_data['meta'])
+                elif parameters[MODE_PARAMETER_NAME] == 'data':
                     all_segments_data.append(one_segment_data)
 
             # For data-wise analysis analyse segments analyses :)
-            if parameters[calc_mode] == 'data':
-                data_out = final_stat_func(ma.stack(all_segments_data), axis=0)
+            if parameters[MODE_PARAMETER_NAME] == 'data':
+                data_out = final_func(ma.stack(all_segments_data), axis=0)
 
                 # Make a global segment covering all input time segments
-                full_range_segment = copy(time_segments[0])  # Take the beginning of the first segment...
-                full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
+                full_range_segment = deepcopy(study_time_segments[0])  # Take the beginning of the first segment...
+                full_range_segment['@ending'] = study_time_segments[-1]['@ending']  # and the end of the last one.
                 full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
                 self._data_helper.put(output_uids[0], values=data_out, level=level, segment=full_range_segment,
-                                      longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                      fill_value=result['@fill_value'], meta=result['meta'])
+                                      longitudes=study_data['@longitude_grid'], latitudes=study_data['@latitude_grid'],
+                                      fill_value=study_data['@fill_value'], meta=study_data['meta'])
 
         print('(CalcExceedance::run) Finished!')

@@ -16,7 +16,7 @@ STUDY_UID = 1
 TYPE_PARAMETER_NAME = 'Type'
 THRESHOLD_PARAMETER_NAME = 'Threshold'
 MODE_PARAMETER_NAME = 'Mode'
-DEFAULT_TYPE = 'duration'
+DEFAULT_TYPE = 'frequency'
 DEFAULT_THRESHOLD = 'low'
 DEFAULT_MODE = 'single'
 
@@ -72,44 +72,13 @@ class CalcExceedance(Calc):
         normals_data = self._data_helper.get(input_uids[NORMALS_UID], segments=normals_time_segments)
         study_data = self._data_helper.get(input_uids[STUDY_UID], segments=study_time_segments)
 
-        # Make desired statistical function shortcut for segment and final processing .
-        if calc_mode == 'timeMean':
-            seg_stat_func = ma.mean
-            final_stat_func = ma.mean
-        elif calc_mode == 'timeMin':
-            seg_stat_func = ma.min
-            final_stat_func = ma.min
-        elif calc_mode == 'timeMax':
-            seg_stat_func = ma.max
-            final_stat_func = ma.max
-        elif calc_mode == 'timeMeanPrec':
-            seg_stat_func = ma.sum
-            final_stat_func = ma.mean
-
-        for level in vertical_levels:
+        for level in study_vertical_levels:
             all_segments_data = []
-            for segment in time_segments:
+            for segment in study_time_segments:
                 one_segment_time_grid = []
 
-                # Get data
-                result = self._data_helper.get(input_uids[0], segments=segment, levels=level)
 
-                # Daily statistics.
-                if parameters[calc_mode] == 'day':
-                    one_segment_data = []
-                    data_time_iter = itertools.zip_longest(result['data'][level][segment['@name']]['@values'],
-                                                           result['data'][level][segment['@name']]['@time_grid'])
-                    for date_key, group in itertools.groupby(data_time_iter, key=self._data_time_key):
-                        group_data = []
-                        for data, _ in group:
-                            group_data.append(data)
-                        group_data = ma.stack(group_data)
-                        one_segment_time_grid.append(date_key)
 
-                        # Calulate time statistics for a current time group (day)
-                        one_segment_data.append(seg_stat_func(group_data, axis=0))
-
-                    one_segment_data = ma.stack(one_segment_data)
 
                 # Calulate time statistics for a current time segment
                 if (parameters[calc_mode] == 'data') or (parameters[calc_mode] == 'segment'):

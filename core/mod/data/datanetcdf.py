@@ -387,7 +387,7 @@ class DataNetcdf(Data):
             lat = root.createDimension('lat', options['latitudes'].size)  # pylint: disable=W0612
             latitudes = root.createVariable('lat', 'f4', ('lat'))
             lev = root.createDimension('level')  # pylint: disable=W0612
-            levels = root.createVariable('level', 'f4', ('level'))
+            levels = root.createVariable('level', 'i4', ('level'))
 
             if options['times'] is not None:
                 time = root.createDimension('time', len(options['times']))  # pylint: disable=W0612
@@ -427,7 +427,7 @@ class DataNetcdf(Data):
 
         # Check if the current level is present in the file.
         levels_list = levels[:].tolist()
-        level_value = float(re.findall('[\d\.]+', options['level'])[0])
+        level_value = int(re.findall('[\d\.]+', options['level'])[0])
         level_units = re.findall('[a-zA-Z]+', options['level'])[0]
         if level_value in levels_list:
             level_idx = levels_list.index(level_value)

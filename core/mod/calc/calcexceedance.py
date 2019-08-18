@@ -55,6 +55,8 @@ class CalcExceedance(Calc):
             feb29_index = time_list.index(feb29)
             data = np.delete(data, feb29_index, axis=0)
             time_grid = np.delete(time_grid, feb29_index, axis=0)
+        
+        return (data, time_grid)
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
@@ -113,7 +115,7 @@ class CalcExceedance(Calc):
                 one_segment_time_grid = study_data['data'][level][segment['@name']]['@time_grid']
 
                 # Remove Feb 29 from the study array (we do not take this day into consideration)
-                self._remove_feb29(study_values, one_segment_time_grid)
+                study_values, one_segment_time_grid = self._remove_feb29(study_values, one_segment_time_grid)
 
                 # Perform calculation for the current time segment
                 if feature == 'frequency':

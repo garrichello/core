@@ -40,6 +40,22 @@ class CalcExceedance(Calc):
 
         return value
 
+    def _remove_feb29(self, data, time_grid):
+        """ Removes February 29 from data and time grid
+        Arguments:
+            data -- data values
+            time_grid -- time grid
+        """
+        try:
+            feb29 = datetime.datetime(time_grid[0].year, 2, 29, time_grid[0].hour, time_grid[0].minute)
+        except ValueError:
+            feb29 = None
+        if feb29:
+            time_list = time_grid.tolist()
+            feb29_index = time_list.index(feb29)
+            data = np.delete(data, feb29_index, axis=0)
+            time_grid = np.delete(time_grid, feb29_index, axis=0)
+
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
@@ -87,7 +103,7 @@ class CalcExceedance(Calc):
             print('(CalcExceedance::run) Error! Unknown exceedance value: \'{}\''.format(exceedance))
             raise ValueError
 
-        final_func = ma.max
+        data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments. 
 
         for level in study_vertical_levels:
             all_segments_data = []
@@ -97,17 +113,9 @@ class CalcExceedance(Calc):
                 one_segment_time_grid = study_data['data'][level][segment['@name']]['@time_grid']
 
                 # Remove Feb 29 from the study array (we do not take this day into consideration)
-                try:
-                    feb29 = datetime.datetime(one_segment_time_grid[0].year, 2, 29,
-                                              one_segment_time_grid[0].hour, one_segment_time_grid[0].minute)
-                except ValueError:
-                    feb29 = None
-                if feb29:
-                    time_list = one_segment_time_grid.tolist()
-                    feb29_index = time_list.index(feb29)
-                    study_values = np.delete(study_values, feb29_index, axis=0)
+                self._remove_feb29(study_values, one_segment_time_grid)
 
-                # Calulate time statistics for the current time segment
+                # Perform calculation for the current time segment
                 if feature == 'frequency':
                     one_segment_data = ma.mean(comparison_func(study_values, normals_values), axis=0) * 100
 
@@ -127,7 +135,7 @@ class CalcExceedance(Calc):
 
             # For data-wise analysis analyse segments analyses :)
             if calc_mode == 'data':
-                data_out = final_func(ma.stack(all_segments_data), axis=0)
+                data_out = data_func(ma.stack(all_segments_data), axis=0)
 
                 # Make a global segment covering all input time segments
                 full_range_segment = deepcopy(study_time_segments[0])  # Take the beginning of the first segment...

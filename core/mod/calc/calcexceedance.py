@@ -3,6 +3,9 @@
 
 from copy import deepcopy
 import operator
+import datetime
+
+import numpy as np
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
@@ -13,12 +16,7 @@ MAX_N_INPUT_ARGUMENTS = 3
 INPUT_PARAMETERS_INDEX = 2
 NORMALS_UID = 0
 STUDY_UID = 1
-TYPE_PARAMETER_NAME = 'Type'
-THRESHOLD_PARAMETER_NAME = 'Threshold'
-MODE_PARAMETER_NAME = 'Mode'
-DEFAULT_TYPE = 'frequency'
-DEFAULT_THRESHOLD = 'low'
-DEFAULT_MODE = 'data'
+DEFAULT_PARAMETERS = {'Feature': 'frequency', 'Exceedance': 'low', 'Mode': 'data'}
 
 class CalcExceedance(Calc):
     """ Provides calculation of a spatial field of cold/warm nights/days values for time series of data.
@@ -27,6 +25,20 @@ class CalcExceedance(Calc):
 
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
+
+    def _get_parameter(self, parameter_name, parameters):
+        """ Extracts parameter value by name from a dictionary or returns a default value.
+        Arguments:
+            parameter_name -- name of the parameter
+            parameters -- dictionary of parameters
+
+        Returns: value from a parameters or default value
+        """
+        value = parameters.get(parameter_name)
+        if value is None:
+            value = DEFAULT_PARAMETERS[parameter_name]
+
+        return value
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
@@ -38,22 +50,15 @@ class CalcExceedance(Calc):
         assert input_uids, '(CalcExceedance::run) No input arguments!'
 
         # Get parameters
-        if len(input_uids) == MAX_N_INPUT_ARGUMENTS:
+        if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-            if parameters.get(TYPE_PARAMETER_NAME) is None:  # If the calculation type is not set...
-                parameters[TYPE_PARAMETER_NAME] = DEFAULT_TYPE  # give it a default value.
-            if parameters.get(THRESHOLD_PARAMETER_NAME) is None:  # If the exceedance threshold is not set...
-                parameters[THRESHOLD_PARAMETER_NAME] = DEFAULT_THRESHOLD  # give it a default value.
-            if parameters.get(MODE_PARAMETER_NAME) is None:  # If the calculation mode is not set...
-                parameters[MODE_PARAMETER_NAME] = DEFAULT_MODE  # give it a default value.            
-        else:
-            parameters = {TYPE_PARAMETER_NAME: DEFAULT_TYPE,
-                          THRESHOLD_PARAMETER_NAME: DEFAULT_THRESHOLD,
-                          MODE_PARAMETER_NAME: DEFAULT_MODE}
+            feature =  self._get_parameter('Feature', parameters)
+            exceedance = self._get_parameter('Exceedance', parameters)
+            calc_mode = self._get_parameter('Mode', parameters)
 
-        print('(CalcExceedance::run) Calculation type: {}'.format(parameters[TYPE_PARAMETER_NAME]))
-        print('(CalcExceedance::run) Exceedance threshold: {}'.format(parameters[THRESHOLD_PARAMETER_NAME]))
-        print('(CalcExceedance::run) Calculation mode: {}'.format(parameters[MODE_PARAMETER_NAME]))
+        print('(CalcExceedance::run) Calculation feature: {}'.format(feature))
+        print('(CalcExceedance::run) Exceedance: {}'.format(exceedance))
+        print('(CalcExceedance::run) Calculation mode: {}'.format(calc_mode))
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
@@ -74,15 +79,14 @@ class CalcExceedance(Calc):
         normals_data = self._data_helper.get(input_uids[NORMALS_UID], segments=normals_time_segments)
         study_data = self._data_helper.get(input_uids[STUDY_UID], segments=study_time_segments)
 
-        if parameters[THRESHOLD_PARAMETER_NAME] == 'low':
+        if exceedance == 'low':
             comparison_func = operator.lt
-        elif parameters[THRESHOLD_PARAMETER_NAME] == 'high':
+        elif exceedance == 'high':
             comparison_func = operator.gt
         else:
-            print('(CalcExceedance::run) Error! Unknown threshold parameter value: \'{}\''.format(
-                parameters[THRESHOLD_PARAMETER_NAME]))
+            print('(CalcExceedance::run) Error! Unknown exceedance value: \'{}\''.format(exceedance))
             raise ValueError
-        
+
         final_func = ma.max
 
         for level in study_vertical_levels:
@@ -90,25 +94,39 @@ class CalcExceedance(Calc):
             for segment in study_time_segments:
                 normals_values = normals_data['data'][percentile][segment['@name']]['@values']
                 study_values = study_data['data'][level][segment['@name']]['@values']
+                one_segment_time_grid = study_data['data'][level][segment['@name']]['@time_grid']
+
+                # Remove Feb 29 from the study array (we do not take this day into consideration)
+                try:
+                    feb29 = datetime.datetime(one_segment_time_grid[0].year, 2, 29,
+                                              one_segment_time_grid[0].hour, one_segment_time_grid[0].minute)
+                except ValueError:
+                    feb29 = None
+                if feb29:
+                    time_list = one_segment_time_grid.tolist()
+                    feb29_index = time_list.index(feb29)
+                    study_values = np.delete(study_values, feb29_index, axis=0)
 
                 # Calulate time statistics for the current time segment
-                if parameters[TYPE_PARAMETER_NAME] == 'frequency':
+                if feature == 'frequency':
                     one_segment_data = ma.mean(comparison_func(study_values, normals_values), axis=0) * 100
                 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
-                if (parameters[MODE_PARAMETER_NAME] == 'segment'):
-                    one_segment_time_grid = study_data['data'][level][segment['@name']]['@time_grid']
+                if (calc_mode == 'segment'):
                     self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
                                           longitudes=study_data['@longitude_grid'], 
                                           latitudes=study_data['@latitude_grid'],
                                           times=one_segment_time_grid, fill_value=study_data['@fill_value'], 
                                           meta=study_data['meta'])
-                elif parameters[MODE_PARAMETER_NAME] == 'data':
+                elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
+                else:
+                    print('(CalcExceedance::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
+                    raise ValueError
 
             # For data-wise analysis analyse segments analyses :)
-            if parameters[MODE_PARAMETER_NAME] == 'data':
+            if calc_mode == 'data':
                 data_out = final_func(ma.stack(all_segments_data), axis=0)
 
                 # Make a global segment covering all input time segments

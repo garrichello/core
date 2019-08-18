@@ -3,6 +3,7 @@
 """
 from string import Template
 from datetime import datetime
+import re
 
 from copy import copy
 from netCDF4 import MFDataset, date2index, num2date, Dataset, MFTime
@@ -386,7 +387,7 @@ class DataNetcdf(Data):
             lat = root.createDimension('lat', options['latitudes'].size)  # pylint: disable=W0612
             latitudes = root.createVariable('lat', 'f4', ('lat'))
             lev = root.createDimension('level')  # pylint: disable=W0612
-            levels = root.createVariable('level', 'i4', ('level'))
+            levels = root.createVariable('level', 'f4', ('level'))
 
             if options['times'] is not None:
                 time = root.createDimension('time', len(options['times']))  # pylint: disable=W0612
@@ -403,9 +404,11 @@ class DataNetcdf(Data):
             # Set variables attributes.
             levels.standard_name = 'level'
             levels_units = None if meta is None else meta.get('level_units')
-            levels.units = 'string' if levels_units is None else levels_units
+            if levels_units:
+                levels.units = levels_units
             levels_long_name = None if meta is None else meta.get('level_long_name')
-            levels.long_name = 'level' if levels_units is None else levels_long_name
+            if levels_long_name:
+                levels.long_name = levels_long_name
             latitudes.standard_name = 'latitude'
             latitudes.units = 'degrees_north'
             latitudes.long_name = 'latitude'
@@ -424,11 +427,14 @@ class DataNetcdf(Data):
 
         # Check if the current level is present in the file.
         levels_list = levels[:].tolist()
-        if int(options['level']) in levels_list:
-            level_idx = levels_list.index(int(options['level']))
+        level_value = float(re.findall('[\d\.]+', options['level'])[0])
+        level_units = re.findall('[a-zA-Z]+', options['level'])[0]
+        if level_value in levels_list:
+            level_idx = levels_list.index(level_value)
         else:
             level_idx = levels.size
-            levels[level_idx] = int(options['level'])  # ... add the new one.
+            levels[level_idx] = level_value  # ... add the new one.
+            levels.units = level_units
 
         dim_list = ['level', 'lat', 'lon']
         if options['times'] is not None:

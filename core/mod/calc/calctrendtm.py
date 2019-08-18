@@ -42,9 +42,8 @@ class cvcCalcTrendTM(Calc):
         result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
 
         data_info = self._data_helper.get_data(input_uids[0])
-        variable_units = data_info['description']['@units']
-        meta = result['meta']
-        meta['variable_units'] = variable_units + '/10yr'
+        description = data_info['description']
+        description['@units'] += '/10yr'
 
         for level in vertical_levels:
             sum_y = 0
@@ -68,6 +67,7 @@ class cvcCalcTrendTM(Calc):
             global_segment = self.make_global_segment(time_segments)
             self._data_helper.put(output_uids[0], values=trend_values, level=level, segment=global_segment,
                                   longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                  fill_value=result['@fill_value'], meta=meta)
+                                  description=description,
+                                  fill_value=result['@fill_value'], meta=result['meta'])
 
         print('(cvcCalcTrendTM::run) Finished!')

@@ -427,8 +427,10 @@ class DataNetcdf(Data):
 
         # Check if the current level is present in the file.
         levels_list = levels[:].tolist()
-        level_value = int(re.findall('[\d\.]+', options['level'])[0])
-        level_units = re.findall('[a-zA-Z]+', options['level'])[0]
+        level_value = re.findall(r'[\d\.]+', options['level'])  # Take a numeric part.
+        level_value = int(level_value[0]) if level_value else None  # Use it if it's present.
+        level_units = re.findall(r'[a-zA-Z]+', options['level'])  # Take an alpha part.
+        level_units = level_units[0] if level_units else None  # Use it if it's present.
         if level_value in levels_list:
             level_idx = levels_list.index(level_value)
         else:

@@ -52,7 +52,7 @@ class CalcExceedance(Calc):
         # Get parameters
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-            feature =  self._get_parameter('Feature', parameters)
+            feature = self._get_parameter('Feature', parameters)
             exceedance = self._get_parameter('Exceedance', parameters)
             calc_mode = self._get_parameter('Mode', parameters)
 
@@ -110,14 +110,14 @@ class CalcExceedance(Calc):
                 # Calulate time statistics for the current time segment
                 if feature == 'frequency':
                     one_segment_data = ma.mean(comparison_func(study_values, normals_values), axis=0) * 100
-                
+
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
-                if (calc_mode == 'segment'):
+                if calc_mode == 'segment':
                     self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
-                                          longitudes=study_data['@longitude_grid'], 
+                                          longitudes=study_data['@longitude_grid'],
                                           latitudes=study_data['@latitude_grid'],
-                                          times=one_segment_time_grid, fill_value=study_data['@fill_value'], 
+                                          times=one_segment_time_grid, fill_value=study_data['@fill_value'],
                                           meta=study_data['meta'])
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)

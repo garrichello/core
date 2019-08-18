@@ -55,7 +55,7 @@ class CalcExceedance(Calc):
             feb29_index = time_list.index(feb29)
             data = np.delete(data, feb29_index, axis=0)
             time_grid = np.delete(time_grid, feb29_index, axis=0)
-        
+
         return (data, time_grid)
 
     def run(self):
@@ -127,7 +127,7 @@ class CalcExceedance(Calc):
                     self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
                                           longitudes=study_data['@longitude_grid'],
                                           latitudes=study_data['@latitude_grid'],
-                                          times=one_segment_time_grid, fill_value=study_data['@fill_value'],
+                                          fill_value=study_data['@fill_value'],
                                           meta=study_data['meta'])
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)

@@ -386,7 +386,7 @@ class DataNetcdf(Data):
             lat = root.createDimension('lat', options['latitudes'].size)  # pylint: disable=W0612
             latitudes = root.createVariable('lat', 'f4', ('lat'))
             lev = root.createDimension('level')  # pylint: disable=W0612
-            levels = root.createVariable('level', 'i4', ('level'))
+            levels = root.createVariable('level', 'str', ('level'))
 
             if options['times'] is not None:
                 time = root.createDimension('time', len(options['times']))  # pylint: disable=W0612

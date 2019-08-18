@@ -104,7 +104,7 @@ class CalcExceedance(Calc):
             print('(CalcExceedance::run) Error! Unknown exceedance value: \'{}\''.format(exceedance))
             raise ValueError
 
-        data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments. 
+        data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments.
 
         for level in study_vertical_levels:
             all_segments_data = []

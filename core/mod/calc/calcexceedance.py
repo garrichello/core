@@ -113,12 +113,20 @@ class CalcExceedance(Calc):
                 study_values = study_data['data'][level][segment['@name']]['@values']
                 study_time_grid = study_data['data'][level][segment['@name']]['@time_grid']
 
-                # Remove Feb 29 from the study array (we do not take this day into consideration)
+                # Remove Feb 29 from the study array (we do not take this day into consideration).
                 study_values = self._remove_feb29(study_values, study_time_grid)
 
-                # Perform calculation for the current time segment
-                if feature == 'frequency':
-                    one_segment_data = ma.mean(comparison_func(study_values, normals_values), axis=0) * 100
+                # Compare values according chosen exceedance.
+                comparison_mask = comparison_func(study_values, normals_values)
+
+                # Perform calculation for the current time segment.
+                if feature == 'frequency':   # We can just average 'True's to get a fraction and multiply by 100%.
+                    one_segment_data = ma.mean(comparison_mask, axis=0) * 100
+
+                if feature == 'intensity':
+                    diff = ma.abs(study_values - normals_values)
+                    diff.mask = ma.mask_or(diff.mask, comparison_mask, shrink=False)
+                    one_segment_data = ma.mean(diff, axis=0)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

@@ -57,6 +57,24 @@ class CalcExceedance(Calc):
 
         return values
 
+    def _calc_duration(self, mask):
+        """ Calculates a duration of the longest consecutive True values.
+        Arguments:
+            mask -- mask values for each time step.
+
+        Returns:
+            m x n array of the longest consecutive True values.
+        """
+        counter = ma.zeros(mask.shape)  # Current counter
+        duration = ma.zeros(mask.shape)  # Longest sequence
+        for array in mask:
+            counter += array  # Increment counters in according cells.
+            counter *= array  # Reset previously accumulated counts in 0-valued cells.
+            idxs = counter > duration
+            duration[idxs] = counter[idxs]
+
+        return duration
+
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
@@ -127,6 +145,9 @@ class CalcExceedance(Calc):
                     diff = ma.abs(study_values - normals_values)  # Calculate difference
                     diff.mask = ma.mask_or(diff.mask, ~comparison_mask, shrink=False)  # and mask out unnecessary values.
                     one_segment_data = ma.mean(diff, axis=0)
+
+                if feature == 'duration':
+                    one_segment_data = self._calc_duration(comparison_mask)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

@@ -65,8 +65,8 @@ class CalcExceedance(Calc):
         Returns:
             m x n array of the longest consecutive True values.
         """
-        counter = ma.zeros(mask.shape)  # Current counter
-        duration = ma.zeros(mask.shape)  # Longest sequence
+        counter = ma.zeros(mask.shape[1:])  # Current counter
+        duration = ma.zeros(mask.shape[1:])  # Longest sequence
         for array in mask:
             counter += array  # Increment counters in according cells.
             counter *= array  # Reset previously accumulated counts in 0-valued cells.

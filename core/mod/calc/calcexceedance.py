@@ -124,8 +124,8 @@ class CalcExceedance(Calc):
                     one_segment_data = ma.mean(comparison_mask, axis=0) * 100
 
                 if feature == 'intensity':
-                    diff = ma.abs(study_values - normals_values)
-                    diff.mask = ma.mask_or(diff.mask, comparison_mask, shrink=False)
+                    diff = ma.abs(study_values - normals_values)  # Calculate difference
+                    diff.mask = ma.mask_or(diff.mask, ~comparison_mask, shrink=False)  # and mask out unnecessary values.
                     one_segment_data = ma.mean(diff, axis=0)
 
                 # For segment-wise averaging send to the output current time segment results

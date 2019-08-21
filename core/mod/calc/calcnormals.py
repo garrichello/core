@@ -57,8 +57,8 @@ class CalcNormals(Calc):
                 one_day['@name'] = 'Year {}'.format(year)
                 segments.append(one_day)
             result = self._data_helper.get(uid, segments=segments, levels=level)
-            data = np.ma.concatenate(
-                [result['data'][level]['Year {}'.format(year)]['@values'] for year in years], axis=0)
+            data = np.ma.stack(
+                [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
             all_days_data.append(np.ma.mean(data, axis=0))
 
             normals_data = np.stack(all_days_data, axis=0)  # Stack to array.

@@ -61,8 +61,11 @@ class CalcNormals(Calc):
                 [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
             all_days_data.append(np.ma.mean(data, axis=0))
 
-        normals_data = np.stack(all_days_data, axis=0)  # Stack to array.
-        mask = result['data'][level]['Year {}'.format(years[0])]['@values'].mask[0]  # lon-lat mask.
+        normals_data = np.stack(all_days_data)  # Stack to array.
+        mask_0 = result['data'][level]['Year {}'.format(years[0])]['@values'].mask  # lon-lat mask.
+        mask_shape = [1] * (mask_0.ndim + 1)  # New shape of the mask.
+        mask_shape[0] = len(days)  # Set it to be (n_days, 1, 1) or (n_days, 1).
+        mask = np.tile(mask_0, mask_shape)  # Generate a mask to conform data dimensions.
         normals['data'] = np.ma.MaskedArray(normals_data, mask=mask, fill_value=result['@fill_value'])
 
         normals['@base_period'] = time_segment

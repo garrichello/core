@@ -25,6 +25,10 @@ class DataAccess():
         ::input_uids():
         Returns a list of UIDs of processing module inputs (as in a task file)
 
+        ::get_data_info(uid):
+        Returns full data description
+            uid -- UID of a processing module's input (as in a task file)
+
         ::get_segments(uid):
         Returns time segments list
             uid -- UID of a processing module's input (as in a task file)
@@ -317,7 +321,7 @@ class DataAccess():
             levels = None
         return levels
 
-    def get_data(self, uid):
+    def get_data_info(self, uid):
         """Returns full data info
 
         Arguments:
@@ -327,7 +331,7 @@ class DataAccess():
             try:
                 input_idx = self._input_uids.index(uid)
             except ValueError:
-                print('(DataAccess::get_segments) No such input UID: ' + uid)
+                print('(DataAccess::get_data_info) No such input UID: ' + uid)
                 raise
             data = self._inputs[input_idx]['data']
         else:

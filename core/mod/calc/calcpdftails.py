@@ -1,5 +1,15 @@
 """Class CalcPDFtails provides methods for calculation of 10th and 90th percentile
-of daily maximum temperature values for 5 consecutive days window of the 30-year Base period.
+of daily values for 5 consecutive days window of the 30-year Base period.
+
+    Input arguments:
+        input_uids[0] -- daily maximum values
+        input_uids[1] -- daily minimum values
+
+    Output arguments:
+        output_uids[0] -- daily PDF tails of maximum values for 10th and 90th percentiles specified as vertical levels:
+            [days, 2, lats, lons]
+        output_uids[1] -- daily PDF tails of minimum values for 10th and 90th percentiles specified as vertical levels:
+            [days, 2, lats, lons]
 """
 
 import datetime
@@ -9,7 +19,6 @@ from core.base.dataaccess import DataAccess
 from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
-MAX_N_INPUT_ARGUMENTS = 2
 START_THRESHOLD = 10
 END_THRESHOLD = 100
 STEP_THRESHOLD = 80
@@ -33,7 +42,7 @@ class CalcPDFtails(Calc):
         # Get time segments and levels and data info.
         time_segment = self._data_helper.get_segments(uid)[0]  # Only the first time segment is taken.
         level = self._data_helper.get_levels(uid)[0]  # Only the first vertical level is taken.
-        data_info = self._data_helper.get_data(uid)
+        data_info = self._data_helper.get_data_info(uid)
 
         start_date = datetime.datetime.strptime(time_segment['@beginning'], '%Y%m%d%H')
         end_date = datetime.datetime.strptime(time_segment['@ending'], '%Y%m%d%H')

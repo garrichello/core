@@ -29,7 +29,7 @@ class CalcNormals(Calc):
 
         # Get time segments and levels and data info.
         time_segment = self._data_helper.get_segments(uid)[0]  # Only the first time segment is taken.
-        data_info = self._data_helper.get_data(uid)
+        data_info = self._data_helper.get_data_info(uid)
 
         start_date = datetime.datetime.strptime(time_segment['@beginning'], '%Y%m%d%H')
         end_date = datetime.datetime.strptime(time_segment['@ending'], '%Y%m%d%H')

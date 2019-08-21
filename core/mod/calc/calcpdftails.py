@@ -26,9 +26,8 @@ class CalcPDFtails(Calc):
         """ Calculates given percentile at given vertical levels for a given time period.
         Arguments:
             uid -- UID of input dataset.
-            threshold -- percentile to calculate.
         Returns:
-            percentile -- 2-D masked array of percentiles.
+            percentile -- [time, lat, lon] masked array of percentiles.
         """
 
         # Get time segments and levels and data info.

@@ -420,7 +420,7 @@ class DataNetcdf(Data):
                 levels = root.createVariable('level', 'i4', ('level'))
                 # Set level attributes.
                 levels.standard_name = 'level'
-                levels_units = None if meta is None else meta.get('level_units')
+                levels_units = level_units if meta is None else meta.get('level_units')
                 if levels_units:
                     levels.units = levels_units
                 levels_long_name = None if meta is None else meta.get('level_long_name')

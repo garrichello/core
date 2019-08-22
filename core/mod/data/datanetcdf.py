@@ -416,7 +416,6 @@ class DataNetcdf(Data):
                 level_idx = 0  # Always 0 for a new file.
                 # Define level variable.
                 dim_list.insert(0, 'level')  # If level is present, add dimension level
-                dims.insert(-2, 1)  # Add level dimension before latitudes (we write one level at a time)
                 lev = root.createDimension('level')  # pylint: disable=W0612
                 levels = root.createVariable('level', 'i4', ('level'))
                 # Set level attributes.
@@ -451,6 +450,7 @@ class DataNetcdf(Data):
                 level_idx = levels.size
 
         if level_value:
+            dims.insert(-2, 1)  # Add level dimension before latitudes (we write one level at a time)
             slices.insert(-2, level_idx)  # Add level index before latitudes.
             # Write level vvariable.
             levels[level_idx] = level_value

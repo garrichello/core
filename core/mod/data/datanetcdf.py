@@ -454,7 +454,6 @@ class DataNetcdf(Data):
             slices.insert(-2, level_idx)  # Add level index before latitudes.
             # Write level vvariable.
             levels[level_idx] = level_value
-            levels.units = level_units
 
         # Check if variable is present in the file.
         data = root.variables.get(varname)

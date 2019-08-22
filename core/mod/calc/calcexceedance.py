@@ -1,4 +1,37 @@
 """ CalcExceedance implements calculation of a spatial field of cold/warm nights/days values for time series of data.
+
+    Input arguments:
+        input_uids[0] -- climate normals data:
+            minimum daily values -- for Nights
+            maximum daily values -- for Days
+            set scenario (depends on dataset): 
+                Climate normals 1961-1990 -- for 1961-1990 base period
+                Climate normals 1971-2000 -- for 1971-2000 base period
+                Climate normals 1981-2010 -- for 1981-2010 base period
+            set parent: UID of study data
+            set product: pdftails
+            set level:
+                10 -- for Cold
+                90 -- for Warm
+            DO NOT set time segments!
+        input_uids[1] -- study data
+            minimum daily values -- for Nights
+            maximum daily values -- for Days
+        input_uids[2] -- module parameters:
+            Feature -- string, allowed values:
+                'frequency' -- frequency
+                'intensity' -- intensity
+                'duration'  -- duration
+                default value: 'frequency'
+            Exceedance -- string, allowed values:
+                'low' -- for Cold
+                'high' -- for Warm
+            Mode -- string, allowed values:
+                'segment' -- for each segment
+                'data' -- maximum over all segments
+    Output arguments:
+        output_uids[0] -- Frequency/Intensity/Duration of Cold/Warm Days/Night, data array of size:
+            [lats, lons]
 """
 
 from copy import deepcopy

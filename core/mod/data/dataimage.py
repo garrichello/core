@@ -165,11 +165,24 @@ class ImageGeotiff:
         dims = data.shape
         filename = make_filename(self._data_info, options)
 
-        dataset = drv.Create(filename, dims[1], dims[0], 1, gdal.GDT_Float32)
-        if dataset is None:
-            print(' (ImageGeotiff::write)  Error creating file: {}. Check the output path! Aborting...'.format(filename))
-            raise FileNotFoundError("Can't write file!")
-        dataset.GetRasterBand(1).WriteArray(data)
+        if data.ndim == 2:
+            dataset = drv.Create(filename, dims[1], dims[0], 1, gdal.GDT_Float32)
+            if dataset is None:
+                print(' (ImageGeotiff::write)  Error creating file: {}. Check the output path! Aborting...'.format(filename))
+                raise FileNotFoundError("Can't write file!")
+            dataset.GetRasterBand(1).WriteArray(data)
+        elif data.ndim == 3:
+            dataset = drv.Create(filename, dims[2], dims[1], dims[0], gdal.GDT_Float32)
+            if dataset is None:
+                print(' (ImageGeotiff::write)  Error creating file: {}. Check the output path! Aborting...'.format(filename))
+                raise FileNotFoundError("Can't write file!")
+            band = 0
+            for data_slice in data:
+                band += 1
+                dataset.GetRasterBand(band).WriteArray(data_slice)
+        else:
+            print(' (ImageGeotiff::write)  Incorrect number of dimensions in data array: {}! Aborting...'.format(data.ndim))
+            raise ValueError
 
         # Prepare geokeys.
         gtype = 'EPSG:4326'

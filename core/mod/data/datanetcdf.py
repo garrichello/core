@@ -380,7 +380,7 @@ class DataNetcdf(Data):
         varname = None if meta is None else meta.get('varname')
         varname = 'data' if varname is None else varname
 
-        level_value = re.findall(r'[\d\.]+', options['level'])  # Take a numeric part.
+        level_value = re.findall(r'\d+', options['level'])  # Take a numeric part.
         level_value = int(level_value[0]) if level_value else None  # Use it if it's present.
         level_units = re.findall(r'[a-zA-Z]+', options['level'])  # Take an alpha part.
         level_units = level_units[0] if level_units else None  # Use it if it's present.

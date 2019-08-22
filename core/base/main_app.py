@@ -37,6 +37,7 @@ class MainApp:
     def run_task(self, task_string):
         """Reads the task from a string and creates all necessary structures."""
 
+        print('(MainApp::run) Let\'s do it!')
         print("(MainApp::read_task) Read the task...")
 
         self._task = xmltodict.parse(task_string)
@@ -47,6 +48,10 @@ class MainApp:
         self._task['task']['processing'] = listify(self._task['task']['processing'])
 
         print("(MainApp::read_task) Done!")
+
+        self._process()
+
+        print('(MainApp::run) Job is done. Exiting.')
 
     def _read_task(self, task_file_name):
         """Reads the task file and creates all necessary structures."""

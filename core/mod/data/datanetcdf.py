@@ -86,7 +86,7 @@ class DataNetcdf(Data):
                 # Little hack: convert level name from metadata database to float and back to string type
                 # to be able to search it correctly in float type level variable converted to string.
                 # Level variable is also primarily converted to float to 'synchronize' types.
-                level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(level_name)))
+                level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(re.findall('\d+', level_name)[0])))
             except KeyError:
                 print(' (DataNetcdf::read) Level \'{0}\' is not found in level variable \'{1}\'. Aborting!'.format(
                     level_name, level_variable_name))

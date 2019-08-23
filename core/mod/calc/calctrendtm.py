@@ -54,7 +54,7 @@ class cvcCalcTrendTM(Calc):
                 sum_y += result['data'][level][segment['@name']]['@values'].filled(0)  # Sum values
                 cnt += (~result['data'][level][segment['@name']]['@values'].mask).astype(int)  # Count valid values
             mean_y = np.ma.MaskedArray(sum_y, mask=~cnt.astype(bool))  # Count values are inverted to create a mask
-            mean_y /= cnt  # Calculate mean value only for valid values
+            mean_y = mean_y / cnt  # Calculate mean value only for valid values
             mean_x = np.mean(range(len(time_segments)))  # Just a simple mean of a simple x-axis
 
             num_arr = 0

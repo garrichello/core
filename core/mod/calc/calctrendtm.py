@@ -41,7 +41,7 @@ class cvcCalcTrendTM(Calc):
         # Get data for all time segments and levels
         result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
 
-        data_info = self._data_helper.get_data(input_uids[0])
+        data_info = self._data_helper.get_data_info(input_uids[0])
         description = data_info['description']
         description['@title'] = 'Trend of ' + description['@title']
         description['@name'] = 'Trend of ' + description['@name']

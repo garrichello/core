@@ -18,11 +18,9 @@
             [lats, lons] -- for Mode == 'data'
 """
 
-from copy import deepcopy
 import operator
-import datetime
 
-import numpy as np
+from copy import deepcopy
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
@@ -55,41 +53,6 @@ class CalcThresholdDays(Calc):
             value = DEFAULT_PARAMETERS[parameter_name]
 
         return value
-
-    def _remove_feb29(self, values, time_grid):
-        """ Removes February 29 from data and time grid
-        Arguments:
-            data -- data values
-            time_grid -- time grid
-        """
-        try:
-            feb29 = datetime.datetime(time_grid[0].year, 2, 29, time_grid[0].hour, time_grid[0].minute)
-        except ValueError:
-            feb29 = None
-        if feb29:
-            time_list = time_grid.tolist()
-            feb29_index = time_list.index(feb29)
-            values = np.delete(values, feb29_index, axis=0)
-
-        return values
-
-    def _calc_duration(self, mask):
-        """ Calculates a duration of the longest consecutive True values.
-        Arguments:
-            mask -- mask values for each time step.
-
-        Returns:
-            m x n array of the longest consecutive True values.
-        """
-        counter = ma.zeros(mask.shape[1:])  # Current counter
-        duration = ma.zeros(mask.shape[1:])  # Longest sequence
-        for array in mask:
-            counter += array  # Increment counters in according cells.
-            counter *= array  # Reset previously accumulated counts in 0-valued cells.
-            idxs = counter > duration
-            duration[idxs] = counter[idxs]
-
-        return duration
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """

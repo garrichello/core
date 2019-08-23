@@ -4,7 +4,7 @@
         input_uids[0] -- climate normals data:
             minimum daily values -- for Nights
             maximum daily values -- for Days
-            set scenario (depends on dataset): 
+            set scenario (depends on dataset):
                 Climate normals 1961-1990 -- for 1961-1990 base period
                 Climate normals 1971-2000 -- for 1971-2000 base period
                 Climate normals 1981-2010 -- for 1981-2010 base period

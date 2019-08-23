@@ -31,7 +31,8 @@
                 'data' -- maximum over all segments
     Output arguments:
         output_uids[0] -- Frequency/Intensity/Duration of Cold/Warm Days/Night, data array of size:
-            [lats, lons]
+            [segments, lats, lons] -- for Mode == 'segment'
+            [lats, lons] -- for Mode == 'data'
 """
 
 from copy import deepcopy

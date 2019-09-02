@@ -1,4 +1,4 @@
-""" CalcDtr implements calculation of a spatial field of average daily temperature range.
+""" CalcDTR implements calculation of a spatial field of average daily temperature range.
 
     Input arguments:
         input_uids[0] -- maximum daily values
@@ -26,7 +26,7 @@ MAX_DATA_UID = 0
 MIN_DATA_UID = 1
 DEFAULT_VALUES = {'Mode': 'data'}
 
-class CalcDtr(Calc):
+class CalcDTR(Calc):
     """ Provides calculation of a spatial field of cold/warm nights/days values for time series of data.
 
     """
@@ -37,22 +37,22 @@ class CalcDtr(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcDtr::run) Started!')
+        print('(CalcDTR::run) Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcDtr::run) No input arguments!'
+        assert input_uids, '(CalcDTR::run) No input arguments!'
 
         # Get parameters
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
             calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
-        print('(CalcDtr::run) Calculation mode: {}'.format(calc_mode))
+        print('(CalcDTR::run) Calculation mode: {}'.format(calc_mode))
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(CalcDtr::run) No output arguments!'
+        assert output_uids, '(CalcDTR::run) No output arguments!'
 
         # Get time segments and levels (only for maximum data, for minimum they must be the same)
         time_segments = self._data_helper.get_segments(input_uids[MAX_DATA_UID])
@@ -86,7 +86,7 @@ class CalcDtr(Calc):
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
-                    print('(CalcDtr::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
+                    print('(CalcDTR::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
                     raise ValueError
 
             # For data-wise analysis analyse segments analyses :)
@@ -102,4 +102,4 @@ class CalcDtr(Calc):
                                       longitudes=max_data['@longitude_grid'], latitudes=max_data['@latitude_grid'],
                                       fill_value=max_data['@fill_value'], meta=max_data['meta'])
 
-        print('(CalcDtr::run) Finished!')
+        print('(CalcDTR::run) Finished!')

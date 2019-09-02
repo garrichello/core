@@ -20,3 +20,18 @@ class Calc():
         full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
         return full_range_segment
+
+    def _get_parameter(self, parameter_name, parameters, default_values):
+        """ Extracts parameter value by name from a dictionary or returns a default value.
+        Arguments:
+            parameter_name -- name of the parameter
+            parameters -- dictionary of parameters
+            default_values -- dictionary of default values of parameters
+
+        Returns: value from a parameters or default value
+        """
+        value = parameters.get(parameter_name)
+        if value is None:
+            value = default_values[parameter_name]
+
+        return value

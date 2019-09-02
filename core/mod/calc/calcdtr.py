@@ -66,7 +66,7 @@ class CalcDTR(Calc):
                 # Read data
                 max_data = self._data_helper.get(input_uids[MAX_DATA_UID], segments=segment)
                 max_values = max_data['data'][level][segment['@name']]['@values']
-                min_data = self._data_helper.get(input_uids[MAX_DATA_UID], segments=segment)
+                min_data = self._data_helper.get(input_uids[MIN_DATA_UID], segments=segment)
                 min_values = min_data['data'][level][segment['@name']]['@values']
 
                 # Calculate the difference.

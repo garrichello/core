@@ -24,6 +24,7 @@ MAX_N_INPUT_ARGUMENTS = 2
 INPUT_PARAMETERS_INDEX = 1
 DATA_UID = 0
 DEFAULT_VALUES = {'Mode': 'data'}
+THRESHOLD = 278.15  # 5 degC in K
 
 class CalcGSL(Calc):
     """ Provides calculation of a spatial field of the growing season length values.
@@ -32,6 +33,31 @@ class CalcGSL(Calc):
 
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
+
+    def _calc_gsl(self, values, threshold):
+        """ Calculates GSL for the given values"""
+
+        data_shape = values.shape[1:]
+        gsl_cnt = ma.zeros(data_shape)
+        warm_cnt = np.zeros(data_shape)
+        cold_cnt = np.zeros(data_shape)
+        increment = np.zeros(data_shape)
+        for i, arr in enumerate(values):
+            if i < 183:  # Take the first half of an year.
+                mask = arr > threshold
+                warm_cnt += mask  # Count warm days.
+                warm_cnt *= mask  # Reset counter of warm days on a cold one.
+                increment = ma.logical_or(increment, (warm_cnt == 5))  # Search for cells with 5 consecutive warm days.
+            else:  # Take the second part of an year.
+                mask = arr < threshold
+                cold_cnt += mask  # Count cold days.
+                cold_cnt *= mask  # Reset counter of cold days on a warm one.
+                increment = ma.logical_and(increment, ~(cold_cnt == 5))  # Search for cells with 5 consecutive cold days.
+            gsl_cnt += increment  # Count days inside GSL at each cell.
+
+        gsl_cnt.mask = values.mask[0]  # Take source mask.
+
+        return gsl_cnt
 
     def run(self):
         """ Main method of the class. Reads data array, process them and returns results. """
@@ -59,12 +85,13 @@ class CalcGSL(Calc):
 
         data_func = ma.mean  # For calc_mode == 'data' we calculate max over all segments.
 
-        deg5 = 278.15  # 5 degC in K
         # Convert degK to degC if data are given in C
+        threshold = THRESHOLD
         data_info = self._data_helper.get_data_info(input_uids[DATA_UID])
         if data_info['description']['@units'] == 'C':
-            deg5 = kelvin_to_celsius(deg5)  # degK in degC
+            threshold = kelvin_to_celsius(threshold)
 
+        # Main loop
         for level in vertical_levels:
             all_segments_data = []
             for segment in time_segments:
@@ -73,35 +100,18 @@ class CalcGSL(Calc):
                 values = data['data'][level][segment['@name']]['@values']
 
                 # Calculate the GSL.
-                data_shape = values.shape[1:]
-                gsl_cnt = ma.zeros(data_shape)
-                warm_cnt = np.zeros(data_shape)
-                cold_cnt = np.zeros(data_shape)
-                increment = np.zeros(data_shape)
-                for i, arr in enumerate(values):
-                    if i < 183:  # Take the first half of an year.
-                        mask = arr > deg5
-                        warm_cnt += mask  # Count warm days.
-                        warm_cnt *= mask  # Reset counter of warm days on a cold one.
-                        increment = ma.logical_or(increment, (warm_cnt == 5))  # Search for cells with 5 consecutive warm days.
-                    else:  # Take the second part of an year.
-                        mask = arr < deg5
-                        cold_cnt += mask  # Count cold days.
-                        cold_cnt *= mask  # Reset counter of cold days on a warm one.
-                        increment = ma.logical_and(increment, ~(cold_cnt == 5))  # Search for cells with 5 consecutive cold days.
-                    gsl_cnt += increment  # Count days inside GSL at each cell.
+                one_segment_data = self._calc_gsl(values, threshold)
 
-                gsl_cnt.mask = values.mask[0]  # Take source mask.
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
                 if calc_mode == 'segment':
-                    self._data_helper.put(output_uids[0], values=gsl_cnt, level=level, segment=segment,
+                    self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
                                           longitudes=data['@longitude_grid'],
                                           latitudes=data['@latitude_grid'],
                                           fill_value=data['@fill_value'],
                                           meta=data['meta'])
                 elif calc_mode == 'data':
-                    all_segments_data.append(gsl_cnt)
+                    all_segments_data.append(one_segment_data)
                 else:
                     print('(CalcGSL::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
                     raise ValueError

@@ -82,12 +82,12 @@ class CalcGSL(Calc):
                         mask = arr > deg5
                         warm_cnt += mask  # Count warm days.
                         warm_cnt *= mask  # Reset counter of warm days on a cold one.
-                        increment = increment or (warm_cnt == 5)  # Search for cells with 5 consecutive warm days.
+                        increment = ma.logical_or(increment, (warm_cnt == 5))  # Search for cells with 5 consecutive warm days.
                     else:  # Take the second part of an year.
                         mask = arr < deg5
                         cold_cnt += mask  # Count cold days.
                         cold_cnt *= mask  # Reset counter of cold days on a warm one.
-                        increment = increment and ~(cold_cnt == 5)  # Search for cells with 5 consecutive cold days.
+                        increment = ma.logical_and(increment, ~(cold_cnt == 5))  # Search for cells with 5 consecutive cold days.
                     gsl_cnt += increment  # Count days inside GSL at each cell.
 
                 gsl_cnt.mask = values.mask  # Take source mask

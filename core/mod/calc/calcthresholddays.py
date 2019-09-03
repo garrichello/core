@@ -30,7 +30,7 @@ from core.mod.calc.calc import Calc
 MAX_N_INPUT_ARGUMENTS = 2
 INPUT_PARAMETERS_INDEX = 1
 STUDY_UID = 0
-DEFAULT_PARAMETERS = {'Condition': 'less', 'Threshold': 273.15, 'Mode': 'data'}
+DEFAULT_VALUES = {'Condition': 'less', 'Threshold': 273.15, 'Mode': 'data'}
 
 class CalcThresholdDays(Calc):
     """ Provides calculation of a spatial field of cold/warm nights/days values for time series of data.
@@ -39,20 +39,6 @@ class CalcThresholdDays(Calc):
 
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
-
-    def _get_parameter(self, parameter_name, parameters):
-        """ Extracts parameter value by name from a dictionary or returns a default value.
-        Arguments:
-            parameter_name -- name of the parameter
-            parameters -- dictionary of parameters
-
-        Returns: value from a parameters or default value
-        """
-        value = parameters.get(parameter_name)
-        if value is None:
-            value = DEFAULT_PARAMETERS[parameter_name]
-
-        return value
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
@@ -66,9 +52,9 @@ class CalcThresholdDays(Calc):
         # Get parameters
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-            condition = self._get_parameter('Condition', parameters)
-            threshold = self._get_parameter('Threshold', parameters)
-            calc_mode = self._get_parameter('Mode', parameters)
+            condition = self._get_parameter('Condition', parameters, DEFAULT_VALUES)
+            threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
+            calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
         print('(CalcThresholdDays::run) Calculation condition: {}'.format(condition))
         print('(CalcThresholdDays::run) Threshold: {}'.format(threshold))

@@ -64,9 +64,9 @@ class CalcDTR(Calc):
             all_segments_data = []
             for segment in time_segments:
                 # Read data
-                max_data = self._data_helper.get(input_uids[MAX_DATA_UID], segments=segment)
+                max_data = self._data_helper.get(input_uids[MAX_DATA_UID], segments=segment, levels=level)
                 max_values = max_data['data'][level][segment['@name']]['@values']
-                min_data = self._data_helper.get(input_uids[MIN_DATA_UID], segments=segment)
+                min_data = self._data_helper.get(input_uids[MIN_DATA_UID], segments=segment, levels=level)
                 min_values = min_data['data'][level][segment['@name']]['@values']
 
                 # Calculate the difference.

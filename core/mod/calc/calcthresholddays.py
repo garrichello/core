@@ -96,7 +96,7 @@ class CalcThresholdDays(Calc):
             all_segments_data = []
             for segment in study_time_segments:
                 # Read data
-                study_data = self._data_helper.get(input_uids[STUDY_UID], segments=segment)
+                study_data = self._data_helper.get(input_uids[STUDY_UID], segments=segment, levels=level)
                 study_values = study_data['data'][level][segment['@name']]['@values']
 
                 # Compare values according chosen exceedance.

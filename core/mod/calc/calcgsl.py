@@ -73,10 +73,10 @@ class CalcGSL(Calc):
 
                 # Calculate the GSL.
                 data_shape = values.shape[1:]
-                gsl_cnt = ma.zeros(data_shape, mask=values.mask)
-                warm_cnt = ma.zeros(data_shape, mask=values.mask)
-                cold_cnt = ma.zeros(data_shape, mask=values.mask)
-                increment = ma.zeros(data_shape, mask=values.mask)
+                gsl_cnt = ma.zeros(data_shape)
+                warm_cnt = ma.zeros(data_shape)
+                cold_cnt = ma.zeros(data_shape)
+                increment = ma.zeros(data_shape)
                 for i, arr in enumerate(values):
                     if i < 183:  # Take the first half of an year.
                         mask = arr > deg5
@@ -90,6 +90,7 @@ class CalcGSL(Calc):
                         increment = increment and ~(cold_cnt == 5)  # Search for cells with 5 consecutive cold days.
                     gsl_cnt += increment  # Count days inside GSL at each cell.
 
+                gsl_cnt.mask = values.mask  # Take source mask
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
                 if calc_mode == 'segment':

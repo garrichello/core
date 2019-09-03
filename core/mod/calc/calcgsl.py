@@ -63,8 +63,6 @@ class CalcGSL(Calc):
         data_info = self._data_helper.get_data_info(input_uids[DATA_UID])
         if data_info['description']['@units'] == 'C':
             deg5 = kelvin_to_celsius(deg5)  # degK in degC
-        else:
-            print('(CalcGSL::run) Unexpectable variable units: {}. Aborting!'.format(data_info['variable']['units']))
 
         for level in vertical_levels:
             all_segments_data = []

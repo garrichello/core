@@ -90,7 +90,7 @@ class CalcGSL(Calc):
                         increment = ma.logical_and(increment, ~(cold_cnt == 5))  # Search for cells with 5 consecutive cold days.
                     gsl_cnt += increment  # Count days inside GSL at each cell.
 
-                gsl_cnt.mask = values.mask  # Take source mask
+                gsl_cnt.mask = arr.mask  # Take source mask
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
                 if calc_mode == 'segment':

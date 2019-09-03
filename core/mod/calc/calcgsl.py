@@ -13,6 +13,7 @@
 """
 
 from copy import deepcopy
+import numpy as np
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
@@ -74,9 +75,9 @@ class CalcGSL(Calc):
                 # Calculate the GSL.
                 data_shape = values.shape[1:]
                 gsl_cnt = ma.zeros(data_shape)
-                warm_cnt = ma.zeros(data_shape)
-                cold_cnt = ma.zeros(data_shape)
-                increment = ma.zeros(data_shape)
+                warm_cnt = np.zeros(data_shape)
+                cold_cnt = np.zeros(data_shape)
+                increment = np.zeros(data_shape)
                 for i, arr in enumerate(values):
                     if i < 183:  # Take the first half of an year.
                         mask = arr > deg5

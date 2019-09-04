@@ -50,7 +50,7 @@ MAX_N_INPUT_ARGUMENTS = 3
 INPUT_PARAMETERS_INDEX = 2
 NORMALS_UID = 0
 STUDY_UID = 1
-DEFAULT_PARAMETERS = {'Feature': 'frequency', 'Exceedance': 'low', 'Mode': 'data'}
+DEFAULT_VALUES = {'Feature': 'frequency', 'Exceedance': 'low', 'Mode': 'data'}
 
 class CalcExceedance(Calc):
     """ Provides calculation of a spatial field of cold/warm nights/days values for time series of data.
@@ -59,20 +59,6 @@ class CalcExceedance(Calc):
 
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
-
-    def _get_parameter(self, parameter_name, parameters):
-        """ Extracts parameter value by name from a dictionary or returns a default value.
-        Arguments:
-            parameter_name -- name of the parameter
-            parameters -- dictionary of parameters
-
-        Returns: value from a parameters or default value
-        """
-        value = parameters.get(parameter_name)
-        if value is None:
-            value = DEFAULT_PARAMETERS[parameter_name]
-
-        return value
 
     def _remove_feb29(self, values, time_grid):
         """ Removes February 29 from data and time grid
@@ -121,9 +107,9 @@ class CalcExceedance(Calc):
         # Get parameters
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-            feature = self._get_parameter('Feature', parameters)
-            exceedance = self._get_parameter('Exceedance', parameters)
-            calc_mode = self._get_parameter('Mode', parameters)
+            feature = self._get_parameter('Feature', parameters, DEFAULT_VALUES)
+            exceedance = self._get_parameter('Exceedance', parameters, DEFAULT_VALUES)
+            calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
         print('(CalcExceedance::run) Calculation feature: {}'.format(feature))
         print('(CalcExceedance::run) Exceedance: {}'.format(exceedance))

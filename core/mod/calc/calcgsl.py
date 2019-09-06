@@ -83,7 +83,7 @@ class CalcGSL(Calc):
         time_segments = self._data_helper.get_segments(input_uids[DATA_UID])
         vertical_levels = self._data_helper.get_levels(input_uids[DATA_UID])
 
-        data_func = ma.mean  # For calc_mode == 'data' we calculate max over all segments.
+        data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
 
         # Convert degK to degC if data are given in C
         threshold = THRESHOLD

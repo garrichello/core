@@ -37,6 +37,11 @@ class CalcBasicStat(Calc):
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
 
+        # Check parameters
+        if not calc_mode in parameters:
+            print('(CalcBasicStat::run) Error! No parameter \'{}\' in module parameters! Check task-file!'.format(calc_mode))
+            raise ValueError
+
         # Get outputs
         output_uids = self._data_helper.output_uids()
         assert output_uids, '(CalcBasicStat::run) No output arguments!'

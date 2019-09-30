@@ -461,6 +461,9 @@ class DataNetcdf(Data):
                 times[:] = [(cur_date - start_date).days for cur_date in options['times']]
 
         else:  # Existing file.
+            if not 'level' in root.variables:
+                print(' (DataNetcdf::write_array)  No \'level\' variable in the file {}. Overwriting old one? Aborting.'.format(filename))
+                raise Exception
             levels = root.variables['level']  # Get level variable (let's suppose it exists).
             levels_list = levels[:].tolist()
             # Check if the current level is present in the file.

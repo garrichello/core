@@ -290,6 +290,8 @@ class DataNetcdf(Data):
                         print(' (DataNetcdf::read)  Error! Unsupported time step \'{}\'. Aborting...'.format(
                             self._data_info['data']['dataset']['@time_step']))
                         raise ValueError
+                    # And, since negative values in total precipitation look weird (IMHO), let's fix them also.
+                    data_slice[np.where(data_slice < 0)] = 0.0
 
                 # Create masked array using ROI mask.
                 print(' (DataNetcdf::read)  Creating masked array...')

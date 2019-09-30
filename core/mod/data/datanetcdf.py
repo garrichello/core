@@ -224,18 +224,23 @@ class DataNetcdf(Data):
                 time_grid = num2date(time_values, time_variable.units)  # Time grid as a datetime object.  # pylint: disable=E1101
 
                 # Searching for a gap in longitude indices. Normally all steps should be equal to 1.
-                # If there is a step longer than 1, we suupose it's a gap due to a shift from 0-360 to -180-180 grid.
+                # If there is a step longer than 1, we suppose it's a gap due to a shift from 0-360 to -180-180 grid.
                 # So instead of a sigle patch in a 0-360 longitude space we should deal with two patches
                 # in a -180-180 longitude space: one to the left of the 0 meridian, and the other to the right of it.
                 # So we search for the gap's position and prepare to read two parts of data.
-                # Then we stack them reversely (left to the right) and correct longitude grid.
+                # Then we stack them reversely (left to the right) and fix the longitude grid.
                 # Thus we will have a single data patch with the uniform logitude grid.
-                lon_index_steps = np.diff(variable_indices[longitude_variable_name])  # Steps between indices.
-                if lon_index_steps.max() > 1:  # Gap is a step longer than 1 (there should be only one gap).
-                    lon_gap_mode = True  # Gap mode! Set the flag! :)
-                    lon_gap_position = lon_index_steps.argmax()  # Index of the gap.
-                else:
-                    lon_gap_mode = False  # Normal mode.
+                lon_gap_mode = False  # Normal mode.
+                for i in range(len(variable_indices[longitude_variable_name])-1):
+                    if variable_indices[longitude_variable_name][i+1]-variable_indices[longitude_variable_name][i] > 1:
+                        lon_gap_mode = True  # Gap mode! Set the flag! :)
+                        lon_gap_position = i  # Index of the gap.    
+                #lon_index_steps = np.diff(variable_indices[longitude_variable_name])  # Steps between indices.
+                #if lon_index_steps.max() > 1:  # Gap is a step longer than 1 (there should be only one gap).
+                #    lon_gap_mode = True  # Gap mode! Set the flag! :)
+                #    lon_gap_position = lon_index_steps.argmax()  # Index of the gap.
+                #else:
+                #    lon_gap_mode = False  # Normal mode.
 
                 # Get start (first) and stop (last) indices for each dimension.
                 start_index = [variable_indices[dd[i]][0] for i in range(len(dd))]

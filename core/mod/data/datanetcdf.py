@@ -511,7 +511,7 @@ class DataNetcdf(Data):
         filename = make_raw_filename(self._data_info, options)
 
         # Create netCDF file.
-        root = Dataset(filename, 'w', format='NETCDF4_CLASSIC')  # , format='NETCDF3_64BIT_OFFSET')
+        root = Dataset(filename, 'w', format='NETCDF4')  # , format='NETCDF3_64BIT_OFFSET')
 
         # Define dimensions.
         lon = root.createDimension('lon', options['longitudes'].size)  # pylint: disable=W0612

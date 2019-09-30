@@ -86,7 +86,7 @@ class DataNetcdf(Data):
                 # Little hack: convert level name from metadata database to float and back to string type
                 # to be able to search it correctly in float type level variable converted to string.
                 # Level variable is also primarily converted to float to 'synchronize' types.
-                level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(re.findall('\d+', level_name)[0])))
+                level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(re.findall(r'\d+', level_name)[0])))
             except KeyError:
                 print(' (DataNetcdf::read) Level \'{0}\' is not found in level variable \'{1}\'. Aborting!'.format(
                     level_name, level_variable_name))
@@ -234,13 +234,7 @@ class DataNetcdf(Data):
                 for i in range(len(variable_indices[longitude_variable_name])-1):
                     if variable_indices[longitude_variable_name][i+1]-variable_indices[longitude_variable_name][i] > 1:
                         lon_gap_mode = True  # Gap mode! Set the flag! :)
-                        lon_gap_position = i  # Index of the gap.    
-                #lon_index_steps = np.diff(variable_indices[longitude_variable_name])  # Steps between indices.
-                #if lon_index_steps.max() > 1:  # Gap is a step longer than 1 (there should be only one gap).
-                #    lon_gap_mode = True  # Gap mode! Set the flag! :)
-                #    lon_gap_position = lon_index_steps.argmax()  # Index of the gap.
-                #else:
-                #    lon_gap_mode = False  # Normal mode.
+                        lon_gap_position = i  # Index of the gap.
 
                 # Get start (first) and stop (last) indices for each dimension.
                 start_index = [variable_indices[dd[i]][0] for i in range(len(dd))]
@@ -277,6 +271,25 @@ class DataNetcdf(Data):
                     print(' (DataNetcdf::read)  Done!')
 
                 data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
+
+                # Due to a very specific way of storing total precipitation in ERA Interim
+                #  we fix values to reflect real precipitation accumulation during each time step.
+                # Originally 6h-step data are stored as: tp@3h, tp@3h+tp@9h, tp@15h, tp@15h+tp@21h...
+                #  We make them to be: tp@3h, tp@9h, tp@15h, tp@21h...
+                # Originally 3h-step data are stored as: tp@3h, tp@3h+tp@6h, tp@3h+tp@6h+tp@9h, tp@15h, tp@15h+tp@18h, tp@15h+tp@18h+tp@21h...
+                #  We make them to be: tp@3h, tp@6h, tp@9h, tp@15h, tp@18h, tp@21h... (note: there is no tp@12h in the time grid!)
+                if self._data_info['data']['dataset']['@name'] == 'ERAInt' and self._data_info['data']['variable']['@name'] == 'tp':
+                    if self._data_info['data']['dataset']['@time_step'] == '6h':
+                        for i in range(0, len(time_grid)-1, 2):
+                            data_slice[i+1] -= data_slice[i]
+                    elif self._data_info['data']['dataset']['@time_step'] == '3h':
+                        for i in range(0, len(time_grid)-2, 2):
+                            data_slice[i+2] -= data_slice[i+1]
+                            data_slice[i+1] -= data_slice[i]
+                    else:
+                        print(' (DataNetcdf::read)  Error! Unsupported time step \'{}\'. Aborting...'.format(
+                            self._data_info['data']['dataset']['@time_step']))
+                        raise ValueError
 
                 # Create masked array using ROI mask.
                 print(' (DataNetcdf::read)  Creating masked array...')
@@ -462,7 +475,7 @@ class DataNetcdf(Data):
 
         # Check if variable is present in the file.
         data = root.variables.get(varname)
-        if data is None:  
+        if data is None:
             # Define data variable if it is not present.
             data = root.createVariable(varname, 'f4', dim_list, fill_value=values.fill_value)
             # Set data attributes.

@@ -37,7 +37,7 @@ class CalcRxnday(Calc):
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
 
-    def calc_rxndays(self, values: ma.array, time_grid: list(datetime)) -> ma.array:
+    def calc_rxndays(self, values, time_grid):
         """ Calculates Rxnday
         Arguments:
             values -- array of total precipitation

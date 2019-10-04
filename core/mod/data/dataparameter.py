@@ -23,7 +23,10 @@ class DataParameter:
 
         if cast_type == 'string':
             return string_value
-
+        if cast_type == 'integer':
+            return int(string_value)
+        if cast_type == 'float':
+            return float(string_value)
 
     def read(self, options):    # pylint: disable=W0613
         """Reads parameters.

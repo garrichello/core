@@ -55,19 +55,19 @@ class CalcRxnday(Calc):
         for _, one_day_group in it_all_data:
             daily_sum = None
             for one_step_data, _ in one_day_group:
-                if not daily_sum:
+                if daily_sum is None:
                     daily_sum = one_step_data
                 else:
                     daily_sum += one_step_data
             queue.append(daily_sum)
-            if not nday_sum:
+            if nday_sum is None:
                 nday_sum = daily_sum
             else:
                 nday_sum += daily_sum
             if len(queue) > threshold:
                 nday_sum -= queue.popleft()
             if len(queue) == threshold:
-                if not max_sum:
+                if max_sum is None:
                     max_sum = nday_sum
                 else:
                     max_sum = ma.max(ma.stack((max_sum, nday_sum)), axis=0)

@@ -41,6 +41,8 @@ class CalcRxnday(Calc):
         """ Calculates Rxnday
         Arguments:
             values -- array of total precipitation
+            time_grid -- time grid
+            threshold -- number of days (n)
         Returns: Rxnday values
         """
 
@@ -52,25 +54,25 @@ class CalcRxnday(Calc):
         nday_sum = None
         max_sum = None
         it_all_data = groupby(zip(values, time_grid), key=lambda x: (x[1].day, x[1].month))
-        for _, one_day_group in it_all_data:
+        for _, one_day_group in it_all_data:  # Iterate over daily groups.
             daily_sum = None
-            for one_step_data, _ in one_day_group:
+            for one_step_data, _ in one_day_group:  # Iterate over each time step in each group.
                 if daily_sum is None:
                     daily_sum = deepcopy(one_step_data)
                 else:
-                    daily_sum += one_step_data
-            queue.append(daily_sum)
+                    daily_sum += one_step_data  # Calculate daily sums.
+            queue.append(daily_sum)  # Store daily sums in a queue.
             if nday_sum is None:
                 nday_sum = deepcopy(daily_sum)
             else:
-                nday_sum += daily_sum
-            if len(queue) > threshold:
-                nday_sum -= queue.popleft()
+                nday_sum += daily_sum  # Additionally sum daily sums.
+            if len(queue) > threshold:  # When 'threshold' days are summed...
+                nday_sum -= queue.popleft()  # ...subtruct one 'left-most' daily sum from the n-day sum.
             if len(queue) == threshold:
                 if max_sum is None:
                     max_sum = deepcopy(nday_sum)
                 else:
-                    max_sum = ma.max(ma.stack((max_sum, nday_sum)), axis=0)
+                    max_sum = ma.max(ma.stack((max_sum, nday_sum)), axis=0)  # Search for maximum value.
 
         return max_sum
 

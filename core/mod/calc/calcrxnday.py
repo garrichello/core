@@ -52,9 +52,9 @@ class CalcRxnday(Calc):
         nday_sum = None
         max_sum = None
         it_all_data = groupby(zip(values, time_grid), key=lambda x: (x[1].day, x[1].month))
-        for _, one_day_group in it_all_data:
+        for k, one_day_group in it_all_data:
             daily_sum = None
-            for one_step_data, _ in one_day_group:
+            for one_step_data, cur_time in one_day_group:
                 if daily_sum is None:
                     daily_sum = one_step_data
                 else:

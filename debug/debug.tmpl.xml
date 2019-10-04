@@ -12,120 +12,97 @@
 <!-- Data segment. Order is not important. -->
 
     <data uid='Data_1' type='dataset'> <!-- type: dataset, array -->
-    	<description title='Collection long name' name='Temperature' units='m'/>
-	<dataset name='ERAInt' resolution='0.75x0.75' time_step='6h' scenario='-'/>  <!-- ERAINT -->
-    	<variable name='tp' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
-	<region units='degrees'>
+    	<description title='Collection long name' name='prcp' units='m'/>
+	    <dataset name='ERAInt' resolution='1.5x1.5' time_step='3h' scenario='-'/>  <!-- ERAINT -->
+    	<variable name='tp' tempk2c='no'/> <!-- TMP, air, 2t, TAV, precip-->
+	    <region units='degrees'>
 	    <!-- <point lon=[/LU_LON/] lat=[/LU_LAT/]/> -->
-            <point lon="-163.4766" lat="66.2315"/>
-            <point lon="163.4766" lat="66.2315"/>
-            <point lon="163.4766" lat="-66.2315"/>
-            <point lon="-163.4766" lat="-66.2315"/>
+            <point lon='-180' lat='88'/>
+            <point lon='180' lat='88'/>
+            <point lon='180' lat='-88'/>
+            <point lon='-180' lat='-88'/>
     	</region>
-	<levels values='none'/>
-	<time uid='Input_1' template='YYYYMMDDHH'>
+	    <levels values='none'/>
+	    <time uid='Input_1' template='YYYYMMDDHH'>
 	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
-	    <segment name="Seg1" beginning="1980120100" ending="1980123123"/>
-	    <segment name="Seg2" beginning="1981120100" ending="1981123123"/>
-	    <segment name="Seg3" beginning="1982120100" ending="1982123123"/>
-	    <segment name="Seg4" beginning="1983120100" ending="1983123123"/>
-	    <segment name="Seg5" beginning="1984120100" ending="1984123123"/>
-	    <segment name="Seg6" beginning="1985120100" ending="1985123123"/>
-	    <segment name="Seg7" beginning="1986120100" ending="1986123123"/>
-	    <segment name="Seg8" beginning="1987120100" ending="1987123123"/>
-	    <segment name="Seg9" beginning="1988120100" ending="1988123123"/>
-	    <segment name="Seg10" beginning="1989120100" ending="1989123123"/>
-	    <segment name="Seg11" beginning="1990120100" ending="1990123123"/>
-	    <segment name="Seg12" beginning="1991120100" ending="1991123123"/>
-	    <segment name="Seg13" beginning="1992120100" ending="1992123123"/>
-	    <segment name="Seg14" beginning="1993120100" ending="1993123123"/>
-	    <segment name="Seg15" beginning="1994120100" ending="1994123123"/>
-	    <segment name="Seg16" beginning="1995120100" ending="1995123123"/>
-	    <segment name="Seg17" beginning="1996120100" ending="1996123123"/>
-	    <segment name="Seg18" beginning="1997120100" ending="1997123123"/>
-	    <segment name="Seg19" beginning="1998120100" ending="1998123123"/>
-	    <segment name="Seg20" beginning="1999120100" ending="1999123123"/>
-	    <segment name="Seg21" beginning="2000120100" ending="2000123123"/>
-	    <segment name="Seg22" beginning="2001120100" ending="2001123123"/>
-	    <segment name="Seg23" beginning="2002120100" ending="2002123123"/>
-	    <segment name="Seg24" beginning="2003120100" ending="2003123123"/>
-	    <segment name="Seg25" beginning="2004120100" ending="2004123123"/>
-	    <segment name="Seg26" beginning="2005120100" ending="2005123123"/>
-	    <segment name="Seg27" beginning="2006120100" ending="2006123123"/>
-	    <segment name="Seg28" beginning="2007120100" ending="2007123123"/>
-	    <segment name="Seg29" beginning="2008120100" ending="2008123123"/>
-	    <segment name="Seg30" beginning="2009120100" ending="2009123123"/>
-	    <segment name="Seg31" beginning="2010120100" ending="2010123123"/>
-	</time>
+	        <segment name='Seg1' beginning='1990010100' ending='1990013123'/>
+	        <segment name='Seg2' beginning='1991010100' ending='1991013123'/>    
+	    </time>
     </data>
     
     <destination uid='Image_1' type='image'> <!-- type: 'image', 'raw' -->
-	<file name='output/TiMeanPrec_output.tiff' type='geotiff'/> <!-- if graphics.kind=='shaded', then file.type='eps' OR 'geotiff'; graphics.kind=='vector': file.type='shape'; graphics.kind=='multiline': file.type='eps'; for kind=='tile' : 'geotiff24' -->
-	<projection name='cylindrical'> <!-- 'azimuthal equidistant, 'cylindrical',... -->
-	    <p0lon units='degrees'>0</p0lon>
-	    <p0lat units='degrees'>0</p0lat>
-	    <rot units='degrees'>0</rot>
-	    <limits units='degrees'>
-		<limit role='left'>-180</limit>
-		<limit role='right'>180</limit>
-		<limit role='top'>90</limit>
-		<limit role='bottom'>-90</limit>
-	    </limits>
-	</projection>
-	<graphics title='' kind='shaded'> <!-- kind: 'shaded', 'vector' (replaces 'contour', 'station', and 'vector'); 'tile', 'multiline', 'regress2d' -->
-	    <width units='pixels'>3072</width>
-	    <height units='pixels'>2304</height>
-	    <legend title='' kind='file' type='continuous' position='none'> <!-- kind: 'embedded', 'file', 'none'; position: 'right', 'left', 'top', 'bottom' (only for kind=='embedded') -->
-		<units>K</units> <!-- added after legend's title -->
-		<nlabels>11</nlabels> <!-- !!! number of labels in legend -->
-		<ncolors>10</ncolors> <!-- number of discrete colors in legend -->
-		<limited>no</limited> <!-- fixed legend limits: yes/no -->
-		<minimum>-15.0</minimum> <!-- ignored if limited == no -->
-		<maximum>15.0</maximum> <!-- ignored if limited == no -->
-		<file name='output/TiMeanPrec_output.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
-	    </legend>
-	    <colortable>RAINBOW</colortable>  <!-- only for graphics kind=='shaded', e.g.: RAINBOW --> 
-	    <colorscale>linear</colorscale> <!-- only for graphics kind=='shaded', linear/log -->
-	    <blackbg>no</blackbg> <!-- black background -->
+	    <file name='output/output_CalcMonthPrec.tiff' type='geotiff'/> <!-- if graphics.kind=='shaded', then file.type='eps' OR 'geotiff'; graphics.kind=='vector': file.type='shape'; graphics.kind=='multiline': file.type='eps'; for kind=='tile' : 'geotiff24' -->
+	    <projection name='cylindrical'> <!-- 'azimuthal equidistant, 'cylindrical',... -->
+	        <p0lon units='degrees'>0</p0lon>
+	        <p0lat units='degrees'>0</p0lat>
+	        <rot units='degrees'>0</rot>
+	        <limits units='degrees'>
+		        <limit role='left'>-180</limit>
+		        <limit role='right'>180</limit>
+		        <limit role='top'>90</limit>
+		        <limit role='bottom'>-90</limit>
+	        </limits>
+	    </projection>
+	    <graphics title='' kind='shaded'> <!-- kind: 'shaded', 'vector' (replaces 'contour', 'station', and 'vector'); 'tile', 'multiline', 'regress2d' -->
+	        <width units='pixels'>3072</width>
+	        <height units='pixels'>2304</height>
+	        <legend title='' kind='file' type='continuous' position='none'> <!-- kind: 'embedded', 'file', 'none'; position: 'right', 'left', 'top', 'bottom' (only for kind=='embedded') -->
+		        <units>K</units> <!-- added after legend's title -->
+		        <nlabels>11</nlabels> <!-- !!! number of labels in legend -->
+		        <ncolors>10</ncolors> <!-- number of discrete colors in legend -->
+		        <limited>no</limited> <!-- fixed legend limits: yes/no -->
+		        <minimum>-15.0</minimum> <!-- ignored if limited == no -->
+		        <maximum>15.0</maximum> <!-- ignored if limited == no -->
+		        <file name='output/output_CalcMonthPrec.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
+	        </legend>
+	        <colortable>RAINBOW</colortable>  <!-- only for graphics kind=='shaded', e.g.: RAINBOW --> 
+	        <colorscale>linear</colorscale> <!-- only for graphics kind=='shaded', linear/log -->
+	        <blackbg>no</blackbg> <!-- black background -->
     	    <smoothing>yes</smoothing> <!-- only for graphics kind=='shaded': yes/no -->
-	    <steps>30</steps> <!-- only for graphics kind == 'contour' or for file type == 'shape' -->
-	</graphics>
+	        <steps>30</steps> <!-- only for graphics kind == 'contour' or for file type == 'shape' -->
+	    </graphics>
     </destination>    
 
     <destination uid="File_1" type="raw"><!-- uid to be generated, then used in processing -->
-      <file name='output/TiMeanPrec_output.nc' type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
+        <file name='output/output_CalcMonthPrec.nc' type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
     </destination>
     
     <data uid='Result_1' type='array'>
-    	<description title='Total' name='Precipitation' units='m' source='Data_1'/>
-	<time uid='Output_1' template='YYYYMMDDHH'>
-	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
-	    <segment name="Seg1" beginning="1980120100" ending="2010123123"/>
-	</time>
+    	<description title='Monthly maximum consecutive 5-day precipitation' name='Monthly maximum consecutive 5-day precipitation' units='mm'/>
+    </data>
+
+    <data uid='Result_2' type='array'>
+        <description title='Trend of monthly maximum consecutive 5-day precipitation' name='Trend of monthly maximum consecutive 5-day precipitation' units='mm/10yr'/>
     </data>
 
     <data uid='ModuleParameters_1' type='parameter'>
-    	<param uid='timeMeanPrec' type='string'>data</param> <!-- data, day, segment -->
+    	<param uid='Mode' type='string'>segment</param> <!-- data, day, segment -->
+    	<param uid='Threshold' type='integer'>5</param> <!-- 1, 5 -->
     </data>
 
 <!-- End of data segment -->
 
 <!-- Code segment. Order is IMPORTANT! -->
 
-    <processing uid='Process_1' class='cvcCalcTiMean_prec' module_path=''>
+    <processing uid='Process_1' class='CalcRxnday' module_path=''>
     	<input uid='P1Input1' data='Data_1'/>
     	<input uid='P1Parameter1' data ='ModuleParameters_1'/>
     	<output uid='P1Output1' data='Result_1'/>
     </processing>
-    
+
+    <processing uid='Process_2' class='cvcCalcTrendTM' module_path=''>
+        <input uid='P2Input1' data='Result_1'/>
+        <output uid='P2Output1' data='Result_2'/>
+    </processing>      
+
     <processing uid='Visualization_1' class='cvcOutput'>
-	    <input uid='V1Data1' data='Result_1'/>
+	    <input uid='V1Data1' data='Result_2'/>
 	    <output uid='V1Destination1' data='Image_1'/>
     </processing>
 
     <processing uid="Output_1" class="cvcOutput">
-      <input uid="O1Data1" data="Result_1"/>
-      <output uid="O1Destination1" data="File_1"/>
+        <input uid="O1Data1" data="Result_2"/>
+        <output uid="O1Destination1" data="File_1"/>
     </processing>
             
 <!-- End of code segment -->

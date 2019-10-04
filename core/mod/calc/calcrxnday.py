@@ -52,23 +52,23 @@ class CalcRxnday(Calc):
         nday_sum = None
         max_sum = None
         it_all_data = groupby(zip(values, time_grid), key=lambda x: (x[1].day, x[1].month))
-        for k, one_day_group in it_all_data:
+        for _, one_day_group in it_all_data:
             daily_sum = None
-            for one_step_data, cur_time in one_day_group:
+            for one_step_data, _ in one_day_group:
                 if daily_sum is None:
-                    daily_sum = one_step_data
+                    daily_sum = deepcopy(one_step_data)
                 else:
                     daily_sum += one_step_data
             queue.append(daily_sum)
             if nday_sum is None:
-                nday_sum = daily_sum
+                nday_sum = deepcopy(daily_sum)
             else:
                 nday_sum += daily_sum
             if len(queue) > threshold:
                 nday_sum -= queue.popleft()
             if len(queue) == threshold:
                 if max_sum is None:
-                    max_sum = nday_sum
+                    max_sum = deepcopy(nday_sum)
                 else:
                     max_sum = ma.max(ma.stack((max_sum, nday_sum)), axis=0)
 

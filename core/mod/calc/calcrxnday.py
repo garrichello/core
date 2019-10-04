@@ -19,6 +19,7 @@ import datetime
 from copy import deepcopy
 import numpy as np
 import numpy.ma as ma
+from itertools import groupby
 
 from core.base.dataaccess import DataAccess
 from core.base.common import print  # pylint: disable=W0622
@@ -37,12 +38,21 @@ class CalcRxnday(Calc):
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
 
-    def calc_rxndays(self, values, time_grid):
+    def calc_rxndays(self, values, time_grid, threshold):
         """ Calculates Rxnday
         Arguments:
             values -- array of total precipitation
         Returns: Rxnday values
         """
+
+        # First of all, we suppose values are for a month with some time step.
+        # Initially, let's sum first 'threshold' days.
+        # Then we slide a window along the time grid
+        #  subtracting one day on the left and adding one day on the right.
+        it_left = groupby(zip(values, time_grid), key=lambda _, d: d.day)  # Define left iterator.
+        it_right = groupby(zip(values, time_grid), key=lambda _, d: d.day)  # Define right iterator.
+
+
 
         
 
@@ -83,9 +93,9 @@ class CalcRxnday(Calc):
                 # Read data
                 data = self._data_helper.get(input_uids[DATA_UID], segments=segment, levels=level)
                 values = data['data'][level][segment['@name']]['@values']
-                time_grid = data['data'][level][segment['name']]['@time_grid']
+                time_grid = data['data'][level][segment['@name']]['@time_grid']
 
-                one_segment_data = self.calc_rxndays(values, time_grid)
+                one_segment_data = self.calc_rxndays(values, time_grid, threshold)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

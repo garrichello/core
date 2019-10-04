@@ -15,11 +15,10 @@
 
 """
 
-import datetime
-from copy import deepcopy
-import numpy as np
-import numpy.ma as ma
+from collections import deque
 from itertools import groupby
+from copy import deepcopy
+import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
 from core.base.common import print  # pylint: disable=W0622
@@ -49,14 +48,31 @@ class CalcRxnday(Calc):
         # Initially, let's sum first 'threshold' days.
         # Then we slide a window along the time grid
         #  subtracting one day on the left and adding one day on the right.
-        it_left = groupby(zip(values, time_grid), key=lambda _, d: d.day)  # Define left iterator.
-        it_right = groupby(zip(values, time_grid), key=lambda _, d: d.day)  # Define right iterator.
+        queue = deque()
+        nday_sum = None
+        max_sum = None
+        it_all_data = groupby(zip(values, time_grid), key=lambda x: (x[1].day, x[1].month))
+        for _, one_day_group in it_all_data:
+            daily_sum = None
+            for one_step_data, _ in one_day_group:
+                if not daily_sum:
+                    daily_sum = one_step_data
+                else:
+                    daily_sum += one_step_data
+            queue.append(daily_sum)
+            if not nday_sum:
+                nday_sum = daily_sum
+            else:
+                nday_sum += daily_sum
+            if len(queue) > threshold:
+                nday_sum -= queue.popleft()
+            if len(queue) == threshold:
+                if not max_sum:
+                    max_sum = nday_sum
+                else:
+                    max_sum = ma.max(ma.stack((max_sum, nday_sum)), axis=0)
 
-
-
-        
-
-        return values
+        return max_sum
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """

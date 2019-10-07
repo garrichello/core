@@ -14,7 +14,6 @@
 
 """
 
-from collections import deque
 from itertools import groupby
 from copy import deepcopy
 import numpy.ma as ma
@@ -45,8 +44,8 @@ class CalcSDII(Calc):
         """
 
         threshold = 1  # Wet day threshold (1 mm)
-        w_days = 0  # Wet days (daily precipitation >= 1 mm) counter.
-        rr_sum = 0  # Sum of daily precipitation in wet days.
+        w_days = None  # Wet days (daily precipitation >= 1 mm) counter.
+        rr_sum = None  # Sum of daily precipitation in wet days.
         it_all_data = groupby(zip(values, time_grid), key=lambda x: (x[1].day, x[1].month))
         for _, one_day_group in it_all_data:  # Iterate over daily groups.
             daily_sum = None
@@ -55,9 +54,14 @@ class CalcSDII(Calc):
                     daily_sum = deepcopy(one_step_data)
                 else:
                     daily_sum += one_step_data  # Calculate daily sums.
-            if daily_sum > threshold:
-                w_days += 1
-                rr_sum += daily_sum
+            mask = daily_sum > threshold
+            if w_days is None:
+                w_days = ma.zeros(daily_sum.shape)
+            w_days += mask
+            if rr_sum is None:
+                rr_sum = ma.zeros(daily_sum.shape)
+            rr_sum[mask] += daily_sum[mask]
+
         result = rr_sum / w_days
 
         return result

@@ -278,7 +278,8 @@ class DataNetcdf(Data):
                 #  We make them to be: tp@3h, tp@9h, tp@15h, tp@21h...
                 # Originally 3h-step data are stored as: tp@3h, tp@3h+tp@6h, tp@3h+tp@6h+tp@9h, tp@15h, tp@15h+tp@18h, tp@15h+tp@18h+tp@21h...
                 #  We make them to be: tp@3h, tp@6h, tp@9h, tp@15h, tp@18h, tp@21h... (note: there is no tp@12h in the time grid!)
-                if self._data_info['data']['dataset']['@name'] == 'ERAInt' and self._data_info['data']['variable']['@name'] == 'tp':
+                if self._data_info['data']['dataset']['@name'].lower() == 'eraint' and \
+                    self._data_info['data']['variable']['@name'].lower() == 'tp':
                     if self._data_info['data']['dataset']['@time_step'] == '6h':
                         for i in range(0, len(time_grid)-1, 2):
                             data_slice[i+1] -= data_slice[i]

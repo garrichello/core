@@ -114,7 +114,7 @@ class CalcSDII(Calc):
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
-                    print('(CalcCDDCWD::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
+                    print('(CalcSDII::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
                     raise ValueError
 
             # For data-wise analysis analyse segments analyses :)

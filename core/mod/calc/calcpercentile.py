@@ -25,7 +25,7 @@ class CalcPercentile(Calc):
     def _apply_condition(self, data, condition):
         if condition == 'wet':
             mask = data < 1  # Precipitation >=1 mm per day is a condition for a wet day
-            data.mask = np.ma.logical_and(data.mask, mask)
+            data.mask = np.ma.logical_or(data.mask, mask)
 
     def _calc_percentile(self, uid, n, level, condition=None):
         """ Calculates n-th percentile at a given vertical level for a given time period.

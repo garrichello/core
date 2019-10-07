@@ -93,8 +93,8 @@ class CalcRnnmm(Calc):
                 values = data['data'][level][segment['@name']]['@values']
                 time_grid = data['data'][level][segment['@name']]['@time_grid']
                 description = data['data']['description']
-                description['@title'] = 'Count of days with precipitation greater or equal {} mm'.format(threshold)
-                description['@name'] = 'Count of days with precipitation greater or equal {} mm'.format(threshold)
+                description['@title'] = 'Count of days with precipitation ≥ {} mm'.format(threshold)
+                description['@name'] = 'Count of days with precipitation ≥ {} mm'.format(threshold)
                 description['@units'] = 'days'
 
                 one_segment_data = self.calc_rnnmm(values, time_grid, threshold)

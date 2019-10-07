@@ -1,5 +1,4 @@
-"""Class CalcNormals provides methods for calculation of 10th and 90th normals
-of daily maximum temperature values for 5 consecutive days window of the 30-year Base period.
+"""Class CalcNormals provides methods for calculation of climate normals for the 30-year Base period.
 """
 
 import datetime
@@ -12,7 +11,7 @@ from core.mod.calc.calc import Calc
 MAX_N_INPUT_ARGUMENTS = 2
 
 class CalcNormals(Calc):
-    """ Performs calculation of n-th normals of daily maximum temperatures.
+    """ Performs calculation of climate normals of values.
 
     """
 

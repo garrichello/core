@@ -62,7 +62,7 @@ class CalcSDII(Calc):
                 rr_sum = ma.zeros(daily_sum.shape)
             rr_sum[mask] += daily_sum[mask]
 
-        result = rr_sum / w_days
+        result = rr_sum / w_days  # Masked array automatically hides NaNs created by division by zero.
 
         return result
 

@@ -34,6 +34,7 @@ class CalcBasicStat(Calc):
         assert input_uids, '(CalcBasicStat::run) No input arguments!'
 
         # Get parameters
+        parameters = None
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
 

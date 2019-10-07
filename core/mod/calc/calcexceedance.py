@@ -105,11 +105,12 @@ class CalcExceedance(Calc):
         assert input_uids, '(CalcExceedance::run) No input arguments!'
 
         # Get parameters
+        parameters = None
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-            feature = self._get_parameter('Feature', parameters, DEFAULT_VALUES)
-            exceedance = self._get_parameter('Exceedance', parameters, DEFAULT_VALUES)
-            calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
+        feature = self._get_parameter('Feature', parameters, DEFAULT_VALUES)
+        exceedance = self._get_parameter('Exceedance', parameters, DEFAULT_VALUES)
+        calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
         print('(CalcExceedance::run) Calculation feature: {}'.format(feature))
         print('(CalcExceedance::run) Exceedance: {}'.format(exceedance))

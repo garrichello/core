@@ -50,11 +50,12 @@ class CalcThresholdDays(Calc):
         assert input_uids, '(CalcThresholdDays::run) No input arguments!'
 
         # Get parameters
+        parameters = None
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-            condition = self._get_parameter('Condition', parameters, DEFAULT_VALUES)
-            threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
-            calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
+        condition = self._get_parameter('Condition', parameters, DEFAULT_VALUES)
+        threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
+        calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
         print('(CalcThresholdDays::run) Calculation condition: {}'.format(condition))
         print('(CalcThresholdDays::run) Threshold: {}'.format(threshold))

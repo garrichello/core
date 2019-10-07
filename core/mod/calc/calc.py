@@ -30,7 +30,9 @@ class Calc():
 
         Returns: value from a parameters or default value
         """
-        value = parameters.get(parameter_name)
+        value = None
+        if parameters is not None:
+            value = parameters.get(parameter_name)
         if value is None:
             value = default_values[parameter_name]
 

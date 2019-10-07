@@ -66,10 +66,11 @@ class CalcRnnmm(Calc):
         assert input_uids, '(CalcRnnmm::run) No input arguments!'
 
         # Get parameters
+        parameters = None
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-            threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
-            calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
+        threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
+        calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
         print('(CalcRnnmm::run) Threshold: {}'.format(threshold))
         print('(CalcRnnmm::run) Calculation mode: {}'.format(calc_mode))

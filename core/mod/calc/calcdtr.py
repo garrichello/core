@@ -44,9 +44,10 @@ class CalcDTR(Calc):
         assert input_uids, '(CalcDTR::run) No input arguments!'
 
         # Get parameters
+        parameters = None
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-            calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
+        calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
         print('(CalcDTR::run) Calculation mode: {}'.format(calc_mode))
 

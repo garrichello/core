@@ -48,12 +48,7 @@ class CalcSDII(Calc):
         rr_sum = None  # Sum of daily precipitation in wet days.
         it_all_data = groupby(zip(values, time_grid), key=lambda x: (x[1].day, x[1].month))
         for _, one_day_group in it_all_data:  # Iterate over daily groups.
-            daily_sum = None
-            for one_step_data, _ in one_day_group:  # Iterate over each time step in each group.
-                if daily_sum is None:
-                    daily_sum = deepcopy(one_step_data)
-                else:
-                    daily_sum += one_step_data  # Calculate daily sums.
+            daily_sum = self._calc_daily_sum(one_day_group)
             mask = daily_sum > threshold
             if w_days is None:
                 w_days = ma.zeros(daily_sum.shape)

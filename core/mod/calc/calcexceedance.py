@@ -50,7 +50,7 @@ MAX_N_INPUT_ARGUMENTS = 3
 INPUT_PARAMETERS_INDEX = 2
 NORMALS_UID = 0
 STUDY_UID = 1
-DEFAULT_VALUES = {'Feature': 'frequency', 'Exceedance': 'low', 'Mode': 'data'}
+DEFAULT_VALUES = {'Feature': 'frequency', 'Exceedance': 'low', 'Mode': 'data', 'Condition': None}
 
 class CalcExceedance(Calc):
     """ Provides calculation of a spatial field of cold/warm nights/days values for time series of data.
@@ -110,10 +110,13 @@ class CalcExceedance(Calc):
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
         feature = self._get_parameter('Feature', parameters, DEFAULT_VALUES)
         exceedance = self._get_parameter('Exceedance', parameters, DEFAULT_VALUES)
+        condition = self._get_parameter('Condition', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
         print('(CalcExceedance::run) Calculation feature: {}'.format(feature))
         print('(CalcExceedance::run) Exceedance: {}'.format(exceedance))
+        if condition is not None:
+            print('(CalcExceedance::run) Condition: {}'.format(condition))
         print('(CalcExceedance::run) Calculation mode: {}'.format(calc_mode))
 
         # Get outputs
@@ -155,6 +158,10 @@ class CalcExceedance(Calc):
                 # Remove Feb 29 from the study array (we do not take this day into consideration).
                 study_values = self._remove_feb29(study_values, study_time_grid)
 
+                # Apply conditions if there are any.
+                if condition is not None:
+                    self._apply_condition(study_values, condition)
+
                 # Compare values according chosen exceedance.
                 comparison_mask = comparison_func(study_values, normals_values)
 
@@ -169,6 +176,10 @@ class CalcExceedance(Calc):
 
                 if feature == 'duration':
                     one_segment_data = self._calc_duration(comparison_mask)
+
+                if feature == 'total':
+                    study_values.mask = ma.mask_or(study_values.mask, ~comparison_mask, shrink=False)
+                    one_segment_data = ma.sum(study_values, axis=0)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

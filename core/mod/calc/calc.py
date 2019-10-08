@@ -2,6 +2,7 @@
 """
 
 from copy import deepcopy
+import numpy.ma as ma
 
 class Calc():
     """ Base class for all calculation methods
@@ -47,3 +48,8 @@ class Calc():
                 daily_sum += one_step_data  # Calculate daily sums.
 
         return daily_sum
+
+    def _apply_condition(self, data, condition):
+        if condition == 'wet':  # Precipitation >=1 mm per day is a condition for a wet day
+            mask = data < 1
+            data.mask = ma.mask_or(data.mask, mask, shrink=False)

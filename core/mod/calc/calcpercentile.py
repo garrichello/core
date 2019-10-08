@@ -83,11 +83,6 @@ class CalcPercentile(Calc):
         mask = np.tile(mask_0, mask_shape)  # Generate a mask to conform data dimensions.
         percentile['data'] = np.ma.MaskedArray(percentile_data, mask=mask, fill_value=result['@fill_value'])
 
-        if condition is not None:
-            if condition == 'wet':
-                description = deepcopy(result['data']['description'])
-                description['@title'] = 'Percentile of wet days'
-                description['@name'] = 'Percentile of wet days'
         percentile['@base_period'] = time_segment
         percentile['@day_grid'] = days
         percentile['@longitude_grid'] = result['@longitude_grid']
@@ -98,7 +93,6 @@ class CalcPercentile(Calc):
         percentile['meta']['time_long_name'] = 'Calendar day of the year'
         percentile['meta']['level_units'] = 'percentile'
         percentile['meta']['level_long_name'] = 'Percentile'
-        percentile['description'] = description
 
         return percentile
 
@@ -130,6 +124,6 @@ class CalcPercentile(Calc):
                               segment=percentile['@base_period'], level=str(threshold),
                               longitudes=percentile['@longitude_grid'], latitudes=percentile['@latitude_grid'],
                               times=percentile['@day_grid'], fill_value=percentile['@fill_value'],
-                              meta=percentile['meta'], description=percentile['description'])
+                              meta=percentile['meta'])
 
         print('(CalcPercentile::run) Finished!')

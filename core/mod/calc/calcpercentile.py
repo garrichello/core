@@ -85,7 +85,7 @@ class CalcPercentile(Calc):
 
         if condition is not None:
             if condition == 'wet':
-                description = deepcopy(data['data']['description'])
+                description = deepcopy(result['data']['description'])
                 description['@title'] = 'Percentile of wet days'
                 description['@name'] = 'Percentile of wet days'
         percentile['@base_period'] = time_segment

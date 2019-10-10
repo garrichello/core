@@ -59,7 +59,7 @@ class CalcDTR(Calc):
         time_segments = self._data_helper.get_segments(input_uids[MAX_DATA_UID])
         vertical_levels = self._data_helper.get_levels(input_uids[MAX_DATA_UID])
 
-        data_func = ma.mean  # For calc_mode == 'data' we calculate max over all segments.
+        data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
 
         for level in vertical_levels:
             all_segments_data = []

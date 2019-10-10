@@ -57,7 +57,7 @@ class CalcHTC(Calc):
         # We sum values between crossings (segments) and analyse sums according to (Ped', 1951).
 
         # Define a function to detect False->True transition.
-        trans = lambda a, b: not a and b
+        trans = lambda a, b: ma.logical_and(ma.logical_not(a), b)
 
         # Create shape for new arrays without time dimmension.
         dims = list(temp_values.shape)

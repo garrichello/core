@@ -171,19 +171,20 @@ class CalcHTC(Calc):
 
         # Get time segments and levels (only for maximum data, for minimum they must be the same)
         time_segments = self._data_helper.get_segments(input_uids[PRCP_DATA_UID])
-        vertical_levels = self._data_helper.get_levels(input_uids[PRCP_DATA_UID])
+        prcp_levels = self._data_helper.get_levels(input_uids[PRCP_DATA_UID])
+        temp_levels = self._data_helper.get_levels(input_uids[TEMP_DATA_UID])
 
         data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
 
-        for level in vertical_levels:
+        for prcp_level, temp_level in zip(prcp_levels, temp_levels):
             all_segments_values = []
             for segment in time_segments:
                 # Read data
-                prcp_data = self._data_helper.get(input_uids[PRCP_DATA_UID], segments=segment, levels=level)
-                prcp_values = prcp_data['data'][level][segment['@name']]['@values']
-                temp_data = self._data_helper.get(input_uids[TEMP_DATA_UID], segments=segment, levels=level)
-                temp_values = temp_data['data'][level][segment['@name']]['@values']
-                time_grid = prcp_data['data'][level][segment['@name']]['@time_grid']
+                prcp_data = self._data_helper.get(input_uids[PRCP_DATA_UID], segments=segment, levels=prcp_level)
+                prcp_values = prcp_data['data'][prcp_level][segment['@name']]['@values']
+                temp_data = self._data_helper.get(input_uids[TEMP_DATA_UID], segments=segment, levels=temp_level)
+                temp_values = temp_data['data'][temp_level][segment['@name']]['@values']
+                time_grid = prcp_data['data'][prcp_level][segment['@name']]['@time_grid']
 
                 # Perform calculation for the current time segment.
                 one_segment_values = self._calc_htc(prcp_values, temp_values, threshold, time_grid)
@@ -191,7 +192,7 @@ class CalcHTC(Calc):
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
                 if calc_mode == 'segment':
-                    self._data_helper.put(output_uids[0], values=one_segment_values, level=level, segment=segment,
+                    self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment,
                                           longitudes=prcp_data['@longitude_grid'],
                                           latitudes=prcp_data['@latitude_grid'],
                                           fill_value=prcp_data['@fill_value'],
@@ -211,7 +212,7 @@ class CalcHTC(Calc):
                 full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
                 full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
-                self._data_helper.put(output_uids[0], values=values_out, level=level, segment=full_range_segment,
+                self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment,
                                       longitudes=prcp_data['@longitude_grid'], latitudes=prcp_data['@latitude_grid'],
                                       fill_value=prcp_data['@fill_value'], meta=prcp_data['meta'])
 

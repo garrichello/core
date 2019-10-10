@@ -14,7 +14,10 @@
             [lats, lons] -- for Mode == 'data'
 """
 
+import operator
 from copy import deepcopy
+import datetime
+
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
@@ -35,8 +38,113 @@ class CalcHTC(Calc):
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
 
-    def _calc_htc(self, prcp_values, temp_values, threshold):
-        return 0
+    def _calc_half_htc(self, prcp_values, temp_values, threshold, cmp_func):
+        """ Calculates Selyaninov's hydrothermal coeffcient for only a half of an year.
+        Arguments:
+            prcp_values -- daily total precipitation values
+            temp_values -- daily mean temperature values
+            threshold -- threshold temperature (10C, by default)
+            cmp_func -- comparative function: 
+                operator.ge -- to process the first half of the year
+                operator.lt -- to process the second half of the year
+        Returns:
+            result -- array of Selyaninov's hydrothermal coefficient values
+        """
+        # The idea is to subtract threshold from temperature values
+        #  and to catch cases when values change sign from negative to positive (a transition)
+        #  i.e., pass x-axis upwards.
+        # Each crossing correspond to a possible beginning of vegetation period.
+        # We sum values between crossings (segments) and analyse sums according to (Ped', 1951).
+
+        # Define a function to detect False->True transition.
+        trans = lambda a, b: not a and b
+
+        # Create shape for new arrays without time dimmension.
+        dims = list(temp_values.shape)
+        _ = dims.pop(0)
+
+        # Define some useful arrays.
+        temp_sums_1 = ma.zeros(dims)  # Temperature sums for the first segment.
+        temp_sums_2 = ma.zeros(dims)  # Temperature sums for the second segment.
+        temp_sums_3 = ma.zeros(dims)  # Temperature sums for the third segment.
+        temp_total = ma.zeros(dims)   # Temperature total sum for a vegetation period.
+        prcp_sums_1 = ma.zeros(dims)  # Precipitation sums for the first segment.
+        prcp_sums_2 = ma.zeros(dims)  # Precipitation sums for the second segment.
+        prcp_sums_3 = ma.zeros(dims)  # Precipitation sums for the third segment.
+        prcp_total = ma.zeros(dims)   # Precipitation total sum for a vegetation period.
+
+        trans_mask_1 = ma.zeros(dims)  # Mask of cells in the first segment state
+                                      #  (i.e., where the first transition was detected).
+        trans_mask_2 = ma.zeros(dims)  # Mask of cells in the second segment state.
+        trans_mask_3 = ma.zeros(dims)  # Mask of cells in the third segment state.
+        cur_trans = ma.zeros(dims)  # Matrix of upward transitions at current time step.
+
+        # Search for upward transitions and calculate sums.
+        for cur_temp, cur_prcp in zip(temp_values, prcp_values):
+            temp_deviation = cur_temp - threshold
+            temp_pos_mask = cmp_func(temp_deviation, 0)  # Mask of positive values.
+            cur_trans = trans(cur_trans, temp_pos_mask)  # Detect negative->positive transition.
+            # Turn on the third state, if a transitions is detected and the second state is on.
+            trans_mask_3 = ma.logical_and(cur_trans, trans_mask_2)
+            # Turn on the second state, if a transitions is detected and the first state is on.
+            trans_mask_2 = ma.logical_and(cur_trans, trans_mask_1)
+            # Turn on the first state, if a transitions is detected or leave it as is.
+            trans_mask_1 = ma.logical_or(cur_trans, trans_mask_1)
+            # Sum values in the first segment.
+            seg_1_mask = ma.logical_and(trans_mask_1, ma.logical_not(trans_mask_2))
+            temp_sums_1[seg_1_mask] += temp_deviation[seg_1_mask]
+            prcp_sums_1[seg_1_mask] += cur_prcp[seg_1_mask]
+            # Sum values in the second segment.
+            seg_2_mask = ma.logical_and(trans_mask_2, ma.logical_not(trans_mask_3))
+            temp_sums_2[seg_2_mask] += temp_deviation[seg_2_mask]
+            prcp_sums_2[seg_2_mask] += cur_prcp[seg_2_mask]
+            # Sum values in the third segment (in fact, everything after the second one).
+            temp_sums_3[trans_mask_3] += temp_deviation[trans_mask_3]
+            prcp_sums_3[trans_mask_3] += cur_prcp[trans_mask_3]
+
+        # Check Ped's conditions and calculate temperature sums for the vegetation period.
+        # Create some intermediate sums.
+        temp_sums_12 = temp_sums_1 + temp_sums_2
+        temp_sums_23 = temp_sums_2 + temp_sums_3
+        temp_sums_123 = temp_sums_12 + temp_sums_3
+        # If vegetation period starts at the first transition point.
+        start_at_seg_1 = ma.logical_and(temp_sums_1 >= 0, temp_sums_12 >= 0)
+        temp_total[start_at_seg_1] = temp_sums_123[start_at_seg_1]
+        prcp_total[start_at_seg_1] = prcp_sums_1[start_at_seg_1] + prcp_sums_2[start_at_seg_1] + prcp_sums_3[start_at_seg_1]
+        # If vegetation period starts at the second transition point.
+        start_at_seg_2 = ma.logical_and(temp_sums_1 < 0, temp_sums_2 >= 0)
+        temp_total[start_at_seg_2] = temp_sums_23[start_at_seg_2]
+        prcp_total[start_at_seg_2] = prcp_sums_2[start_at_seg_2] + prcp_sums_3[start_at_seg_2]
+        # If vegetation period starts at the third transition point.
+        start_at_seg_3 = ma.logical_or(ma.logical_and(temp_sums_1 < 0, temp_sums_2 < 0), 
+                                       ma.logical_and(ma.logical_and(temp_sums_1 > 0, temp_sums_2 < 0), 
+                                                      temp_sums_12 < 0))
+        temp_total[start_at_seg_3] = temp_sums_3[start_at_seg_3]
+        prcp_total[start_at_seg_3] = prcp_sums_3[start_at_seg_3]
+        # Restore original temperature values from deviations.
+        temp_total += threshold
+
+        return (prcp_total, temp_total)
+
+    def _calc_htc(self, prcp_values, temp_values, threshold, time_grid):
+        """ Calculates Selyaninov's hydrothermal coeffcient.
+        Arguments:
+            prcp_values -- daily total precipitation values
+            temp_values -- daily mean temperature values
+            threshold -- threshold temperature (10C, by default)
+        Returns:
+            result -- array of Selyaninov's hydrothermal coefficient values
+        """
+        midyear = datetime.datetime(time_grid[0].year, 6, 15)
+        first_half = time_grid < midyear
+        second_half = time_grid >= midyear
+        prcp_total_1, temp_total_1 = self._calc_half_htc(prcp_values[first_half], temp_values[first_half], threshold, operator.ge)
+        prcp_total_2, temp_total_2 = self._calc_half_htc(prcp_values[second_half], temp_values[second_half], threshold, operator.lt)
+
+        # Calculate HTC.
+        result = 10 * (prcp_total_1 + prcp_total_2) / (temp_total_1 + temp_total_2)
+
+        return result
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
@@ -75,9 +183,10 @@ class CalcHTC(Calc):
                 prcp_values = prcp_data['data'][level][segment['@name']]['@values']
                 temp_data = self._data_helper.get(input_uids[TEMP_DATA_UID], segments=segment, levels=level)
                 temp_values = temp_data['data'][level][segment['@name']]['@values']
+                time_grid = prcp_data['data'][level][segment['@name']]['@time_grid']
 
                 # Perform calculation for the current time segment.
-                one_segment_values = self._calc_htc(prcp_values, temp_values, threshold)
+                one_segment_values = self._calc_htc(prcp_values, temp_values, threshold, time_grid)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

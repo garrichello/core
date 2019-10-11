@@ -35,7 +35,7 @@
     </data>
 
     <destination uid='Image_1' type='image'> <!-- type: 'image', 'raw' -->
-	    <file name='output/output_CalcHTCTrend.tiff' type='geotiff'/> <!-- type for graphics kind='shape': 'eps', 'geotiff'; kind='contour'/'station': 'eps', 'shape'; for kind=='multiline': 'eps'; for kind=='tile' : 'geotiff24' -->
+	    <file name='output/output_CalcHTC.tiff' type='geotiff'/> <!-- type for graphics kind='shape': 'eps', 'geotiff'; kind='contour'/'station': 'eps', 'shape'; for kind=='multiline': 'eps'; for kind=='tile' : 'geotiff24' -->
 	    <projection name='cylindrical'> <!-- 'azimuthal equidistant, 'cylindrical',... -->
     	    <limits units='degrees'>
               	<limit role="left">-180</limit>
@@ -54,7 +54,7 @@
 	    	    <limited>no</limited> <!-- fixed legend limits: yes/no -->
     		    <minimum>-15.0</minimum> <!-- ignored if limited == no -->
         		<maximum>15.0</maximum> <!-- ignored if limited == no -->
-	        	<file name='output/output_CalcHTCTrend.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
+	        	<file name='output/output_CalcHTC.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
     	    </legend>
 	        <colortable>RAINBOW</colortable>  <!-- only for graphics kind=='shaded' -->
 	        <colorscale>linear</colorscale> <!-- only for graphics kind=='shaded' -->
@@ -63,19 +63,15 @@
     </destination>
 
     <destination uid='File_1' type='raw'>
-		<file name='output/output_CalcHTCTrend.nc' type='netcdf'/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' -->
+		<file name='output/output_CalcHTC.nc' type='netcdf'/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' -->
     </destination>   
 
     <data uid='Result_1' type='array'>
     	<description title='Hydrothermal coefficient of Selyaninov' name='Selyaninov HTC' units='mm/C'/>
     </data>
 
-    <data uid='Result_2' type='array'>
-        <description title='Trend of Hydrothermal coefficient of Selyaninov' name='Trend of Selyaninov HTC' units='mm/C/10yr'/>
-    </data>
- 
     <data uid='ModuleParameters_1' type='parameter'>
-    	<param uid='Mode' type='string'>segment</param> <!-- data, day, segment, mean -->
+    	<param uid='Mode' type='string'>data</param> <!-- data, day, segment, mean -->
         <param uid='Threshold' type='integer'>10</param> <!-- for instance, 5, 10, 25, 95 -->
     </data>
     
@@ -90,18 +86,13 @@
     	<output uid='P1Output1' data='Result_1'/>
     </processing>
 
-    <processing uid='Process_2' class='cvcCalcTrendTM' module_path=''>
-        <input uid='P2Input1' data='Result_1'/>
-        <output uid='P2Output1' data='Result_2'/>
-    </processing>
-
     <processing uid='Visualization_1' class='cvcOutput'>
-	    <input uid='V1Input1' data='Result_2'/>
+	    <input uid='V1Input1' data='Result_1'/>
 	    <output uid='V1Destination' data='Image_1'/>
     </processing>
 
     <processing uid="Output_1" class="cvcOutput">
-	    <input uid="O1Data1" data="Result_2"/>
+	    <input uid="O1Data1" data="Result_1"/>
         <output uid="O1Destination" data="File_1"/>
     </processing>
 

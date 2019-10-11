@@ -145,7 +145,7 @@ class CalcHTC(Calc):
             result -- array of Selyaninov's hydrothermal coefficient values
         """
         start = 0
-        end = prcp_values.shape[0]
+        end = prcp_values.shape[0] - 1
         mid = (end - start) // 2
         prcp_total_1, temp_total_1 = self._calc_half_htc(prcp_values, temp_values, threshold, start, mid+1)
         prcp_total_2, temp_total_2 = self._calc_half_htc(prcp_values, temp_values, threshold, end, mid)

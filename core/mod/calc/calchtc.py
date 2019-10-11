@@ -87,9 +87,9 @@ class CalcHTC(Calc):
             cur_trans = trans(prev_pos_mask, temp_pos_mask)  # Detect negative->positive transition.
             prev_pos_mask = temp_pos_mask  # Store current positive mask for the next iteration.
             # Turn on the third state, if a transitions is detected and the second state is on.
-            trans_mask_3 = ma.logical_and(cur_trans, trans_mask_2)
+            trans_mask_3 = ma.logical_and(ma.logical_or(cur_trans, trans_mask_3), trans_mask_2)
             # Turn on the second state, if a transitions is detected and the first state is on.
-            trans_mask_2 = ma.logical_and(cur_trans, trans_mask_1)
+            trans_mask_2 = ma.logical_and(ma.logical_or(cur_trans, trans_mask_2), trans_mask_1)
             # Turn on the first state, if a transitions is detected or leave it as is.
             trans_mask_1 = ma.logical_or(cur_trans, trans_mask_1)
             # Sum values in the first segment.

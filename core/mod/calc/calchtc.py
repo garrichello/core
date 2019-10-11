@@ -78,12 +78,14 @@ class CalcHTC(Calc):
         trans_mask_2 = ma.zeros(dims)  # Mask of cells in the second segment state.
         trans_mask_3 = ma.zeros(dims)  # Mask of cells in the third segment state.
         cur_trans = ma.zeros(dims)  # Matrix of upward transitions at current time step.
+        prev_pos_mask = ma.zeros(dims)  # Matrix of previous positive mask state.
 
         # Search for upward transitions and calculate sums.
         for cur_temp, cur_prcp in zip(temp_values, prcp_values):
             temp_deviation = cur_temp - threshold
             temp_pos_mask = cmp_func(temp_deviation, 0)  # Mask of positive values.
-            cur_trans = trans(cur_trans, temp_pos_mask)  # Detect negative->positive transition.
+            cur_trans = trans(prev_pos_mask, temp_pos_mask)  # Detect negative->positive transition.
+            prev_pos_mask = temp_pos_mask  # Store current positive mask for the next iteration.
             # Turn on the third state, if a transitions is detected and the second state is on.
             trans_mask_3 = ma.logical_and(cur_trans, trans_mask_2)
             # Turn on the second state, if a transitions is detected and the first state is on.

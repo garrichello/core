@@ -21,7 +21,7 @@ import datetime
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print, celsius_to_kelvin  # pylint: disable=W0622
+from core.base.common import print, kelvin_to_celsius  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 3
@@ -171,8 +171,6 @@ class CalcHTC(Calc):
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
         threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
 
-        threshold = celsius_to_kelvin(threshold)
-
         print('(CalcHTC::run) Calculation mode: {}'.format(calc_mode))
         print('(CalcHTC::run) Threshold: {}'.format(threshold))
 
@@ -196,6 +194,10 @@ class CalcHTC(Calc):
                 temp_data = self._data_helper.get(input_uids[TEMP_DATA_UID], segments=segment, levels=temp_level)
                 temp_values = temp_data['data'][temp_level][segment['@name']]['@values']
                 time_grid = prcp_data['data'][prcp_level][segment['@name']]['@time_grid']
+
+                # Convert degK to degC if needed
+                if temp_data['data']['description']['@units'] == 'K':
+                    temp_values = kelvin_to_celsius(temp_values)
 
                 # Perform calculation for the current time segment.
                 one_segment_values = self._calc_htc(prcp_values, temp_values, threshold, time_grid)

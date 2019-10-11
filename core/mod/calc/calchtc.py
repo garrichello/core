@@ -38,15 +38,12 @@ class CalcHTC(Calc):
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
 
-    def _calc_half_htc(self, prcp_values, temp_values, threshold, cmp_func):
+    def _calc_half_htc(self, prcp_values, temp_values, threshold, start, end):
         """ Calculates Selyaninov's hydrothermal coeffcient for only a half of an year.
         Arguments:
             prcp_values -- daily total precipitation values
             temp_values -- daily mean temperature values
             threshold -- threshold temperature (10C, by default)
-            cmp_func -- comparative function: 
-                operator.ge -- to process the first half of the year
-                operator.lt -- to process the second half of the year
         Returns:
             result -- array of Selyaninov's hydrothermal coefficient values
         """
@@ -80,13 +77,16 @@ class CalcHTC(Calc):
                                       #  (i.e., where the first transition was detected).
         trans_mask_2 = ma.zeros(dims)  # Mask of cells in the second segment state.
         trans_mask_3 = ma.zeros(dims)  # Mask of cells in the third segment state.
-        cur_trans = ma.zeros(dims)  # Matrix of upward transitions at current time step.
         prev_pos_mask = ma.zeros(dims)  # Matrix of previous positive mask state.
 
+        step = 1 if start <= end else -1
+
         # Search for upward transitions and calculate sums.
-        for cur_temp, cur_prcp in zip(temp_values, prcp_values):
+        for i in range(start, end, step):
+            cur_temp = temp_values[i]
+            cur_prcp = prcp_values[i]
             temp_deviation = cur_temp - threshold
-            temp_pos_mask = cmp_func(temp_deviation, 0)  # Mask of positive values.
+            temp_pos_mask = temp_deviation >= 0  # Mask of positive values.
             cur_trans = trans(prev_pos_mask, temp_pos_mask)  # Detect negative->positive transition.
             prev_pos_mask = temp_pos_mask  # Store current positive mask for the next iteration.
             # Turn on the third state, if a transitions is detected and the second state is on.
@@ -135,7 +135,7 @@ class CalcHTC(Calc):
 
         return (prcp_total, temp_total)
 
-    def _calc_htc(self, prcp_values, temp_values, threshold, time_grid):
+    def _calc_htc(self, prcp_values, temp_values, threshold):
         """ Calculates Selyaninov's hydrothermal coeffcient.
         Arguments:
             prcp_values -- daily total precipitation values
@@ -144,11 +144,11 @@ class CalcHTC(Calc):
         Returns:
             result -- array of Selyaninov's hydrothermal coefficient values
         """
-        midyear = datetime.datetime(time_grid[0].year, 6, 15)
-        first_half = time_grid < midyear
-        second_half = time_grid >= midyear
-        prcp_total_1, temp_total_1 = self._calc_half_htc(prcp_values[first_half], temp_values[first_half], threshold, operator.ge)
-        prcp_total_2, temp_total_2 = self._calc_half_htc(prcp_values[second_half], temp_values[second_half], threshold, operator.lt)
+        start = 0
+        end = prcp_values.shape[0]
+        mid = (end - start) // 2
+        prcp_total_1, temp_total_1 = self._calc_half_htc(prcp_values, temp_values, threshold, start, mid+1)
+        prcp_total_2, temp_total_2 = self._calc_half_htc(prcp_values, temp_values, threshold, end, mid)
 
         # Calculate HTC.
         result = 10 * (prcp_total_1 + prcp_total_2) / (temp_total_1 + temp_total_2)
@@ -200,7 +200,7 @@ class CalcHTC(Calc):
                     temp_values = kelvin_to_celsius(temp_values)
 
                 # Perform calculation for the current time segment.
-                one_segment_values = self._calc_htc(prcp_values, temp_values, threshold, time_grid)
+                one_segment_values = self._calc_htc(prcp_values, temp_values, threshold)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

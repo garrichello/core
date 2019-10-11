@@ -70,7 +70,10 @@ class SLDLegend:
             else:
                 legend_values = [(legend_colors[i]) / float(num_colors) * (data_max - data_min) + data_min for i in idxs]
                 # Order of magnitude of the difference between max and min values.
-                value_order = np.log10((data_max - data_min) / num_labels)
+                if data_max != data_min:
+                    value_order = np.log10((data_max - data_min) / num_labels)
+                else:
+                    value_order = np.log10((data_max) / num_labels)
                 precision = 0 if value_order >= 0 else int(np.ceil(abs(value_order)))
                 width = int(np.ceil(np.log10(data_max)) + precision)
                 format_string = '{}:{}.{}f{}'.format('{', width, precision, '}')

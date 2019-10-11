@@ -67,6 +67,9 @@ class CalcHTC(Calc):
         temp_sums_1 = ma.zeros(dims)  # Temperature sums for the first segment.
         temp_sums_2 = ma.zeros(dims)  # Temperature sums for the second segment.
         temp_sums_3 = ma.zeros(dims)  # Temperature sums for the third segment.
+        temp_cnt_1 = ma.zeros(dims)  # Temperature counter for the first segment.
+        temp_cnt_2 = ma.zeros(dims)  # Temperature counter for the second segment.
+        temp_cnt_3 = ma.zeros(dims)  # Temperature counter for the third segment.
         temp_total = ma.zeros(dims)   # Temperature total sum for a vegetation period.
         prcp_sums_1 = ma.zeros(dims)  # Precipitation sums for the first segment.
         prcp_sums_2 = ma.zeros(dims)  # Precipitation sums for the second segment.
@@ -95,36 +98,40 @@ class CalcHTC(Calc):
             # Sum values in the first segment.
             seg_1_mask = ma.logical_and(trans_mask_1, ma.logical_not(trans_mask_2))
             temp_sums_1[seg_1_mask] += temp_deviation[seg_1_mask]
+            temp_cnt_1[seg_1_mask] += 1
             prcp_sums_1[seg_1_mask] += cur_prcp[seg_1_mask]
             # Sum values in the second segment.
             seg_2_mask = ma.logical_and(trans_mask_2, ma.logical_not(trans_mask_3))
             temp_sums_2[seg_2_mask] += temp_deviation[seg_2_mask]
+            temp_cnt_2[seg_2_mask] += 1
             prcp_sums_2[seg_2_mask] += cur_prcp[seg_2_mask]
             # Sum values in the third segment (in fact, everything after the second one).
             temp_sums_3[trans_mask_3] += temp_deviation[trans_mask_3]
+            temp_cnt_3[trans_mask_3] += 1
             prcp_sums_3[trans_mask_3] += cur_prcp[trans_mask_3]
 
         # Check Ped's conditions and calculate temperature sums for the vegetation period.
         # Create some intermediate sums.
         temp_sums_12 = temp_sums_1 + temp_sums_2
+        temp_cnt_12 = temp_cnt_1 + temp_cnt_2
         temp_sums_23 = temp_sums_2 + temp_sums_3
+        temp_cnt_23 = temp_cnt_2 + temp_cnt_3
         temp_sums_123 = temp_sums_12 + temp_sums_3
+        temp_cnt_123 = temp_cnt_12 + temp_cnt_3
         # If vegetation period starts at the first transition point.
         start_at_seg_1 = ma.logical_and(temp_sums_1 >= 0, temp_sums_12 >= 0)
-        temp_total[start_at_seg_1] = temp_sums_123[start_at_seg_1]
+        temp_total[start_at_seg_1] = temp_sums_123[start_at_seg_1] + temp_cnt_123[start_at_seg_1] * threshold
         prcp_total[start_at_seg_1] = prcp_sums_1[start_at_seg_1] + prcp_sums_2[start_at_seg_1] + prcp_sums_3[start_at_seg_1]
         # If vegetation period starts at the second transition point.
         start_at_seg_2 = ma.logical_and(temp_sums_1 < 0, temp_sums_2 >= 0)
-        temp_total[start_at_seg_2] = temp_sums_23[start_at_seg_2]
+        temp_total[start_at_seg_2] = temp_sums_23[start_at_seg_2] + temp_cnt_23[start_at_seg_2] * threshold
         prcp_total[start_at_seg_2] = prcp_sums_2[start_at_seg_2] + prcp_sums_3[start_at_seg_2]
         # If vegetation period starts at the third transition point.
         start_at_seg_3 = ma.logical_or(ma.logical_and(temp_sums_1 < 0, temp_sums_2 < 0), 
                                        ma.logical_and(ma.logical_and(temp_sums_1 > 0, temp_sums_2 < 0), 
                                                       temp_sums_12 < 0))
-        temp_total[start_at_seg_3] = temp_sums_3[start_at_seg_3]
+        temp_total[start_at_seg_3] = temp_sums_3[start_at_seg_3] + temp_cnt_3[start_at_seg_3] * threshold
         prcp_total[start_at_seg_3] = prcp_sums_3[start_at_seg_3]
-        # Restore original temperature values from deviations.
-        temp_total += threshold
 
         return (prcp_total, temp_total)
 

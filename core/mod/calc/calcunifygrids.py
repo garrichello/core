@@ -71,7 +71,7 @@ class CalcUnifyGrids(Calc):
                 data_1 = self._data_helper.get(input_uids[DATA_1_UID], segments=data_1_segment, levels=data_1_level)
                 data_2 = self._data_helper.get(input_uids[DATA_2_UID], segments=data_2_segment, levels=data_2_level)
                 data_1_values = data_1['data'][data_1_level][data_1_segment['@name']]['@values']
-                data_2_values = data_1['data'][data_2_level][data_2_segment['@name']]['@values']
+                data_2_values = data_2['data'][data_2_level][data_2_segment['@name']]['@values']
 
                 # Perform calculation for the current time segment.
                 unidata_1, unidata_2 = self._unify_grids(data_1, data_2)

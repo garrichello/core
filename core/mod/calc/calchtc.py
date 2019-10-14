@@ -191,7 +191,9 @@ class CalcHTC(Calc):
         time_segments = self._data_helper.get_segments(input_uids[PRCP_DATA_UID])
         prcp_levels = self._data_helper.get_levels(input_uids[PRCP_DATA_UID])
         temp_levels = self._data_helper.get_levels(input_uids[TEMP_DATA_UID])
-
+        assert len(prcp_levels) == len(temp_levels), \
+            '(CalcHTC::run) Error! Number of vertical levels are not the same!'
+            
         data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
 
         for prcp_level, temp_level in zip(prcp_levels, temp_levels):

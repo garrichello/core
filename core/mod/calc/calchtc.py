@@ -187,7 +187,7 @@ class CalcHTC(Calc):
         output_uids = self._data_helper.output_uids()
         assert output_uids, '(CalcHTC::run) No output arguments!'
 
-        # Get time segments and levels (only for maximum data, for minimum they must be the same)
+        # Get time segments and levels
         time_segments = self._data_helper.get_segments(input_uids[PRCP_DATA_UID])
         prcp_levels = self._data_helper.get_levels(input_uids[PRCP_DATA_UID])
         temp_levels = self._data_helper.get_levels(input_uids[TEMP_DATA_UID])

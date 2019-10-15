@@ -35,9 +35,9 @@ class CalcUnifyGrids(Calc):
         """ Unifies spatial and temporal grids. Transform data to conform them.
         Arguments:
             data_1 -- first dataset
-            data_1_add -- addition to data_1, contains time grid and values
+            data_1_add -- time segment and level name
             data_2 -- second dataset
-            data_2_add -- addition to data_2, contains time grid and values
+            data_2_add -- time segment and level name
         Returns:
             (out_data_1, out_data_2) -- datasets on unified grids
         """
@@ -72,10 +72,8 @@ class CalcUnifyGrids(Calc):
                 # Read data
                 data_1 = self._data_helper.get(input_uids[DATA_1_UID], segments=data_1_segment, levels=data_1_level)
                 data_2 = self._data_helper.get(input_uids[DATA_2_UID], segments=data_2_segment, levels=data_2_level)
-                # Get 'pointers' to subdictionaries with values and time grids
-                #  to avoid passing segments and levels to _unify_grids method.
-                data_1_add = data_1['data'][data_1_level][data_1_segment['@name']]
-                data_2_add = data_2['data'][data_2_level][data_2_segment['@name']]
+                data_1_add = {'level': data_1_level, 'segment': data_1_segment}
+                data_2_add = {'level': data_2_level, 'segment': data_2_segment}
 
                 # Perform calculation for the current time segment.
                 unidata_1, unidata_2 = self._unify_grids(data_1, data_1_add, data_2, data_2_add)

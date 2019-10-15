@@ -226,7 +226,7 @@ class DataAccess():
         info['data']['description']['@title'] = dataset_tbl_info.collection_name
         info['data']['description']['@name'] = var_tbl_info.parameter_name
         info['data']['description']['@units'] = var_tbl_info.units_name
-        info['data']['description']['@acc_mode'] == var_tbl_info.acc_mode
+        info['data']['description']['@acc_mode'] = var_tbl_info.acc_mode
 
         # Each vertical level is processed separately because corresponding arrays can be stored in different files
         for level_name in levels_names:

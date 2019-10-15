@@ -212,7 +212,7 @@ class DataAccess():
             var_tbl_info = \
                 session.query(units_tr_tbl.columns['name'].label('units_name'),
                               par_tr_tbl.columns['name'].label('parameter_name'),
-                              par_tr_tbl.columns['acc_mode'].label('acc_mode')).select_from(
+                              par_tbl.columns['acc_mode'].label('acc_mode')).select_from(
                                   data_tbl).join(variable_tbl).join(units_tbl).join(units_tr_tbl).join(par_tbl).join(
                                       par_tr_tbl).filter(variable_tbl.columns['name'] == variable_name).filter(
                                           units_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(

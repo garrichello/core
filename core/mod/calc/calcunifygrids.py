@@ -31,11 +31,13 @@ class CalcUnifyGrids(Calc):
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
 
-    def _unify_grids(self, data_1, data_2):
+    def _unify_grids(self, data_1, data_1_add, data_2, data_2_add):
         """ Unifies spatial and temporal grids. Transform data to conform them.
         Arguments:
             data_1 -- first dataset
+            data_1_add -- addition to data_1, contains time grid and values
             data_2 -- second dataset
+            data_2_add -- addition to data_2, contains time grid and values
         Returns:
             (out_data_1, out_data_2) -- datasets on unified grids
         """
@@ -70,11 +72,13 @@ class CalcUnifyGrids(Calc):
                 # Read data
                 data_1 = self._data_helper.get(input_uids[DATA_1_UID], segments=data_1_segment, levels=data_1_level)
                 data_2 = self._data_helper.get(input_uids[DATA_2_UID], segments=data_2_segment, levels=data_2_level)
-                data_1_values = data_1['data'][data_1_level][data_1_segment['@name']]['@values']
-                data_2_values = data_2['data'][data_2_level][data_2_segment['@name']]['@values']
+                # Get 'pointers' to subdictionaries with values and time grids
+                #  to avoid passing segments and levels to _unify_grids method.
+                data_1_add = data_1['data'][data_1_level][data_1_segment['@name']]
+                data_2_add = data_2['data'][data_2_level][data_2_segment['@name']]
 
                 # Perform calculation for the current time segment.
-                unidata_1, unidata_2 = self._unify_grids(data_1, data_2)
+                unidata_1, unidata_2 = self._unify_grids(data_1, data_1_add, data_2, data_2_add)
 
                 self._data_helper.put(output_uids[DATA_1_UID], values=unidata_1['@values'],
                                       level=data_1_level, segment=data_1_segment,

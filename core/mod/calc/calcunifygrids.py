@@ -31,6 +31,24 @@ class CalcUnifyGrids(Calc):
     def __init__(self, data_helper: DataAccess):
         self._data_helper = data_helper
 
+    def _unify_time_grid(self, values, original_time_grid, target_time_grid, mode):
+        """ Transforms data to a given time grid: from fine to coarse.
+        Normally data are averaged but some (total precipitation) are summed.
+        Arguments:
+            values -- data values (e.g., [time, lat, lon])
+            original_time_grid -- original time grid
+            target_time_grid -- target time grid
+            mode -- action mode:
+                'mean' -- data are averaged
+                'sum' -- data are summed
+        Returns:
+            result -- transformed along time axis data values
+        """
+        
+
+
+        return 0
+
     def _unify_grids(self, data_1, data_1_add, data_2, data_2_add):
         """ Unifies spatial and temporal grids. Transform data to conform them.
         Arguments:
@@ -49,6 +67,7 @@ class CalcUnifyGrids(Calc):
         time_grid_1 = data_1['data'][level_1_name][segment_1_name]['@time_grid']
         lats_1 = data_1['@latitude_grid']
         lons_1 = data_1['@longitude_grid']
+        mode_1 = data_1['data']['description']['@acc_mode']
 
         level_2_name = data_2_add['level']
         segment_2_name = data_2_add['segment']['@name']
@@ -56,8 +75,14 @@ class CalcUnifyGrids(Calc):
         time_grid_2 = data_2['data'][level_2_name][segment_2_name]['@time_grid']
         lats_2 = data_2['@latitude_grid']
         lons_2 = data_2['@longitude_grid']
+        mode_2 = data_2['data']['description']['@acc_mode']
 
-        
+        # Find out which time grid is finer than another.
+        # Since time range must be the same for both grids, longer grid is finer.
+        if len(time_grid_1) > len(time_grid_2):
+            values_1 = self._unify_time_grid(values_1, time_grid_1, time_grid_2, mode_1)
+        elif len(time_grid_1) < len(time_grid_2):
+            values_2 = self._unify_time_grid(values_2, time_grid_2, time_grid_1, mode_2)
 
 
         return (data_1, data_2)

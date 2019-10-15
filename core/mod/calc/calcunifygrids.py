@@ -42,6 +42,24 @@ class CalcUnifyGrids(Calc):
             (out_data_1, out_data_2) -- datasets on unified grids
         """
 
+        # Get grids and values.
+        level_1_name = data_1_add['level']
+        segment_1_name = data_1_add['segment']['@name']
+        values_1 = data_1['data'][level_1_name][segment_1_name]['@values']
+        time_grid_1 = data_1['data'][level_1_name][segment_1_name]['@time_grid']
+        lats_1 = data_1['@latitude_grid']
+        lons_1 = data_1['@longitude_grid']
+
+        level_2_name = data_2_add['level']
+        segment_2_name = data_2_add['segment']['@name']
+        values_2 = data_2['data'][level_2_name][segment_2_name]['@values']
+        time_grid_2 = data_2['data'][level_2_name][segment_2_name]['@time_grid']
+        lats_2 = data_2['@latitude_grid']
+        lons_2 = data_2['@longitude_grid']
+
+        
+
+
         return (data_1, data_2)
 
     def run(self):

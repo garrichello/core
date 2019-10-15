@@ -211,7 +211,8 @@ class DataAccess():
         try:
             var_tbl_info = \
                 session.query(units_tr_tbl.columns['name'].label('units_name'),
-                              par_tr_tbl.columns['name'].label('parameter_name')).select_from(
+                              par_tr_tbl.columns['name'].label('parameter_name'),
+                              par_tr_tbl.columns['acc_mode'].label('acc_mode')).select_from(
                                   data_tbl).join(variable_tbl).join(units_tbl).join(units_tr_tbl).join(par_tbl).join(
                                       par_tr_tbl).filter(variable_tbl.columns['name'] == variable_name).filter(
                                           units_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(
@@ -225,6 +226,7 @@ class DataAccess():
         info['data']['description']['@title'] = dataset_tbl_info.collection_name
         info['data']['description']['@name'] = var_tbl_info.parameter_name
         info['data']['description']['@units'] = var_tbl_info.units_name
+        info['data']['description']['@acc_mode'] == variable_tbl.acc_mode
 
         # Each vertical level is processed separately because corresponding arrays can be stored in different files
         for level_name in levels_names:

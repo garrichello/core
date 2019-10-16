@@ -226,6 +226,8 @@ class CalcUnifyGrids(Calc):
             print('(CalcUnifyGrids::run) How did we get here?!')
             raise ValueError
 
+        result['@values_1'] = values_1
+        result['@values_2'] = values_2
         result['meta'] = {**data_1['meta'], **data_2['meta']}  # Combine both 'meta'
 
         return result

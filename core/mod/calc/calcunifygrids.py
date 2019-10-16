@@ -160,7 +160,10 @@ class CalcUnifyGrids(Calc):
                 cur_values_nan = cur_values.filled(np.nan)
                 interp_func = RegularGridInterpolator((original_lats, original_lons), cur_values_nan, bounds_error=False)
                 tmp = interp_func((target_lats2d, target_lons2d))
-                result[i] = ma.MaskedArray(tmp, mask=np.isnan(tmp), fill_value=cur_values.fill_value)
+                result[i] = ma.MaskedArray(tmp, mask=np.isnan(tmp))
+
+        result.fill_value = values.fill_value
+        return result
 
     def _unify_grids(self, data_1, data_1_add, data_2, data_2_add):
         """ Unifies spatial and temporal grids. Transform data to conform them.

@@ -155,12 +155,11 @@ class CalcUnifyGrids(Calc):
         if values.ndim == 3 and out_ndim == 3:
             dims = list(values.shape)
             result = ma.zeros((dims[0], len(target_lats), len(target_lons)))
-            original_lats2d, original_lons2d = np.meshgrid(original_lats, original_lons)
-            target_points = np.array(np.meshgrid(target_lats, target_lons))
+            target_lats2d, target_lons2d = np.meshgrid(target_lats, target_lons)
             for i, cur_values in enumerate(values):
                 cur_values_nan = cur_values.filled(np.nan)
-                interp_func = RegularGridInterpolator((original_lats2d, original_lons2d), cur_values_nan)
-                tmp = interp_func(target_points)
+                interp_func = RegularGridInterpolator((original_lats, original_lons), cur_values_nan)
+                tmp = interp_func((target_lats2d, target_lons2d))
                 result[i] = ma.MaskedArray(tmp, mask=np.isnan(tmp), fill_value=cur_values.fill_value)
 
     def _unify_grids(self, data_1, data_1_add, data_2, data_2_add):

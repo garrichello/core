@@ -70,7 +70,7 @@ class CalcUnifyGrids(Calc):
         if (target_time_grid[1]-target_time_grid[0]).days >= 1:
             for i, cur_values in enumerate(values):  # i runs along original_time_grid.
                 if original_time_grid[i] >= target_time_grid[j] and \
-                    original_time_grid[i] < target_time_grid[j+1] if j < len(target_time_grid) else True:  # Control right bound.
+                    original_time_grid[i] < target_time_grid[j+1] if j < len(target_time_grid)-1 else True:  # Control right bound.
                     store.append(cur_values)  # Collect values inside one day/month/year
                 else:
                     result[j] = acc_func(ma.stack(store), axis=0)  # Apply an appropriate aggregating function.
@@ -102,7 +102,7 @@ class CalcUnifyGrids(Calc):
                         j += 1
                     if j == len(target_time_grid):
                         break
-        return 0
+        return result
 
     def _unify_grids(self, data_1, data_1_add, data_2, data_2_add):
         """ Unifies spatial and temporal grids. Transform data to conform them.

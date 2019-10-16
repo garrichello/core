@@ -155,7 +155,7 @@ class CalcUnifyGrids(Calc):
         if values.ndim == 3 and out_ndim == 3:
             dims = list(values.shape)
             result = ma.zeros((dims[0], len(target_lats), len(target_lons)))
-            target_lats2d, target_lons2d = np.meshgrid(target_lats, target_lons)
+            target_lats2d, target_lons2d = np.meshgrid(target_lats, target_lons, indexing='ij')
             for i, cur_values in enumerate(values):
                 cur_values_nan = cur_values.filled(np.nan)
                 interp_func = RegularGridInterpolator((original_lats, original_lons), cur_values_nan, bounds_error=False)

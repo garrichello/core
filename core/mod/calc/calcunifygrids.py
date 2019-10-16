@@ -159,8 +159,22 @@ class CalcUnifyGrids(Calc):
             for i, cur_values in enumerate(values):
                 cur_values_nan = cur_values.filled(np.nan)
                 interp_func = RegularGridInterpolator((original_lats, original_lons), cur_values_nan, bounds_error=False)
-                tmp = interp_func((target_lats2d, target_lons2d))
-                result[i] = ma.MaskedArray(tmp, mask=np.isnan(tmp))
+                result[i] = interp_func((target_lats2d, target_lons2d))
+                result.mask = ma.mask_or(result.mask, np.isnan(result[i]))
+
+        # 2. Reanalysis -> Stations
+        if values.ndim == 3 and out_ndim == 2:
+            dims = list(values.shape)
+            result = ma.zeros((dims[0], len(target_lons)))  # n_lons == n_stations
+            for i, cur_values in enumerate(values):
+                cur_values_nan = cur_values.filled(np.nan)
+                interp_func = RegularGridInterpolator((original_lats, original_lons), cur_values_nan, bounds_error=False)
+                result[i] = interp_func((target_lats, target_lons))
+                result.mask = ma.mask_or(result.mask, np.isnan(result[i]))
+
+        # 3. Stations -> Stations
+        if values.ndim == 2 and out_ndim == 2:
+            pass
 
         result.fill_value = values.fill_value
         return result

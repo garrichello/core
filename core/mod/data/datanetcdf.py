@@ -433,7 +433,7 @@ class DataNetcdf(Data):
             longitudes[:] = options['longitudes']
             latitudes[:] = options['latitudes']
 
-            if level_value:
+            if not level_value is None:
                 level_idx = 0  # Always 0 for a new file.
                 # Define level variable.
                 dim_list.insert(0, 'level')  # If level is present, add dimension level
@@ -448,7 +448,7 @@ class DataNetcdf(Data):
                 if levels_long_name:
                     levels.long_name = levels_long_name
 
-            if options['times']:
+            if not options['times'] is None:
                 # Define time variable.
                 dim_list.insert(0, 'time')  # If time grid is present, add dimension time
                 time = root.createDimension('time', len(options['times']))  # pylint: disable=W0612

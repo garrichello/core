@@ -75,10 +75,12 @@ class CalcUnifyGrids(Calc):
         #  result(15.05.2001) = acc_func(values(15.05.2001, 00:00), values(15.05.2001, 06:00),
         #                                values(15.05.2001, 12:00), values(15.05.2001, 18:00)).
         if (target_time_grid[1]-target_time_grid[0]).days >= 1:
-            for i, cur_values in enumerate(values):  # i runs along original_time_grid.
+            i = 0  # i runs along original_time_grid.
+            while i < len(values) and j < len(result):
                 if original_time_grid[i] >= target_time_grid[j] and \
                     original_time_grid[i] < target_time_grid[j+1] if j < len(target_time_grid)-1 else True:  # Control right bound.
-                    store.append(cur_values)  # Collect values inside one day/month/year
+                    store.append(values[i])  # Collect values inside one day/month/year
+                    i += 1
                 else:
                     result[j] = acc_func(ma.stack(store), axis=0)  # Apply an appropriate aggregating function.
                     store = []

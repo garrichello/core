@@ -68,17 +68,21 @@ class SLDLegend:
                 legend_values = list(values_override.keys())
                 legend_labels = list(values_override.values())
             else:
-                legend_values = [(legend_colors[i]) / float(num_colors) * (data_max - data_min) + data_min for i in idxs]
-                # Order of magnitude of the difference between max and min values.
-                if data_max != data_min:
-                    value_order = np.log10((data_max - data_min) / num_labels)
+                if values.dtype == np.dtype('bool'):
+                    legend_values = [1, 0]
+                    legend_labels = ['Unmasked', 'Masked']
                 else:
-                    value_order = np.log10((data_max) / num_labels)
-                precision = 0 if value_order >= 0 else int(np.ceil(abs(value_order)))
-                width = int(np.ceil(np.log10(data_max)) + precision)
-                format_string = '{}:{}.{}f{}'.format('{', width, precision, '}')
-                # Labels for each colorbar tick
-                legend_labels = [format_string.format(value) + ' ' + options['description']['@units'] for value in legend_values]
+                    legend_values = [(legend_colors[i]) / float(num_colors) * (data_max - data_min) + data_min for i in idxs]
+                    # Order of magnitude of the difference between max and min values.
+                    if data_max != data_min:
+                        value_order = np.log10((data_max - data_min) / num_labels)
+                    else:
+                        value_order = np.log10((data_max) / num_labels)
+                    precision = 0 if value_order >= 0 else int(np.ceil(abs(value_order)))
+                    width = int(np.ceil(np.log10(data_max)) + precision)
+                    format_string = '{}:{}.{}f{}'.format('{', width, precision, '}')
+                    # Labels for each colorbar tick
+                    legend_labels = [format_string.format(value) + ' ' + options['description']['@units'] for value in legend_values]
             # Colors for each colorbar tick in HEX format
             rgb_values = [colors.to_hex(colormap(legend_colors[i])) for i in idxs]
         else:   # When there are no any data values

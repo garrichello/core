@@ -82,7 +82,11 @@ class DataAccess():
         else:
             for input_ in self._inputs:
                 uid = input_['@uid']
-                self._input_uids.append(uid)
+                if not uid in self._input_uids:
+                    self._input_uids.append(uid)
+                else:
+                    print('(DataAccess::__init__)  Error! Duplicate input data UID: {}. Aborting.'.format(uid))
+                    raise ValueError
                 # Get additional info about an input from the metadata database
                 input_info = self._get_metadata(metadb_info, input_)
                 #  Data access class name is: 'Data' + <data type name> (e.g., DataNetcdf)
@@ -106,7 +110,11 @@ class DataAccess():
         else:
             for output_ in self._outputs:
                 uid = output_['@uid']
-                self._output_uids.append(uid)
+                if not uid in self._output_uids:
+                    self._output_uids.append(uid)
+                else:
+                    print('(DataAccess::__init__)  Error! Duplicate output data UID: {}. Aborting.'.format(uid))
+                    raise ValueError
                 # Get additional info about an output from the metadata database
                 output_info = self._get_metadata(metadb_info, output_)
                 #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)

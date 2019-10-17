@@ -1,5 +1,5 @@
 """ CalcCorrelation calculates linear correlation coefficient for two datasets.
-Spatial bounds, as well as spatial and time resolutions should be the same for both datasets. 
+Spatial bounds, as well as spatial and time resolutions should be the same for both datasets.
 Level list lengths should be the same also. Time ranges may differ.
 
     Input arguments:

@@ -153,7 +153,7 @@ class CalcUnifyGrids(Calc):
             #  then spatial grids are equal and we don't need to do anything.
             return values
 
-        # OK, we have three options: 
+        # OK, we have three options:
         #  1) reanalysis (values.ndim == 3) -> reanalysis (out_ndim == 3);
         #  2) reanalysis (values.ndim == 3) -> stations (out_ndim == 2);
         #  3) stations (values.ndim == 2) -> stations (out_ndim == 2).

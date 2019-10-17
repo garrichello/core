@@ -95,7 +95,6 @@ class CalcCorrelation(Calc):
 
                 self._data_helper.put(output_uids[DATA_2_UID], values=significance,
                                       level=data_1_level, segment=data_1_segment,
-                                      times=data_1['@time_grid'],
                                       longitudes=data_1['@longitude_grid'],
                                       latitudes=data_1['@latitude_grid'],
                                       fill_value=data_1['@fill_value'],

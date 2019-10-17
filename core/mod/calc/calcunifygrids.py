@@ -69,6 +69,7 @@ class CalcUnifyGrids(Calc):
 
         # Reduce values over the time dimension.
         store = []  # Stores values inside one target time grid step.
+        i = 0  # Runs along original_time_grid.
         j = 0  # Runs along target_time_grid.
         # If target grid has daily steps or longer we deal with averaged/total values.
         # So we need to average or sum original grid values for each target grid step:
@@ -76,7 +77,6 @@ class CalcUnifyGrids(Calc):
         #                                values(15.05.2001, 12:00), values(15.05.2001, 18:00)).
         delta = original_time_grid[0]-target_time_grid[0]  # Time grids relative delta.
         if (target_time_grid[1]-target_time_grid[0]).days >= 1:
-            i = 0  # i runs along original_time_grid.
             while i < len(values) and j < len(result):
                 if original_time_grid[i]-delta >= target_time_grid[j] and \
                     original_time_grid[i]-delta < target_time_grid[j+1] if j < len(target_time_grid)-1 else True:  # Control right bound.
@@ -89,8 +89,6 @@ class CalcUnifyGrids(Calc):
             if j < len(result):
                 result[j] = acc_func(ma.stack(store), axis=0)  # Apply an appropriate aggregating function.
                 j += 1
-            assert (i == len(values) and j == len(result)), \
-                '(CalcUnifyGrids::_unify_time_grid) Error! Time grids are not equal!'
         # If target grid has n-hourly steps we deal with another time grid for instantenous or accumulated values.
         # So we need to interpolate original grid instanteneous values to the target grid:
         #  result(15.05.2001, 06:00) = interpolate(values(15.05.2001, 03:00), values(15.05.2001, 09:00))
@@ -101,22 +99,29 @@ class CalcUnifyGrids(Calc):
         #  result(15.05.2001, 12:00) = values(15.05.2001, 09:00) + values(15.05.2001, 12:00)...
         else:
             if mode == 'sum':  # Accumulate accumulated values :)
-                for i, cur_values in enumerate(values):  # i runs along original_time_grid.
-                    if original_time_grid[i] <= target_time_grid[j] and \
-                        original_time_grid[i] > target_time_grid[j-1] if j > 0 else True:  # Control left bound.
-                        store.append(cur_values)  # Collect values inside one day/month/year
+                while i < len(values) and j < len(result):
+                    if original_time_grid[i]-delta <= target_time_grid[j] and \
+                        original_time_grid[i]-delta > target_time_grid[j-1] if j > 0 else True:  # Control left bound.
+                        store.append(values[i])  # Collect values inside one day/month/year
+                        i += 1
                     else:
                         result[j] = ma.sum(ma.stack(store), axis=0)  # Sum accumulated values.
                         store = []
                         j += 1
+                if j < len(result):
+                    result[j] = acc_func(ma.stack(store), axis=0)  # Apply an appropriate aggregating function.
+                    j += 1
             else:
                 # ToDo: Someday there will be interpolation. But for now: only search for the exact match.
                 for i, cur_values in enumerate(values):  # i runs along original_time_grid.
-                    if original_time_grid[i] == target_time_grid[j]:
+                    if original_time_grid[i]-delta == target_time_grid[j]:
                         result[j] = cur_values
                         j += 1
-                    if j == len(target_time_grid):
+                    if j == len(result):
                         break
+
+        assert (i == len(values) and j == len(result)), '(CalcUnifyGrids::_unify_time_grid) Error! Time grids lengths are not equal!'
+
         return result
 
     def _unify_spatial_grid(self, values, original_grids, target_grids, out_ndim):

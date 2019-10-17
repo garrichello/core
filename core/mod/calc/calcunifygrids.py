@@ -85,6 +85,11 @@ class CalcUnifyGrids(Calc):
                     result[j] = acc_func(ma.stack(store), axis=0)  # Apply an appropriate aggregating function.
                     store = []
                     j += 1
+            if j < len(result):
+                result[j] = acc_func(ma.stack(store), axis=0)  # Apply an appropriate aggregating function.
+                j += 1
+            assert (i == len(values) and j == len(result)), \
+                '(CalcUnifyGrids::_unify_time_grid) Error! Time grids are not equal!'
         # If target grid has n-hourly steps we deal with another time grid for instantenous or accumulated values.
         # So we need to interpolate original grid instanteneous values to the target grid:
         #  result(15.05.2001, 06:00) = interpolate(values(15.05.2001, 03:00), values(15.05.2001, 09:00))

@@ -38,13 +38,13 @@ class CalcCorrelation(Calc):
         Returns:
             (corr_coeff, significance) -- correlation coefficient and significance arrays
         """
-        N = values_1.shape[0]  # Sample length
+        n_samples = values_1.shape[0]  # Sample length
         # Calculate Pearson's correlatiob coefficient
         values_cov = ma.sum((values_1 - ma.mean(values_1, axis=0)) * (values_2 - ma.mean(values_2, axis=0)), axis=0)
-        corr_coef = values_cov / (ma.std(values_1, axis=0) * ma.std(values_2, axis=0)) / N
+        corr_coef = values_cov / (ma.std(values_1, axis=0) * ma.std(values_2, axis=0)) / n_samples
 
         # Calculate significance using t-distribution with n-2 degrees of freedom.
-        deg_fr = N - 2  # Degrees of freedom.
+        deg_fr = n_samples - 2  # Degrees of freedom.
         t_distr = ma.abs(corr_coef * ma.sqrt(deg_fr / (1. - corr_coef**2)))  # Student's t-distribution.
         prob = 0.5 + conf_level / 2  # Probability for two tails.
         cr_value = student_t.ppf(prob, deg_fr)  # Student's Critical value.

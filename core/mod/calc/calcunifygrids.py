@@ -74,11 +74,12 @@ class CalcUnifyGrids(Calc):
         # So we need to average or sum original grid values for each target grid step:
         #  result(15.05.2001) = acc_func(values(15.05.2001, 00:00), values(15.05.2001, 06:00),
         #                                values(15.05.2001, 12:00), values(15.05.2001, 18:00)).
+        delta = original_time_grid[0]-target_time_grid[0]  # Time grids relative delta.
         if (target_time_grid[1]-target_time_grid[0]).days >= 1:
             i = 0  # i runs along original_time_grid.
             while i < len(values) and j < len(result):
-                if original_time_grid[i] >= target_time_grid[j] and \
-                    original_time_grid[i] < target_time_grid[j+1] if j < len(target_time_grid)-1 else True:  # Control right bound.
+                if original_time_grid[i]-delta >= target_time_grid[j] and \
+                    original_time_grid[i]-delta < target_time_grid[j+1] if j < len(target_time_grid)-1 else True:  # Control right bound.
                     store.append(values[i])  # Collect values inside one day/month/year
                     i += 1
                 else:

@@ -10,7 +10,6 @@ Level list lengths should be the same also. Time ranges may differ.
         output_uids[1] -- significance
 """
 from scipy.stats import t as student_t
-import numpy as np
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess

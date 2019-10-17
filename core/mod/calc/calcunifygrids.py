@@ -176,7 +176,7 @@ class CalcUnifyGrids(Calc):
         if values.ndim == 2 and out_ndim == 2:
             pass
 
-        result.fill_value = values.fill_value
+#        result.fill_value = values.fill_value
         return result
 
     def _unify_grids(self, data_1, data_1_add, data_2, data_2_add):

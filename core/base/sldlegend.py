@@ -112,6 +112,8 @@ class SLDLegend:
             rgb_values -- hex-values of colors corresponding to data values.
             fill_value -- value for transparent pixels
         """
+        if fill_value.dtype == np.dtype('bool'):  # Convert boolean fill value to numeric.
+            fill_value = int(fill_value)
         sld = {}
         sld['StyledLayerDescriptor'] = {}
         sld['StyledLayerDescriptor']['@version'] = '1.0.0'

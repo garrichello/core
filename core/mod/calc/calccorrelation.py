@@ -81,7 +81,9 @@ class CalcCorrelation(Calc):
                 data_2 = self._data_helper.get(input_uids[DATA_2_UID], segments=data_2_segment, levels=data_2_level)
                 values_1 = data_1['data'][data_1_level][data_1_segment['@name']]['@values']
                 values_2 = data_2['data'][data_2_level][data_2_segment['@name']]['@values']
-                meta = {**data_1['meta'], **data_2['meta']}  # Combine meta from both datasets.
+                meta_corr_coef = {**data_1['meta'], **data_2['meta']}  # Combine meta from both datasets.
+                meta_sig = {**data_1['meta'], **data_2['meta']}  # Combine meta from both datasets.
+                meta_sig['legend_override'] = {1: 'Significant', 0: 'Not significant'}
 
                 # Perform calculation for the current time segment.
                 corr_coef, significance = self._calc_correlation(values_1, values_2)
@@ -91,13 +93,13 @@ class CalcCorrelation(Calc):
                                       longitudes=data_1['@longitude_grid'],
                                       latitudes=data_1['@latitude_grid'],
                                       fill_value=data_1['@fill_value'],
-                                      meta=meta)
+                                      meta=meta_corr_coef)
 
                 self._data_helper.put(output_uids[DATA_2_UID], values=significance,
                                       level=data_1_level, segment=data_1_segment,
                                       longitudes=data_1['@longitude_grid'],
                                       latitudes=data_1['@latitude_grid'],
                                       fill_value=data_1['@fill_value'],
-                                      meta=meta)
+                                      meta=meta_sig)
 
         print('(CalcCorrelation::run) Finished!')

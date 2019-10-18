@@ -33,23 +33,23 @@
     </data>  
     
     <data uid='Data_2' type='dataset'> <!-- type: dataset, array -->
-    	<description title="ST600" name='Daily precipitation' units='mm/day'/>
-	    <dataset name='ST600DB' resolution='-' time_step="1d" scenario='-'/>  <!-- ERAINT -->
-    	<variable name='prec' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
+    	<description title="APHRODITE's Water Resources Project" name='Daily precipitation' units='mm/day'/>
+	    <dataset name='APHRODITE' resolution='0.25x0.25' time_step="1d" scenario='-'/>  <!-- ERAINT -->
+    	<variable name='precip' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
 	    <region units='degrees' lon0='0'>
 	        <point lon='60' lat='70'/>
 	        <point lon='90' lat='70'/>
 	        <point lon='90' lat='50'/>
 	        <point lon='60' lat='50'/>
 	    </region>
-	    <levels values='2m'/>
+	    <levels values='sfc'/>
 	    <time uid='Input_2' template='YYYYMMDDHH'>
 	        <segment name='Seg1' beginning='1981070100' ending='1981073118'/>
 	    </time>
     </data>
     
     <destination uid='Image_1' type='image'> <!-- type: 'image', 'raw' -->
-	    <file name='output/output_CalcCorrelation_R.shp' type='shape'/> <!-- type for graphics kind='shape': 'eps', 'geotiff'; kind='contour'/'station': 'eps', 'shape'; for kind=='multiline': 'eps'; for kind=='tile' : 'geotiff24' -->
+	    <file name='output/output_CalcCorrelation_R.tiff' type='geotiff'/> <!-- type for graphics kind='shape': 'eps', 'geotiff'; kind='contour'/'station': 'eps', 'shape'; for kind=='multiline': 'eps'; for kind=='tile' : 'geotiff24' -->
 	    <projection name='cylindrical'> <!-- 'azimuthal equidistant, 'cylindrical',... -->
 	        <limits units='degrees'>
           	    <limit role="left">-180</limit>
@@ -58,7 +58,7 @@
           	    <limit role="bottom">-90</limit>                                        
 	        </limits>
 	    </projection>
-	    <graphics title='Correlation coefficient' kind='station'> <!-- kind: 'shaded', 'contour', 'station', 'tile'; 'multiline', 'vector', 'regress2d' -->
+	    <graphics title='Correlation coefficient' kind='shaded'> <!-- kind: 'shaded', 'contour', 'station', 'tile'; 'multiline', 'vector', 'regress2d' -->
     	    <width units='pixels'>3072</width>
 	        <height units='pixels'>2304</height>
 	        <legend title='Correlation coefficient' kind='file' type='continuous' position='none'> <!-- kind: 'embedded', 'file', 'none'; position: 'right', 'left', 'top', 'bottom' (only for kind=='embedded') -->
@@ -78,7 +78,7 @@
     </destination>
     
     <destination uid='Image_2' type='image'> <!-- type: 'image', 'raw' -->
-	    <file name='output/output_CalcCorrelation_sig.shp' type='shape'/> <!-- type for graphics kind='shape': 'eps', 'geotiff'; kind='contour'/'station': 'eps', 'shape'; for kind=='multiline': 'eps'; for kind=='tile' : 'geotiff24' -->
+	    <file name='output/output_CalcCorrelation_sig.tiff' type='geotiff'/> <!-- type for graphics kind='shape': 'eps', 'geotiff'; kind='contour'/'station': 'eps', 'shape'; for kind=='multiline': 'eps'; for kind=='tile' : 'geotiff24' -->
 	    <projection name='cylindrical'> <!-- 'azimuthal equidistant, 'cylindrical',... -->
 	        <limits units='degrees'>
           	    <limit role="left">-180</limit>
@@ -87,7 +87,7 @@
               	<limit role="bottom">-90</limit>                                        
     	    </limits>
 	    </projection>
-    	<graphics title='Significance of Correlation coefficient' kind='station'> <!-- kind: 'shaded', 'contour', 'station', 'tile'; 'multiline', 'vector', 'regress2d' -->
+    	<graphics title='Significance of Correlation coefficient' kind='shaded'> <!-- kind: 'shaded', 'contour', 'station', 'tile'; 'multiline', 'vector', 'regress2d' -->
     	    <width units='pixels'>3072</width>
 	        <height units='pixels'>2304</height>
 	        <legend title='Significance of Correlation coefficient' kind='file' type='continuous' position='none'> <!-- kind: 'embedded', 'file', 'none'; position: 'right', 'left', 'top', 'bottom' (only for kind=='embedded') -->
@@ -123,11 +123,11 @@
     </data>
     
     <data uid='Result_3' type='array'>
-        <description title='Pearson correlation coefficient' name='Correlation coefficient' units=''/>
+        <description title='Correlation coefficient' name='Correlation coefficient' units=''/>
     </data>
     
     <data uid='Result_4' type='array'>
-        <description title='Significance of correlation coefficient' name='Significance' units=''/>
+        <description title='Significance of Correlation coefficient' name='Significance' units=''/>
     </data>
               
 <!-- End of data segment -->

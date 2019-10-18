@@ -523,7 +523,7 @@ class DataNetcdf(Data):
         station = root.createDimension('station', options['meta']['stations']['@names'].size)  # pylint: disable=W0612
         times_long_name = 'time of measurement'
 
-        if options['times'] is not None:
+        if not options['times'] is None:
             time = root.createDimension('time', options['times'].size)  # pylint: disable=W0612
             times = root.createVariable('time', 'f8', ('time'))
             times.units = 'days since 1970-1-1 00:00:0.0'
@@ -533,7 +533,7 @@ class DataNetcdf(Data):
         latitudes = root.createVariable('lat', 'f4', ('lat'))
         longitudes = root.createVariable('lon', 'f4', ('lon'))
 
-        if options['times'] is not None:
+        if not options['times'] is None:
             data = root.createVariable('data', 'f4', ('time', 'station'), fill_value=values.fill_value)
             coordinates = 'time lat lon alt'
         else:
@@ -563,7 +563,7 @@ class DataNetcdf(Data):
         station_name.long_name = 'station name'
         data.coordinates = coordinates
         data.units = options['description']['@units']
-        data.long_name = '{} {}'.format(options['description']['@title'], options['description']['@name'])
+        data.long_name = options['description']['@name']
 
         # Write variables.
         # TODO: May be in the future we will write time grid into a file. If needed.

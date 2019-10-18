@@ -45,7 +45,7 @@ class SLDLegend:
         # Check for optional color values and names
         legend_override = None
         if options.get('meta') is not None:
-            if options['meta'].get('levels') is not None:
+            if options['meta'].get('legend_override') is not None:
                 legend_override = options['meta']['legend_override']
 
         # Generate legend colors, labels and values.

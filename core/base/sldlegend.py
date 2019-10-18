@@ -43,19 +43,19 @@ class SLDLegend:
             data_max = values.max()
 
         # Check for optional color values and names
-        values_override = None
+        legend_override = None
         if options.get('meta') is not None:
             if options['meta'].get('levels') is not None:
-                values_override = options['meta']['levels']
+                legend_override = options['meta']['legend_override']
 
         # Generate legend colors, labels and values.
-        if values_override is not None:
-            num_colors = len(values_override)
+        if legend_override is not None:
+            num_colors = len(legend_override)
         else:
             num_colors = 253 if self._legend_options['@type'] == 'continuous' else int(self._legend_options['ncolors'])
         legend_colors = [int(float(color_idx) / (num_colors) * 253.0) for color_idx in range(num_colors + 1)]
         legend_colors.reverse()
-        if values_override is not None:
+        if legend_override is not None:
             num_labels = num_colors
         else:
             num_labels = int(self._legend_options['nlabels'])
@@ -64,9 +64,9 @@ class SLDLegend:
 
         # Generate format string for printing legend labels according to a difference between maximum and minimum values
         if values.count() != 0:  # When data values are present
-            if values_override:
-                legend_values = list(values_override.keys())
-                legend_labels = list(values_override.values())
+            if legend_override:
+                legend_values = list(legend_override.keys())
+                legend_labels = list(legend_override.values())
             else:
                 if values.dtype == np.dtype('bool'):
                     legend_values = [1, 0]

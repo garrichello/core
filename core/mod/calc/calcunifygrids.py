@@ -187,10 +187,41 @@ class CalcUnifyGrids(Calc):
 
         # 3. Stations -> Stations
         if values.ndim == 2 and out_ndim == 2:
-            pass
+            print('(CalcUnifyGrids::_unify_spatial_grid) Spatial interpolation stations->stations is not implemented yet!')
+            raise Exception
 
 #        result.fill_value = values.fill_value
         return result
+
+    def _get_grids(self, data, data_add):
+        """ Extracts grids and values from dataset structure.
+        Arguments:
+            data -- dataset
+            data_add -- time segment and level name
+        Returns:
+            values, time_grid, lats, lons, acc_mode -- grids and values, and data accumulation mode
+        """
+
+        level_name = data_add['level']
+        segment_name = data_add['segment']['@name']
+        values = deepcopy(data['data'][level_name][segment_name]['@values'])
+        time_grid = data['data'][level_name][segment_name]['@time_grid']
+        lats = data['@latitude_grid']
+        lons = data['@longitude_grid']
+        acc_mode = data['data']['description']['@acc_mode']
+        # If latitudes are given in descending order, revert it. And values also.
+        # This is the requirement of the interpolation routine.
+        # Needed only for gridded (reanalysis) data.
+        if len(lats) > 1 and values.ndim == 3:
+            if lats[1] < lats[0]:
+                lats = lats[::-1]
+                values = values[:, ::-1, :]
+            elif lats[1] == lats[0]:
+                print('(CalcUnifyGrids::run) Error! Latitude grid of dataset {} is not changing!'.format(
+                    data['data']['description']['@title']))
+                raise ValueError
+
+        return values, time_grid, lats, lons, acc_mode
 
     def _unify_grids(self, data_1, data_1_add, data_2, data_2_add):
         """ Unifies spatial and temporal grids. Transform data to conform them.
@@ -204,24 +235,10 @@ class CalcUnifyGrids(Calc):
         """
 
         # Get grids and values.
-        level_1_name = data_1_add['level']
-        segment_1_name = data_1_add['segment']['@name']
-        values_1 = deepcopy(data_1['data'][level_1_name][segment_1_name]['@values'])
-        time_grid_1 = data_1['data'][level_1_name][segment_1_name]['@time_grid']
-        lats_1 = data_1['@latitude_grid']
-        lons_1 = data_1['@longitude_grid']
-        mode_1 = data_1['data']['description']['@acc_mode']
+        values_1, time_grid_1, lats_1, lons_1, mode_1 = self._get_grids(data_1, data_1_add)
+        values_2, time_grid_2, lats_2, lons_2, mode_2 = self._get_grids(data_2, data_2_add)
 
-        level_2_name = data_2_add['level']
-        segment_2_name = data_2_add['segment']['@name']
-        values_2 = deepcopy(data_2['data'][level_2_name][segment_2_name]['@values'])
-        time_grid_2 = data_2['data'][level_2_name][segment_2_name]['@time_grid']
-        lats_2 = data_2['@latitude_grid']
-        lons_2 = data_2['@longitude_grid']
-        mode_2 = data_2['data']['description']['@acc_mode']
-
-        # Return resulted values and grids
-        result = {}
+        result = {}  # Result values and grids.
 
         # Find out which time grid is finer than another.
         # Due to the fact that time ranges must be the same for both grids, longer grid is finer.
@@ -240,7 +257,7 @@ class CalcUnifyGrids(Calc):
         # Due to the fact that spatial range must be the same for both grids, longer lat grid is finer.
         # Reanalysis is always interpolated to stations coordinates.
         if values_1.ndim > values_2.ndim or (values_1.ndim == values_2.ndim and n_points_1 >= n_points_2):
-            values_1 = self._unify_spatial_grid(values_1, (lats_1, lons_1), (lats_2, lons_1), values_2.ndim)
+            values_1 = self._unify_spatial_grid(values_1, (lats_1, lons_1), (lats_2, lons_2), values_2.ndim)
             result['@longitude_grid'] = copy(lons_2)
             result['@latitude_grid'] = copy(lats_2)
             result['@fill_value'] = values_1.fill_value  # Take fill_value from the result of interpolation.

@@ -2,6 +2,7 @@
     DataAccess
 """
 
+from copy import copy
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
@@ -23,6 +24,10 @@ class DataAccess():
 
         ::input_uids():
         Returns a list of UIDs of processing module inputs (as in a task file)
+
+        ::get_data_info(uid):
+        Returns full data description
+            uid -- UID of a processing module's input (as in a task file)
 
         ::get_segments(uid):
         Returns time segments list
@@ -77,7 +82,11 @@ class DataAccess():
         else:
             for input_ in self._inputs:
                 uid = input_['@uid']
-                self._input_uids.append(uid)
+                if not uid in self._input_uids:
+                    self._input_uids.append(uid)
+                else:
+                    print('(DataAccess::__init__)  Error! Duplicate input data UID: {}. Aborting.'.format(uid))
+                    raise ValueError
                 # Get additional info about an input from the metadata database
                 input_info = self._get_metadata(metadb_info, input_)
                 #  Data access class name is: 'Data' + <data type name> (e.g., DataNetcdf)
@@ -101,7 +110,11 @@ class DataAccess():
         else:
             for output_ in self._outputs:
                 uid = output_['@uid']
-                self._output_uids.append(uid)
+                if not uid in self._output_uids:
+                    self._output_uids.append(uid)
+                else:
+                    print('(DataAccess::__init__)  Error! Duplicate output data UID: {}. Aborting.'.format(uid))
+                    raise ValueError
                 # Get additional info about an output from the metadata database
                 output_info = self._get_metadata(metadb_info, output_)
                 #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
@@ -139,7 +152,7 @@ class DataAccess():
 
         # If it is a dataset there is much to do
         info['data'] = argument['data'] # All the information about the dataset is passed to data-accessing modules
-        
+
         # Metadata database URL
         db_url = 'mysql://{0}@{1}/{2}'.format(metadb_info['@user'], metadb_info['@host'], metadb_info['@name'])
         engine = create_engine(db_url)
@@ -205,8 +218,9 @@ class DataAccess():
         # Get units and full name of the variable
         try:
             var_tbl_info = \
-                session.query(units_tr_tbl.columns['name'].label('units_name'), 
-                              par_tr_tbl.columns['name'].label('parameter_name')).select_from(
+                session.query(units_tr_tbl.columns['name'].label('units_name'),
+                              par_tr_tbl.columns['name'].label('parameter_name'),
+                              par_tbl.columns['acc_mode'].label('acc_mode')).select_from(
                                   data_tbl).join(variable_tbl).join(units_tbl).join(units_tr_tbl).join(par_tbl).join(
                                       par_tr_tbl).filter(variable_tbl.columns['name'] == variable_name).filter(
                                           units_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(
@@ -220,6 +234,7 @@ class DataAccess():
         info['data']['description']['@title'] = dataset_tbl_info.collection_name
         info['data']['description']['@name'] = var_tbl_info.parameter_name
         info['data']['description']['@units'] = var_tbl_info.units_name
+        info['data']['description']['@acc_mode'] = var_tbl_info.acc_mode
 
         # Each vertical level is processed separately because corresponding arrays can be stored in different files
         for level_name in levels_names:
@@ -316,6 +331,23 @@ class DataAccess():
             levels = None
         return levels
 
+    def get_data_info(self, uid):
+        """Returns full data info
+
+        Arguments:
+            uid -- UID of a processing module's input (as in a task file)
+        """
+        if self._input_uids is not None:
+            try:
+                input_idx = self._input_uids.index(uid)
+            except ValueError:
+                print('(DataAccess::get_data_info) No such input UID: ' + uid)
+                raise
+            data = self._inputs[input_idx]['data']
+        else:
+            data = None
+        return data
+
     def put(self, uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None, fill_value=None,
             description=None, meta=None):
         """Writes data and metadata to an output data storage (array).
@@ -336,14 +368,14 @@ class DataAccess():
         """
         options = {}
         options['level'] = level
-        options['segment'] = segment
-        options['times'] = times
-        options['longitudes'] = longitudes
-        options['latitudes'] = latitudes
+        options['segment'] = copy(segment)
+        options['times'] = copy(times)
+        options['longitudes'] = copy(longitudes)
+        options['latitudes'] = copy(latitudes)
         if fill_value is not None:
             values.fill_value = fill_value
-        options['description'] = description
-        options['meta'] = meta
+        options['description'] = copy(description)
+        options['meta'] = copy(meta)
         self._data_objects[uid].write(values, options)
 
     def output_uids(self):

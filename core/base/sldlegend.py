@@ -43,19 +43,19 @@ class SLDLegend:
             data_max = values.max()
 
         # Check for optional color values and names
-        values_override = None
+        legend_override = None
         if options.get('meta') is not None:
-            if options['meta'].get('levels') is not None:
-                values_override = options['meta']['levels']
+            if options['meta'].get('legend_override') is not None:
+                legend_override = options['meta']['legend_override']
 
         # Generate legend colors, labels and values.
-        if values_override is not None:
-            num_colors = len(values_override)
+        if legend_override is not None:
+            num_colors = len(legend_override)
         else:
             num_colors = 253 if self._legend_options['@type'] == 'continuous' else int(self._legend_options['ncolors'])
         legend_colors = [int(float(color_idx) / (num_colors) * 253.0) for color_idx in range(num_colors + 1)]
         legend_colors.reverse()
-        if values_override is not None:
+        if legend_override is not None:
             num_labels = num_colors
         else:
             num_labels = int(self._legend_options['nlabels'])
@@ -64,18 +64,25 @@ class SLDLegend:
 
         # Generate format string for printing legend labels according to a difference between maximum and minimum values
         if values.count() != 0:  # When data values are present
-            if values_override:
-                legend_values = list(values_override.keys())
-                legend_labels = list(values_override.values())
+            if legend_override:
+                legend_values = list(legend_override.keys())
+                legend_labels = list(legend_override.values())
             else:
-                legend_values = [(legend_colors[i]) / float(num_colors) * (data_max - data_min) + data_min for i in idxs]
-                # Order of magnitude of the difference between max and min values.
-                value_order = np.log10((data_max - data_min) / num_labels)
-                precision = 0 if value_order >= 0 else int(np.ceil(abs(value_order)))
-                width = int(np.ceil(np.log10(data_max)) + precision)
-                format_string = '{}:{}.{}f{}'.format('{', width, precision, '}')
-                # Labels for each colorbar tick
-                legend_labels = [format_string.format(value) + ' ' + options['description']['@units'] for value in legend_values]
+                if values.dtype == np.dtype('bool'):
+                    legend_values = [1, 0]
+                    legend_labels = ['Unmasked', 'Masked']
+                else:
+                    legend_values = [(legend_colors[i]) / float(num_colors) * (data_max - data_min) + data_min for i in idxs]
+                    # Order of magnitude of the difference between max and min values.
+                    if data_max != data_min:
+                        value_order = np.log10((data_max - data_min) / num_labels)
+                    else:
+                        value_order = np.log10((data_max) / num_labels)
+                    precision = 0 if value_order >= 0 else int(np.ceil(abs(value_order)))
+                    width = int(np.ceil(np.log10(data_max)) + precision)
+                    format_string = '{}:{}.{}f{}'.format('{', width, precision, '}')
+                    # Labels for each colorbar tick
+                    legend_labels = [format_string.format(value) + ' ' + options['description']['@units'] for value in legend_values]
             # Colors for each colorbar tick in HEX format
             rgb_values = [colors.to_hex(colormap(legend_colors[i])) for i in idxs]
         else:   # When there are no any data values
@@ -105,6 +112,8 @@ class SLDLegend:
             rgb_values -- hex-values of colors corresponding to data values.
             fill_value -- value for transparent pixels
         """
+        if fill_value.dtype == np.dtype('bool'):  # Convert boolean fill value to numeric.
+            fill_value = int(fill_value)
         sld = {}
         sld['StyledLayerDescriptor'] = {}
         sld['StyledLayerDescriptor']['@version'] = '1.0.0'

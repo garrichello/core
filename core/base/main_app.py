@@ -1,6 +1,8 @@
 """Contains classes:
     MainApp
 """
+from copy import deepcopy
+
 import collections
 import xmltodict
 
@@ -10,44 +12,101 @@ from .common import print, listify  # pylint: disable=W0622
 class MainApp:
     """Main application class. It does everything the application does."""
 
-    def __init__(self, args=None):
+    def __init__(self):
         """Parses command line arguments, extracts a task file name."
 
         Arguments:
             args - argparse's Namespace with command line arguments of the application.
         """
 
-        self._task_file_name = args.task_file_name
         self._task = {}
         self._data_uid_list = []
         self._destination_uid_list = []
 
-    def run(self):
+    def run(self, args):
         """Run this function to run the Core."""
 
         print('(MainApp::run) Let\'s do it!')
 
-        self._read_task()
+        task_file_name = args.task_file_name
+        self._read_task(task_file_name)
         self._process()
 
         print('(MainApp::run) Job is done. Exiting.')
 
-    def _read_task(self):
+    def run_task(self, task_string):
+        """Reads the task from a string and creates all necessary structures."""
+
+        print('(MainApp::run) Let\'s do it!')
+        print("(MainApp::read_task) Read the task...")
+
+        self._task = xmltodict.parse(task_string)
+
+        # Make them lists!
+        self._task['task']['data'] = listify(self._task['task']['data'])
+        self._task['task']['destination'] = listify(self._task['task']['destination'])
+        self._task['task']['processing'] = listify(self._task['task']['processing'])
+
+        print("(MainApp::read_task) Done!")
+
+        self._process()
+
+        print('(MainApp::run) Job is done. Exiting.')
+
+    def _read_task(self, task_file_name):
         """Reads the task file and creates all necessary structures."""
 
         print("(MainApp::read_task) Read the task file...")
 
         try:
-            with open(self._task_file_name) as file_descriptor:
+            with open(task_file_name) as file_descriptor:
                 self._task = xmltodict.parse(file_descriptor.read())
         except FileNotFoundError:
-            print('(MainApp::_read_task) Task file not found: ' + self._task_file_name)
+            print('(MainApp::_read_task) Task file not found: ' + task_file_name)
             raise
         except UnicodeDecodeError:
-            with open(self._task_file_name, encoding='windows-1251') as file_descriptor:
+            with open(task_file_name, encoding='windows-1251') as file_descriptor:
                 self._task = xmltodict.parse(file_descriptor.read())
 
+        # Make them lists!
+        self._task['task']['data'] = listify(self._task['task']['data'])
+        self._task['task']['destination'] = listify(self._task['task']['destination'])
+        self._task['task']['processing'] = listify(self._task['task']['processing'])
+
         print("(MainApp::read_task) Done!")
+
+    def _dict_append(self, source, destination):
+        if isinstance(source, dict):
+            for k, v in source.items():
+                if k not in destination.keys():
+                    destination[k] = deepcopy(v)
+                else:
+                    self._dict_append(source[k], destination[k])
+
+    def _inherit_properties(self, task, parent_uid, child_uid):
+        """Allows to inherit properties of a parent data element conserving existing properties of a child.
+
+        Arguments:
+            task -- current task dictionary
+            parent_uid -- parent data UID
+            child_uid -- child data UID
+
+        Returns: 
+            'data' dictionary with properties of the parent data overridden with existing properties of a child.
+        """
+        child_idx = self._data_uid_list.index(child_uid)
+        try:
+            parent_idx = self._data_uid_list.index(parent_uid) # Search for a parent 'data' element.
+        except ValueError:
+            print('(MainApp::_inherit_properties) Can\'t find parent data UID \'{}\' in child data \'{}\''.format(
+                parent_uid, child_uid))
+        child_data = task['data'][child_idx]
+        parent_data = task['data'][parent_idx]
+        self._dict_append(parent_data, child_data)
+        if child_data.get('@product'):
+            child_data['variable']['@name'] += '_' + child_data.get('@product')  # Suffix for the base variable name.
+
+        return child_data
 
     def _prepare_proc_arguments(self, task, proc_uid, proc_args):
         """Adds a new 'data' element into the argument's dictionary
@@ -66,15 +125,19 @@ class MainApp:
             argument_uid = arg['@data'] # UID of the data/destination argument.
             if argument_uid in self._data_uid_list:
                 data_idx = self._data_uid_list.index(argument_uid) # Search for a 'data' element.
-                arg['data'] = task['data'][data_idx] # Add a new dictionary item with a description.
-                arg_description = arg['data'].get('description')  # Get arguments description
+                parent_uid = task['data'][data_idx].get('@parent')  # UID of the parent data (which properties it should inherit).
+                if parent_uid:
+                    arg['data'] = self._inherit_properties(task, parent_uid, argument_uid)
+                else:
+                    arg['data'] = task['data'][data_idx]  # Add a new dictionary item with a description.
+                arg_description = arg['data'].get('description')  # Get arguments description.
                 source_uid = None
-                if arg_description is not None:
-                    source_uid = arg_description.get('@source')  # Check if the arguments description has 'source' attribute                    
-                if source_uid is not None:
+                if arg_description:
+                    source_uid = arg_description.get('@source')  # Check if the arguments description has 'source' attribute.
+                if source_uid:
                     source_idx = self._data_uid_list.index(source_uid)
-                    arg['data']['description']['@name'] = task['data'][source_idx]['description']['@name']  # Get name from source UID
-                    arg['data']['description']['@units'] = task['data'][source_idx]['description']['@units']  # Get units from source UID
+                    arg['data']['description']['@name'] = task['data'][source_idx]['description']['@name']  # Get name from source UID.
+                    arg['data']['description']['@units'] = task['data'][source_idx]['description']['@units']  # Get units from source UID.
             elif argument_uid in self._destination_uid_list:
                 data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
                 arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.
@@ -93,7 +156,7 @@ class MainApp:
             task = self._task[task_name]
             metadb_info = task['metadb'] # Location of the metadata database and user credentials to access it.
             self._data_uid_list = [data['@uid'] for data in task['data']] # List of all data UIDs.
-            self._destination_uid_list = [destination['@uid'] for destination in listify(task['destination'])] # List of all destination UIDs.
+            self._destination_uid_list = [destination['@uid'] for destination in task['destination']] # List of all destination UIDs.
 
             # Run processings one by one as specified in a task file.
             for proc in task['processing']:

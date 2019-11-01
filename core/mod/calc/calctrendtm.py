@@ -41,6 +41,12 @@ class cvcCalcTrendTM(Calc):
         # Get data for all time segments and levels
         result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
 
+        data_info = self._data_helper.get_data_info(input_uids[0])
+        description = data_info['description']
+        description['@title'] = 'Trend of ' + description['@title']
+        description['@name'] = 'Trend of ' + description['@name']
+        description['@units'] += '/10yr'
+
         for level in vertical_levels:
             sum_y = 0
             cnt = 0
@@ -48,7 +54,7 @@ class cvcCalcTrendTM(Calc):
                 sum_y += result['data'][level][segment['@name']]['@values'].filled(0)  # Sum values
                 cnt += (~result['data'][level][segment['@name']]['@values'].mask).astype(int)  # Count valid values
             mean_y = np.ma.MaskedArray(sum_y, mask=~cnt.astype(bool))  # Count values are inverted to create a mask
-            mean_y /= cnt  # Calculate mean value only for valid values
+            mean_y = mean_y / cnt  # Calculate mean value only for valid values
             mean_x = np.mean(range(len(time_segments)))  # Just a simple mean of a simple x-axis
 
             num_arr = 0
@@ -63,6 +69,7 @@ class cvcCalcTrendTM(Calc):
             global_segment = self.make_global_segment(time_segments)
             self._data_helper.put(output_uids[0], values=trend_values, level=level, segment=global_segment,
                                   longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                  description=description,
                                   fill_value=result['@fill_value'], meta=result['meta'])
 
         print('(cvcCalcTrendTM::run) Finished!')

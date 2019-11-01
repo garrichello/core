@@ -191,7 +191,7 @@ class DataHdfeos(Data):
         # If data variable units are class numbers, generate meta dictionary containing levels names for the legend.
         if data_variable.units in CLASS_UNITS:
             meta = {}
-            meta['levels'] = {i: level for i, level in enumerate(level_variable)}
+            meta['legend_override'] = {i: level for i, level in enumerate(level_variable)}
         else:
             meta = None
 

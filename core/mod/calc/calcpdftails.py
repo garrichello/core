@@ -1,5 +1,15 @@
 """Class CalcPDFtails provides methods for calculation of 10th and 90th percentile
-of daily maximum temperature values for 5 consecutive days window of the 30-year Base period.
+of daily values for 5 consecutive days window of the 30-year Base period.
+
+    Input arguments:
+        input_uids[0] -- daily maximum values
+        input_uids[1] -- daily minimum values
+
+    Output arguments:
+        output_uids[0] -- daily PDF tails of maximum values for 10th and 90th percentiles specified as vertical levels:
+            [days, 2, lats, lons]
+        output_uids[1] -- daily PDF tails of minimum values for 10th and 90th percentiles specified as vertical levels:
+            [days, 2, lats, lons]
 """
 
 import datetime
@@ -9,7 +19,6 @@ from core.base.dataaccess import DataAccess
 from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
-MAX_N_INPUT_ARGUMENTS = 2
 START_THRESHOLD = 10
 END_THRESHOLD = 100
 STEP_THRESHOLD = 80
@@ -26,14 +35,14 @@ class CalcPDFtails(Calc):
         """ Calculates given percentile at given vertical levels for a given time period.
         Arguments:
             uid -- UID of input dataset.
-            threshold -- percentile to calculate.
         Returns:
-            percentile -- 2-D masked array of percentiles.
+            percentile -- [time, lat, lon] masked array of percentiles.
         """
 
-        # Get time segments and levels
+        # Get time segments and levels and data info.
         time_segment = self._data_helper.get_segments(uid)[0]  # Only the first time segment is taken.
         level = self._data_helper.get_levels(uid)[0]  # Only the first vertical level is taken.
+        data_info = self._data_helper.get_data_info(uid)
 
         start_date = datetime.datetime.strptime(time_segment['@beginning'], '%Y%m%d%H')
         end_date = datetime.datetime.strptime(time_segment['@ending'], '%Y%m%d%H')
@@ -80,10 +89,10 @@ class CalcPDFtails(Calc):
         percentile['@latitude_grid'] = result['@latitude_grid']
         percentile['@fill_value'] = result['@fill_value']
         percentile['meta'] = result['meta']
-        if 'max' in result['data']['description']['@name'].lower():
-            percentile['meta']['varname'] = 'maxday'
-        elif 'min' in result['data']['description']['@name'].lower():
-            percentile['meta']['varname'] = 'minday'
+        percentile['meta']['varname'] = data_info['variable']['@name'] + '_pdftails'
+        percentile['meta']['time_long_name'] = 'Calendar day of the year'
+        percentile['meta']['level_units'] = 'percentile'
+        percentile['meta']['level_long_name'] = 'Percentile'
 
         return percentile
 
@@ -104,12 +113,12 @@ class CalcPDFtails(Calc):
         out_uid = 0
         for in_uid in input_uids:
             percentile = self._calc_percentile(in_uid)
-            for threshold, data in percentile['data']:
+            for threshold, data in percentile['data'].items():
                 self._data_helper.put(output_uids[out_uid], values=data, level=str(threshold),
                                       segment=percentile['@base_period'],
                                       longitudes=percentile['@longitude_grid'], latitudes=percentile['@latitude_grid'],
                                       times=percentile['@day_grid'], fill_value=percentile['@fill_value'],
                                       meta=percentile['meta'])
-                out_uid += 1
+            out_uid += 1
 
         print('(CalcPDFtails::run) Finished!')

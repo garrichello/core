@@ -11,7 +11,6 @@ from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2
 INPUT_PARAMETERS_INDEX = 1
-DEFAULT_MODE = 'data'
 
 class CalcBasicStat(Calc):
     """ Provides basic statistical analysis.
@@ -35,13 +34,14 @@ class CalcBasicStat(Calc):
         assert input_uids, '(CalcBasicStat::run) No input arguments!'
 
         # Get parameters
+        parameters = None
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-            if parameters.get(calc_mode) is None:  # If the calculation mode is not set...
-                parameters[calc_mode] = DEFAULT_MODE  # give it a default value.
-        else:
-            parameters = {}
-            parameters[calc_mode] = DEFAULT_MODE
+
+        # Check parameters
+        if not calc_mode in parameters:
+            print('(CalcBasicStat::run) Error! No parameter \'{}\' in module parameters! Check task-file!'.format(calc_mode))
+            raise ValueError
 
         # Get outputs
         output_uids = self._data_helper.output_uids()

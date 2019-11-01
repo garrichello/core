@@ -3,13 +3,14 @@
 """
 from string import Template
 from datetime import datetime
+import re
 
 from copy import copy
 from netCDF4 import MFDataset, date2index, num2date, Dataset, MFTime
 import numpy as np
 import numpy.ma as ma
 
-from core.base.common import listify, unlistify, print, make_filename  # pylint: disable=W0622
+from core.base.common import listify, unlistify, print, make_raw_filename  # pylint: disable=W0622
 from .data import Data, GRID_TYPE_REGULAR
 
 LONGITUDE_UNITS = {'degrees_east', 'degree_east', 'degrees_E', 'degree_E',
@@ -85,7 +86,7 @@ class DataNetcdf(Data):
                 # Little hack: convert level name from metadata database to float and back to string type
                 # to be able to search it correctly in float type level variable converted to string.
                 # Level variable is also primarily converted to float to 'synchronize' types.
-                level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(level_name)))
+                level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(re.findall(r'\d+', level_name)[0])))
             except KeyError:
                 print(' (DataNetcdf::read) Level \'{0}\' is not found in level variable \'{1}\'. Aborting!'.format(
                     level_name, level_variable_name))
@@ -112,11 +113,12 @@ class DataNetcdf(Data):
             self._data_info['data']['dataset']['@name'], self._data_info['data']['dataset']['@resolution'],
             self._data_info['data']['dataset']['@scenario'], self._data_info['data']['dataset']['@time_step']
         ))
+        print(' (DataNetcdf::read) [Variable: {}]'.format(self._data_info['data']['variable']['@name']))
 
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])
         if levels_to_read is None:
-            levels_to_read = self._data_info['levels']  # Read all levels if nothing specified.
+            levels_to_read = listify(self._data_info['data']['levels']['@values'])  # Read all levels if nothing specified.
         # Segments must be a list or None.
         segments_to_read = listify(options['segments'])
         if segments_to_read is None:
@@ -196,7 +198,8 @@ class DataNetcdf(Data):
                 calendar = time_variable.calendar
             except AttributeError:
                 calendar = 'standard'
-            time_variable = MFTime(time_variable, calendar=calendar)  # Apply multi-file support to the time variable
+            if len(netcdf_root._files) > 1:  # Skip if there only one file
+                time_variable = MFTime(time_variable, calendar=calendar)  # Apply multi-file support to the time variable
 
             print(' (DataNetcdf::read)  Done!')
 
@@ -206,32 +209,32 @@ class DataNetcdf(Data):
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
-                print(' (DataNetcdf::read)  Time segment \'{0}\''.format(segment['@name']))
+                print(' (DataNetcdf::read)  Time segment \'{}\' ({}-{})'.format(
+                    segment['@name'], segment['@beginning'], segment['@ending']))
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')
-                time_idx_range = date2index([segment_start, segment_end], time_variable, select='nearest')
+                time_idx_range = date2index([segment_start, segment_end], time_variable, select='before')
                 if time_idx_range[1] == 0:
                     print(''' (DataNetcdf::read)  Error! The end of the time segment is before the first time in the dataset.
                                            Aborting!''')
                     raise ValueError
-                variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1])  # pylint: disable=W0212, E1101
+                variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1]+1)  # pylint: disable=W0212, E1101
                 time_values = time_variable[variable_indices[time_variable._name]]  # Raw time values.  # pylint: disable=W0212, E1101
                 time_grid = num2date(time_values, time_variable.units)  # Time grid as a datetime object.  # pylint: disable=E1101
 
                 # Searching for a gap in longitude indices. Normally all steps should be equal to 1.
-                # If there is a step longer than 1, we suupose it's a gap due to a shift from 0-360 to -180-180 grid.
+                # If there is a step longer than 1, we suppose it's a gap due to a shift from 0-360 to -180-180 grid.
                 # So instead of a sigle patch in a 0-360 longitude space we should deal with two patches
                 # in a -180-180 longitude space: one to the left of the 0 meridian, and the other to the right of it.
                 # So we search for the gap's position and prepare to read two parts of data.
-                # Then we stack them reversely (left to the right) and correct longitude grid.
+                # Then we stack them reversely (left to the right) and fix the longitude grid.
                 # Thus we will have a single data patch with the uniform logitude grid.
-                lon_index_steps = np.diff(variable_indices[longitude_variable_name])  # Steps between indices.
-                if lon_index_steps.max() > 1:  # Gap is a step longer than 1 (there should be only one gap).
-                    lon_gap_mode = True  # Gap mode! Set the flag! :)
-                    lon_gap_position = lon_index_steps.argmax()  # Index of the gap.
-                else:
-                    lon_gap_mode = False  # Normal mode.
+                lon_gap_mode = False  # Normal mode.
+                for i in range(len(variable_indices[longitude_variable_name])-1):
+                    if variable_indices[longitude_variable_name][i+1]-variable_indices[longitude_variable_name][i] > 1:
+                        lon_gap_mode = True  # Gap mode! Set the flag! :)
+                        lon_gap_position = i  # Index of the gap.
 
                 # Get start (first) and stop (last) indices for each dimension.
                 start_index = [variable_indices[dd[i]][0] for i in range(len(dd))]
@@ -249,11 +252,11 @@ class DataNetcdf(Data):
                 # Here we actually read the data array from the file for all lons and lats (it's faster to read everything).
                 # And mask all points outside the ROI mask for all times.
                 print(' (DataNetcdf::read)  Actually reading...')
-                slices = [slice(start_index[i], stop_index[i]) for i in range(data_variable.ndim)]
+                slices = tuple([slice(start_index[i], stop_index[i]) for i in range(data_variable.ndim)])
                 data_slice = data_variable[slices]
                 if lon_gap_mode:
                     print(' (DataNetcdf::read)  [Gap mode] Reading the second data part...')
-                    slices_2 = [slice(start_index_2[i], stop_index_2[i]) for i in range(data_variable.ndim)]
+                    slices_2 = tuple([slice(start_index_2[i], stop_index_2[i]) for i in range(data_variable.ndim)])
                     data_slice_2 = data_variable[slices_2]
                 print(' (DataNetcdf::read)  Done!')
 
@@ -268,6 +271,28 @@ class DataNetcdf(Data):
                     print(' (DataNetcdf::read)  Done!')
 
                 data_slice = np.squeeze(data_slice)  # Remove single-dimensional entries
+
+                # Due to a very specific way of storing total precipitation in ERA Interim
+                #  we fix values to reflect real precipitation accumulation during each time step.
+                # Originally 6h-step data are stored as: tp@3h, tp@3h+tp@9h, tp@15h, tp@15h+tp@21h...
+                #  We make them to be: tp@3h, tp@9h, tp@15h, tp@21h...
+                # Originally 3h-step data are stored as: tp@3h, tp@3h+tp@6h, tp@3h+tp@6h+tp@9h, tp@15h, tp@15h+tp@18h, tp@15h+tp@18h+tp@21h...
+                #  We make them to be: tp@3h, tp@6h, tp@9h, tp@15h, tp@18h, tp@21h... (note: there is no tp@12h in the time grid!)
+                if self._data_info['data']['dataset']['@name'].lower() == 'eraint' and \
+                    self._data_info['data']['variable']['@name'].lower() == 'tp':
+                    if self._data_info['data']['dataset']['@time_step'] == '6h':
+                        for i in range(0, len(time_grid)-1, 2):
+                            data_slice[i+1] -= data_slice[i]
+                    elif self._data_info['data']['dataset']['@time_step'] == '3h':
+                        for i in range(0, len(time_grid)-2, 2):
+                            data_slice[i+2] -= data_slice[i+1]
+                            data_slice[i+1] -= data_slice[i]
+                    else:
+                        print(' (DataNetcdf::read)  Error! Unsupported time step \'{}\'. Aborting...'.format(
+                            self._data_info['data']['dataset']['@time_step']))
+                        raise ValueError
+                    # And, since negative values in total precipitation look weird (IMHO), let's fix them also.
+                    data_slice[np.where(data_slice < 0)] = 0.0
 
                 # Create masked array using ROI mask.
                 print(' (DataNetcdf::read)  Creating masked array...')
@@ -296,7 +321,7 @@ class DataNetcdf(Data):
                     fill_value = 1e20
 
                 fill_value_mask = data_slice == fill_value
-                combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time)
+                combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time, shrink=False)
 
                 masked_data_slice = ma.MaskedArray(data_slice, mask=combined_mask, fill_value=fill_value)
                 #print('(DataNetcdf::read)   Min data value: {}, max data value: {}'.format(masked_data_slice.min(), masked_data_slice.max()))
@@ -359,57 +384,113 @@ class DataNetcdf(Data):
         """
 
         # Construct the file name
-        filename = make_filename(self._data_info, options)
+        filename = make_raw_filename(self._data_info, options)
 
         print(' (DataNetcdf::write_array)  Writing netCDF file: {}'.format(filename))
 
         # Create netCDF file.
-        root = Dataset(filename, 'w')  # , format='NETCDF3_64BIT_OFFSET')
+        try:
+            root = Dataset(filename, 'w', clobber=False, format='NETCDF4_CLASSIC')  # , format='NETCDF3_64BIT_OFFSET')
+            new_file = True
+        except OSError:
+            root = Dataset(filename, 'a')
+            new_file = False
 
-        # Define dimensions.
-        lon = root.createDimension('lon', options['longitudes'].size)  # pylint: disable=W0612
-        lat = root.createDimension('lat', options['latitudes'].size)  # pylint: disable=W0612
+        meta = options.get('meta')
 
-        times_long_name = 'time'
+        varname = None if meta is None else meta.get('varname')
+        varname = 'data' if varname is None else varname
 
-        if options['times'] is not None:
-            time = root.createDimension('time', options['times'].size)  # pylint: disable=W0612
-            times = root.createVariable('time', 'f8', ('time'))
-            times.units = 'days since 1970-1-1 00:00:0.0'
-            times.long_name = times_long_name
+        level_value = re.findall(r'\d+', options['level'])  # Take a numeric part.
+        level_value = int(level_value[0]) if level_value else None  # Use it if it's present.
+        level_units = re.findall(r'[a-zA-Z]+', options['level'])  # Take an alpha part.
+        level_units = level_units[0] if level_units else None  # Use it if it's present.
 
-        # Define variables.
-        latitudes = root.createVariable('lat', 'f4', ('lat'))
-        longitudes = root.createVariable('lon', 'f4', ('lon'))
+        dims = list(values.shape)
+        dim_list = ['lat', 'lon']  # Basic list of dimensions.
+        slices = [slice(None) for i in range(values.ndim)]
 
-        if options['times'] is not None:
-            data = root.createVariable('data', 'f4', ('time', 'lat', 'lon'), fill_value=values.fill_value)
-        else:
-            data = root.createVariable('data', 'f4', ('lat', 'lon'), fill_value=values.fill_value)
+        # Define dimensions and variables.
+        if new_file:
+            # Set global attributes.
+            root.Title = options['description']['@title']
+            root.Conventions = 'CF'
+            root.Source = 'Generated by CLIMATE Web-GIS'
 
-        # Set global attributes.
-        root.Title = options['description']['@title']
-        root.Conventions = 'CF'
-        root.Source = 'Generated by CLIMATE Web-GIS'
+            # Define geographic variables.
+            lon = root.createDimension('lon', options['longitudes'].size)  # pylint: disable=W0612
+            longitudes = root.createVariable('lon', 'f4', ('lon'))
+            lat = root.createDimension('lat', options['latitudes'].size)  # pylint: disable=W0612
+            latitudes = root.createVariable('lat', 'f4', ('lat'))
+            # Set geographic attributes.
+            latitudes.standard_name = 'latitude'
+            latitudes.units = 'degrees_north'
+            latitudes.long_name = 'latitude'
+            longitudes.standard_name = 'longitude'
+            longitudes.units = 'degrees_east'
+            longitudes.long_name = 'longitude'
+            # Write geographic variables.
+            longitudes[:] = options['longitudes']
+            latitudes[:] = options['latitudes']
 
-        # Set variables attributes.
-        latitudes.standard_name = 'latitude'
-        latitudes.units = 'degrees_north'
-        latitudes.long_name = 'latitude'
-        longitudes.standard_name = 'longitude'
-        longitudes.units = 'degrees_east'
-        longitudes.long_name = 'longitude'
-        data.units = options['description']['@units']
-        data.long_name = '{} {}'.format(options['description']['@title'], options['description']['@name'])
+            if not level_value is None:
+                level_idx = 0  # Always 0 for a new file.
+                # Define level variable.
+                dim_list.insert(0, 'level')  # If level is present, add dimension level
+                lev = root.createDimension('level')  # pylint: disable=W0612
+                levels = root.createVariable('level', 'i4', ('level'))
+                # Set level attributes.
+                levels.standard_name = 'level'
+                levels_units = level_units if level_units else None if meta is None else meta.get('level_units')
+                if levels_units:
+                    levels.units = levels_units
+                levels_long_name = None if meta is None else meta.get('level_long_name')
+                if levels_long_name:
+                    levels.long_name = levels_long_name
 
-        # Write variables.
-        # TODO: May be in the future we will write time grid into a file. If needed.
-        if options['times'] is not None:
-            pass
+            if not options['times'] is None:
+                # Define time variable.
+                dim_list.insert(0, 'time')  # If time grid is present, add dimension time
+                time = root.createDimension('time', len(options['times']))  # pylint: disable=W0612
+                times = root.createVariable('time', 'f8', ('time'))
+                # Set time attributes.
+                times.units = 'days since {}-1-1 00:00:0.0'.format(options['times'][0].year)
+                times_long_name = None if meta is None else meta.get('time_long_name')
+                times.long_name = 'time' if times_long_name is None else times_long_name
+                # Write time variable.
+                start_date = datetime(options['times'][0].year, 1, 1)
+                times[:] = [(cur_date - start_date).days for cur_date in options['times']]
 
-        longitudes[:] = options['longitudes']
-        latitudes[:] = options['latitudes']
-        data[:] = ma.filled(values, fill_value=values.fill_value)
+        else:  # Existing file.
+            if not 'level' in root.variables:
+                print(' (DataNetcdf::write_array)  No \'level\' variable in the file {}. Overwriting old one? Aborting.'.format(filename))
+                raise Exception
+            levels = root.variables['level']  # Get level variable (let's suppose it exists).
+            levels_list = levels[:].tolist()
+            # Check if the current level is present in the file.
+            if level_value in levels_list:
+                level_idx = levels_list.index(level_value)
+            else:
+                level_idx = levels.size
+
+        if level_value:
+            dims.insert(-2, 1)  # Add level dimension before latitudes (we write one level at a time)
+            slices.insert(-2, level_idx)  # Add level index before latitudes.
+            # Write level vvariable.
+            levels[level_idx] = level_value
+
+        # Check if variable is present in the file.
+        data = root.variables.get(varname)
+        if data is None:
+            # Define data variable if it is not present.
+            data = root.createVariable(varname, 'f4', dim_list, fill_value=values.fill_value)
+            # Set data attributes.
+            data.units = options['description']['@units']
+            data.long_name = options['description']['@name']
+
+        # Prepare and write values.
+        values = values.reshape(dims)
+        data[tuple(slices)] = ma.filled(values, fill_value=values.fill_value)  # Write values.
 
         root = None
 
@@ -431,10 +512,10 @@ class DataNetcdf(Data):
         print('(DataNetcdf::write_stations)  Writing data to a netCDF file...')
 
         # Construct the file name
-        filename = make_filename(self._data_info, options)
+        filename = make_raw_filename(self._data_info, options)
 
         # Create netCDF file.
-        root = Dataset(filename, 'w')  # , format='NETCDF3_64BIT_OFFSET')
+        root = Dataset(filename, 'w', format='NETCDF4')  # , format='NETCDF3_64BIT_OFFSET')
 
         # Define dimensions.
         lon = root.createDimension('lon', options['longitudes'].size)  # pylint: disable=W0612
@@ -442,7 +523,7 @@ class DataNetcdf(Data):
         station = root.createDimension('station', options['meta']['stations']['@names'].size)  # pylint: disable=W0612
         times_long_name = 'time of measurement'
 
-        if options['times'] is not None:
+        if not options['times'] is None:
             time = root.createDimension('time', options['times'].size)  # pylint: disable=W0612
             times = root.createVariable('time', 'f8', ('time'))
             times.units = 'days since 1970-1-1 00:00:0.0'
@@ -452,7 +533,7 @@ class DataNetcdf(Data):
         latitudes = root.createVariable('lat', 'f4', ('lat'))
         longitudes = root.createVariable('lon', 'f4', ('lon'))
 
-        if options['times'] is not None:
+        if not options['times'] is None:
             data = root.createVariable('data', 'f4', ('time', 'station'), fill_value=values.fill_value)
             coordinates = 'time lat lon alt'
         else:
@@ -482,7 +563,7 @@ class DataNetcdf(Data):
         station_name.long_name = 'station name'
         data.coordinates = coordinates
         data.units = options['description']['@units']
-        data.long_name = '{} {}'.format(options['description']['@title'], options['description']['@name'])
+        data.long_name = options['description']['@name']
 
         # Write variables.
         # TODO: May be in the future we will write time grid into a file. If needed.

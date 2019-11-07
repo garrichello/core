@@ -117,19 +117,6 @@ def list_remove_all(list_, item_to_remove):
     return [item for item in list_ if item != item_to_remove]
 
 
-def print(*args, **kwargs):  # pylint: disable=W0622
-    """Prints out to a standard output a string prefixed with current date and time
-
-    Arguments:
-        string_ -- string to print
-
-    """
-    now = datetime.datetime.now()
-    date_time = '({0:02}/{1:02}/{2:04} {3:02}:{4:02}:{5:02}) '.format(
-        now.day, now.month, now.year, now.hour, now.minute, now.second)
-    builtins.print(date_time, end='')
-    return builtins.print(*args, **kwargs)
-
 def make_filename(data_info, options):
     """Constructs a file name for writing raw output.
     It's used in write-methods of various data-access classes.

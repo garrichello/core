@@ -3,10 +3,10 @@
 """
 
 from copy import copy
+import logging
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-
 from .common import load_module, make_module_name, listify
 
 ENGLISH_LANG_CODE = '409'
@@ -68,6 +68,7 @@ class DataAccess():
             metadb_info -- dictionary describing metadata database (location and user credentials)
         """
 
+        self.logger = logging.getLogger()
         self._input_uids = []  # UIDs of input data sources.
         self._output_uids = []  # UID of output data destinations.
         self._data_objects = {}  # Instanses of data access classes.
@@ -75,7 +76,7 @@ class DataAccess():
 
         # Process input arguments: None - no inputs; get metadata for each data source (if any)
         # and instantiate corresponding classes.
-        print('(DataAccess::__init__) Prepare inputs...')
+        self.logger.info('Prepare inputs...')
         self._inputs = listify(inputs)
         if self._inputs is None:
             self._input_uids = None
@@ -85,13 +86,13 @@ class DataAccess():
                 if not uid in self._input_uids:
                     self._input_uids.append(uid)
                 else:
-                    print('(DataAccess::__init__)  Error! Duplicate input data UID: {}. Aborting.'.format(uid))
+                    self.logger.error(' Error! Duplicate input data UID: %s. Aborting.', uid)
                     raise ValueError
                 # Get additional info about an input from the metadata database
                 input_info = self._get_metadata(metadb_info, input_)
                 #  Data access class name is: 'Data' + <data type name> (e.g., DataNetcdf)
                 data_class_name = 'Data' + input_info['@data_type'].capitalize()
-                print('(DataAccess::__init__)  Input data module: {}'.format(data_class_name))
+                self.logger.info(' Input data module: %s', data_class_name)
                 module_name = make_module_name(data_class_name)
                 data_class = load_module(module_name, data_class_name, package_name=self.__module__)
                 if input_['data'].get('@object') is None:
@@ -99,11 +100,11 @@ class DataAccess():
                 self._data_objects[uid] = input_['data']['@object']
                 self._data_types[uid] = input_info['@data_type']
 
-        print('(DataAccess::__init__) Done!')
+        self.logger.info('Done!')
 
         # Process ouput argumetns: None - no outputs; get metadata for each data destination (if any)
         # and instantiate corresponding classes.
-        print('(DataAccess::__init__) Prepare outputs...')
+        self.logger.info('Prepare outputs...')
         self._outputs = listify(outputs)
         if outputs is None:
             self._output_uids = None
@@ -113,13 +114,13 @@ class DataAccess():
                 if not uid in self._output_uids:
                     self._output_uids.append(uid)
                 else:
-                    print('(DataAccess::__init__)  Error! Duplicate output data UID: {}. Aborting.'.format(uid))
+                    self.logger.error(' Error! Duplicate output data UID: %s. Aborting.', uid)
                     raise ValueError
                 # Get additional info about an output from the metadata database
                 output_info = self._get_metadata(metadb_info, output_)
                 #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
                 data_class_name = 'Data' + output_info['@data_type'].capitalize()
-                print('(DataAccess::__init__)  Output data module: {}'.format(data_class_name))
+                self.logger.info(' Output data module: %s', data_class_name)
                 module_name = make_module_name(data_class_name)
                 data_class = load_module(module_name, data_class_name, package_name=self.__module__)
                 if output_['data'].get('@object') is None:
@@ -127,7 +128,7 @@ class DataAccess():
                 self._data_objects[uid] = output_['data']['@object']
                 self._data_types[uid] = output_info['@data_type']
 
-        print('(DataAccess::__init__) Done!')
+        self.logger.info('Done!')
 
         self._metadb = metadb_info
 
@@ -207,9 +208,8 @@ class DataAccess():
                                                       time_step_tbl.columns['name'] == time_step_name).filter(
                                                           collection_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).one()
         except NoResultFound:
-            print('{} collection: {}, scenario: {}, resolution: {}, time step: {}'.format(
-                '(DataAccess::_get_metadata) No records found in MDDB for', dataset_name, scenario_name,
-                resolution_name, time_step_name))
+            self.logger.error('No records found in MDDB for collection: %s, scenario: %s, resolution: %s, time step: %s',
+                              dataset_name, scenario_name, resolution_name, time_step_name)
             raise
 
         info['@data_type'] = dataset_tbl_info.file_type_name
@@ -227,8 +227,7 @@ class DataAccess():
                                               par_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(
                                                   data_tbl.columns['ds_id'] == dataset_tbl_info.id).distinct().one()
         except NoResultFound:
-            print('{} variable {}'.format(
-                '(DataAccess::_get_metadata) No records found in MDDB for', variable_name))
+            self.logger.error('No records found in MDDB for variable %s', variable_name)
             raise
 
         info['data']['description']['@title'] = dataset_tbl_info.collection_name
@@ -258,9 +257,8 @@ class DataAccess():
                                                       levels_tbl.columns['name'].like(level_name_pattern)).filter(
                                                           units_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).one()
             except NoResultFound:
-                print('{} collection: {}, scenario: {}, resolution: {}, time step: {}, variable: {}, level: {}'.format(
-                    '(DataAccess::_get_metadata) No records found in MDDB for', dataset_name, scenario_name,
-                    resolution_name, time_step_name, variable_name, level_name))
+                self.logger.error('No records found in MDDB for collection: %s, scenario: %s, resolution: %s, time step: %s, variable: %s, level: %s',
+                                  dataset_name, scenario_name, resolution_name, time_step_name, variable_name, level_name)
                 raise
 
             info['data']['levels'][level_name]['@scale'] = data_tbl_info.scale
@@ -304,7 +302,7 @@ class DataAccess():
             try:
                 input_idx = self._input_uids.index(uid)
             except ValueError:
-                print('(DataAccess::get_segments) No such input UID: ' + uid)
+                self.logger.error('(DataAccess::get_segments) No such input UID: %s', uid)
                 raise
             segments = self._inputs[input_idx]['data']['time']['segment']
         else:
@@ -321,7 +319,7 @@ class DataAccess():
             try:
                 input_idx = self._input_uids.index(uid)
             except ValueError:
-                print('(DataAccess::get_segments) No such input UID: ' + uid)
+                self.logger.error('(DataAccess::get_segments) No such input UID: %s', uid)
                 raise
             if isinstance(self._inputs[input_idx]['data']['levels']['@values'], set):
                 levels = list(self._inputs[input_idx]['data']['levels']['@values'])
@@ -341,7 +339,7 @@ class DataAccess():
             try:
                 input_idx = self._input_uids.index(uid)
             except ValueError:
-                print('(DataAccess::get_data_info) No such input UID: ' + uid)
+                self.logger.error('(DataAccess::get_data_info) No such input UID: %s', uid)
                 raise
             data = self._inputs[input_idx]['data']
         else:
@@ -399,6 +397,6 @@ class DataAccess():
             if data_type.upper() == 'DB':  # We assume that stations are stored only in a PostGIS database.
                 is_stations = True
         else:
-            print('(DataAccess::is_stations) Warning: UID {} is not defined in the task file. False was returned.'.format(uid))
+            self.logger.warning('(DataAccess::is_stations) Warning: UID %s is not defined in the task file. False was returned.', uid)
 
         return is_stations

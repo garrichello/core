@@ -4,15 +4,11 @@ It is used as a part of Celery task manager system to start the Core.
 It creates an instance of the MainApp class and starts the Core with a given task..
 """
 from __future__ import absolute_import, unicode_literals
-import sys
 import time
-import traceback
-
-from kombu import Exchange, Queue
-
-import core
 
 from celery import Celery
+
+import core
 
 app = Celery('tasks')  # Instantiate Celery application (it runs tasks).
 app.config_from_object('celeryconfig')  # Celery config is in celeryconfig.py file.
@@ -39,5 +35,4 @@ def run_plain_xml(self, task_xml):
     return 'TASK COMPLETED!'
 
 if __name__ == '__main__':
-        app.start()
-
+    app.start()

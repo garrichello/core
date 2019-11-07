@@ -4,11 +4,10 @@
 from string import Template
 from datetime import datetime
 
-from copy import copy
 import numpy as np
 import numpy.ma as ma
 
-from core.base.common import listify, print  # pylint: disable=W0622
+from core.base.common import listify
 from .data import Data, GRID_TYPE_REGULAR
 from .mfhdf import MFDataset, date2index
 
@@ -75,9 +74,6 @@ class DataHdfeos(Data):
         # Process each vertical level separately.
         for level_name in levels_to_read:
             print(' (DataHdfeos::read)  Vertical level: \'{0}\''.format(level_name))
-
-            data_scale = self._data_info['data']['levels'][level_name]['@scale']
-            data_offset = self._data_info['data']['levels'][level_name]['@offset']
 
             file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']  # Template as in MDDB.
             percent_template = PercentTemplate(file_name_template)  # Custom string template %keyword%.

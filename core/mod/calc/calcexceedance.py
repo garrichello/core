@@ -43,7 +43,6 @@ import numpy as np
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 3

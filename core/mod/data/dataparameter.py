@@ -1,7 +1,7 @@
 """Provides classes:
     DataParameter
 """
-from core.base.common import listify, print
+from core.base.common import listify
 
 class DataParameter:
     """ Provides methods for reading and writing parameters in a task file.

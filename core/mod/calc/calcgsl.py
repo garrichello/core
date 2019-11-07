@@ -17,7 +17,7 @@ import numpy as np
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print, kelvin_to_celsius  # pylint: disable=W0622
+from core.base.common import kelvin_to_celsius
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2

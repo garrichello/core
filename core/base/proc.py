@@ -3,7 +3,7 @@
 """
 
 from .dataaccess import DataAccess
-from .common import load_module, make_module_name, print
+from .common import load_module, make_module_name
 
 class Proc:
     """Class Proc.

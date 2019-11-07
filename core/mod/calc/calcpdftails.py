@@ -16,7 +16,6 @@ import datetime
 import numpy as np
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
 START_THRESHOLD = 10

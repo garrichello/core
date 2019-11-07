@@ -1,7 +1,7 @@
 """Provides classes
     DataArray
 """
-from core.base.common import listify, print
+from core.base.common import listify
 
 from .data import Data
 

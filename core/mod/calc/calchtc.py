@@ -19,7 +19,7 @@ from copy import deepcopy
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print, kelvin_to_celsius  # pylint: disable=W0622
+from core.base.common import kelvin_to_celsius
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 3
@@ -193,7 +193,7 @@ class CalcHTC(Calc):
         temp_levels = self._data_helper.get_levels(input_uids[TEMP_DATA_UID])
         assert len(prcp_levels) == len(temp_levels), \
             '(CalcHTC::run) Error! Number of vertical levels are not the same!'
-            
+
         data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
 
         for prcp_level, temp_level in zip(prcp_levels, temp_levels):

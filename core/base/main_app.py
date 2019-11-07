@@ -7,7 +7,7 @@ import collections
 import xmltodict
 
 from .proc import Proc
-from .common import print, listify  # pylint: disable=W0622
+from .common import listify
 
 class MainApp:
     """Main application class. It does everything the application does."""

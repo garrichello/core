@@ -7,7 +7,7 @@ import numpy as np
 from scipy.interpolate import griddata
 from core.ext import shapefile
 
-from core.base.common import load_module, print, make_filename
+from core.base.common import load_module, make_filename
 from core.base import SLDLegend
 
 class DataImage:

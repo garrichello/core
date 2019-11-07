@@ -7,7 +7,7 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
-from .common import load_module, make_module_name, listify, print  # pylint: disable=W0622
+from .common import load_module, make_module_name, listify
 
 ENGLISH_LANG_CODE = '409'
 

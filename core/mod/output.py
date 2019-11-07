@@ -2,7 +2,7 @@
 
 from core.base.dataaccess import DataAccess
 
-from core.base.common import print, kelvin_to_celsius, celsius_to_kelvin  # pylint: disable=W0622
+from core.base.common import kelvin_to_celsius, celsius_to_kelvin
 
 MINIMUM_POSSIBLE_TEMPERATURE_K = celsius_to_kelvin(-90.0)  # -89.2 degC is the minimum registered temperature on Earth
 MAXIMUM_POSSIBLE_TEMPERATURE_K = celsius_to_kelvin(60.0)  # 56.7 degC is the maximum registered temperature on Earth

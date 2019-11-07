@@ -5,9 +5,7 @@ import datetime
 import numpy as np
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
-from copy import deepcopy
 
 MAX_N_INPUT_ARGUMENTS = 2
 INPUT_PARAMETERS_INDEX = 1

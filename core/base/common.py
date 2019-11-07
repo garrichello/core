@@ -1,10 +1,7 @@
 """Common functions and classes"""
 
 import importlib
-import datetime
 import os.path
-# Python 3 only
-import builtins
 
 ZERO_CELSIUS_IN_KELVIN = 273.15  # 0 degC is 273.15 degK
 MOD_PACKAGE_PATH = 'mod'

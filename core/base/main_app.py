@@ -2,6 +2,7 @@
     MainApp
 """
 from copy import deepcopy
+import logging
 
 import collections
 import xmltodict
@@ -27,19 +28,19 @@ class MainApp:
     def run(self, args):
         """Run this function to run the Core."""
 
-        print('(MainApp::run) Let\'s do it!')
+        logging.info('(MainApp::run) Let\'s do it!')
 
         task_file_name = args.task_file_name
         self._read_task(task_file_name)
         self._process()
 
-        print('(MainApp::run) Job is done. Exiting.')
+        logging.info('(MainApp::run) Job is done. Exiting.')
 
     def run_task(self, task_string, task_id=None):
         """Reads the task from a string and creates all necessary structures."""
 
-        print('(MainApp::run) Let\'s do it!')
-        print("(MainApp::read_task) Read the task...")
+        logging.info('(MainApp::run) Let\'s do it!')
+        logging.info("(MainApp::read_task) Read the task...")
 
         self._task = xmltodict.parse(task_string)
         self._task_id = task_id
@@ -49,22 +50,22 @@ class MainApp:
         self._task['task']['destination'] = listify(self._task['task']['destination'])
         self._task['task']['processing'] = listify(self._task['task']['processing'])
 
-        print("(MainApp::read_task) Done!")
+        logging.info("(MainApp::read_task) Done!")
 
         self._process()
 
-        print('(MainApp::run) Job is done. Exiting.')
+        logging.info('(MainApp::run) Job is done. Exiting.')
 
     def _read_task(self, task_file_name):
         """Reads the task file and creates all necessary structures."""
 
-        print("(MainApp::read_task) Read the task file...")
+        logging.info("(MainApp::read_task) Read the task file...")
 
         try:
             with open(task_file_name) as file_descriptor:
                 self._task = xmltodict.parse(file_descriptor.read())
         except FileNotFoundError:
-            print('(MainApp::_read_task) Task file not found: ' + task_file_name)
+            logging.error('(MainApp::_read_task) Task file not found: %s', task_file_name)
             raise
         except UnicodeDecodeError:
             with open(task_file_name, encoding='windows-1251') as file_descriptor:
@@ -100,8 +101,7 @@ class MainApp:
         try:
             parent_idx = self._data_uid_list.index(parent_uid) # Search for a parent 'data' element.
         except ValueError:
-            print('(MainApp::_inherit_properties) Can\'t find parent data UID \'{}\' in child data \'{}\''.format(
-                parent_uid, child_uid))
+            logging.error('(MainApp::_inherit_properties) Can\'t find parent data UID \'%s\' in child data \'%s\'', parent_uid, child_uid)
         child_data = task['data'][child_idx]
         parent_data = task['data'][parent_idx]
         self._dict_append(parent_data, child_data)
@@ -144,15 +144,14 @@ class MainApp:
                 data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
                 arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.
             else:
-                print('(MainApp::process) Can\'t find data or destination UID: \''
-                      + argument_uid + '\' in processing \'' + proc_uid
-                      + '\' input \'' + arg['@uid'] + '\'')
+                logging.error('(MainApp::process) Can\'t find data or destination UID: \'%s\' in processing \'%s\' input \'%s\'',
+                              argument_uid, proc_uid, arg['@uid'])
                 raise ValueError
 
     def _process(self):
         """Runs modules in the order specified in a task file."""
 
-        print('(MainApp::process) Start the processing.')
+        logging.info('(MainApp::process) Start the processing.')
 
         for task_name in self._task:
             task = self._task[task_name]
@@ -180,4 +179,4 @@ class MainApp:
                 # Run the processor which in turn should run the processing module.
                 processor.run()
 
-        print('(MainApp::process) Processing is finished.')
+        logging.info('(MainApp::process) Processing is finished.')

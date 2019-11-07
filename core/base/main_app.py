@@ -22,6 +22,7 @@ class MainApp:
         self._task = {}
         self._data_uid_list = []
         self._destination_uid_list = []
+        self._task_id = None
 
     def run(self, args):
         """Run this function to run the Core."""
@@ -34,13 +35,14 @@ class MainApp:
 
         print('(MainApp::run) Job is done. Exiting.')
 
-    def run_task(self, task_string):
+    def run_task(self, task_string, task_id=None):
         """Reads the task from a string and creates all necessary structures."""
 
         print('(MainApp::run) Let\'s do it!')
         print("(MainApp::read_task) Read the task...")
 
         self._task = xmltodict.parse(task_string)
+        self._task_id = task_id
 
         # Make them lists!
         self._task['task']['data'] = listify(self._task['task']['data'])
@@ -91,7 +93,7 @@ class MainApp:
             parent_uid -- parent data UID
             child_uid -- child data UID
 
-        Returns: 
+        Returns:
             'data' dictionary with properties of the parent data overridden with existing properties of a child.
         """
         child_idx = self._data_uid_list.index(child_uid)

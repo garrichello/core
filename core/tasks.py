@@ -4,14 +4,15 @@ It is used as a part of Celery task manager system to start the Core.
 It creates an instance of the MainApp class and starts the Core with a given task..
 """
 from __future__ import absolute_import, unicode_literals
-import time
 
 from celery import Celery
+from celery.utils.log import get_task_logger
 
 import core
 
 app = Celery('tasks')  # Instantiate Celery application (it runs tasks).
 app.config_from_object('celeryconfig')  # Celery config is in celeryconfig.py file.
+logger = get_task_logger(__name__)
 
 @app.task(bind=True)
 def run_plain_xml(self, task_xml):
@@ -21,16 +22,10 @@ def run_plain_xml(self, task_xml):
     Everything inside this function is controlled by Celery.
     """
 
-    print(core.__prog__ + ' v.' + core.__version__)
-    print('Running task id: {}'.format(self.request.id))
-    start_time = time.time()
+    logger.info('%s v.%s', core.__prog__, core.__version__)
 
     application = core.MainApp()  # Instance of the Core
     application.run_task(task_xml, self.request.id)  # Run the Core!
-
-    end_time = time.time()
-    exec_time = end_time - start_time
-    print('Total execution time: {0:8.2f} s'.format(exec_time))
 
     return 'TASK COMPLETED!'
 

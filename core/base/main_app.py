@@ -3,6 +3,7 @@
 """
 from copy import deepcopy
 import logging
+logger = logging.getLogger()
 
 import collections
 import xmltodict
@@ -28,19 +29,19 @@ class MainApp:
     def run(self, args):
         """Run this function to run the Core."""
 
-        logging.info('(MainApp::run) Let\'s do it!')
+        logger.info('Let\'s do it!')
 
         task_file_name = args.task_file_name
         self._read_task(task_file_name)
         self._process()
 
-        logging.info('(MainApp::run) Job is done. Exiting.')
+        logger.info('Job is done. Exiting.')
 
     def run_task(self, task_string, task_id=None):
         """Reads the task from a string and creates all necessary structures."""
 
-        logging.info('(MainApp::run) Let\'s do it!')
-        logging.info("(MainApp::read_task) Read the task...")
+        logger.info('Let\'s do it!')
+        logger.info('Read the task...')
 
         self._task = xmltodict.parse(task_string)
         self._task_id = task_id
@@ -50,22 +51,22 @@ class MainApp:
         self._task['task']['destination'] = listify(self._task['task']['destination'])
         self._task['task']['processing'] = listify(self._task['task']['processing'])
 
-        logging.info("(MainApp::read_task) Done!")
+        logger.info('Done!')
 
         self._process()
 
-        logging.info('(MainApp::run) Job is done. Exiting.')
+        logger.info('Job is done. Exiting.')
 
     def _read_task(self, task_file_name):
         """Reads the task file and creates all necessary structures."""
 
-        logging.info("(MainApp::read_task) Read the task file...")
+        logger.info('Read the task file...')
 
         try:
             with open(task_file_name) as file_descriptor:
                 self._task = xmltodict.parse(file_descriptor.read())
         except FileNotFoundError:
-            logging.error('(MainApp::_read_task) Task file not found: %s', task_file_name)
+            logger.error('Task file not found: %s', task_file_name)
             raise
         except UnicodeDecodeError:
             with open(task_file_name, encoding='windows-1251') as file_descriptor:
@@ -76,7 +77,7 @@ class MainApp:
         self._task['task']['destination'] = listify(self._task['task']['destination'])
         self._task['task']['processing'] = listify(self._task['task']['processing'])
 
-        print("(MainApp::read_task) Done!")
+        print('Done!')
 
     def _dict_append(self, source, destination):
         if isinstance(source, dict):
@@ -101,7 +102,7 @@ class MainApp:
         try:
             parent_idx = self._data_uid_list.index(parent_uid) # Search for a parent 'data' element.
         except ValueError:
-            logging.error('(MainApp::_inherit_properties) Can\'t find parent data UID \'%s\' in child data \'%s\'', parent_uid, child_uid)
+            logger.error('Can\'t find parent data UID \'%s\' in child data \'%s\'', parent_uid, child_uid)
         child_data = task['data'][child_idx]
         parent_data = task['data'][parent_idx]
         self._dict_append(parent_data, child_data)
@@ -144,14 +145,14 @@ class MainApp:
                 data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
                 arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.
             else:
-                logging.error('(MainApp::process) Can\'t find data or destination UID: \'%s\' in processing \'%s\' input \'%s\'',
+                logger.error('Can\'t find data or destination UID: \'%s\' in processing \'%s\' input \'%s\'',
                               argument_uid, proc_uid, arg['@uid'])
                 raise ValueError
 
     def _process(self):
         """Runs modules in the order specified in a task file."""
 
-        logging.info('(MainApp::process) Start the processing.')
+        logger.info('(MainApp::process) Start the processing.')
 
         for task_name in self._task:
             task = self._task[task_name]
@@ -179,4 +180,4 @@ class MainApp:
                 # Run the processor which in turn should run the processing module.
                 processor.run()
 
-        logging.info('(MainApp::process) Processing is finished.')
+        logger.info('Processing is finished.')

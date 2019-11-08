@@ -26,6 +26,100 @@ class DataImage(Data):
         self._image = image_class(data_info)
         self._data_info = data_info
 
+    def _transpose_dict(self, dict_of_lists):
+        """ Converts dictionary of lists to a list of dictionaries.
+
+        Arguments:
+            dict_of_lists -- dictionary of lists
+
+        Returns:
+            list_of_dicts -- list of dictionaries
+        """
+
+        if not isinstance(dict_of_lists, dict) or dict_of_lists is None:
+            self.logger.debug('It\'s not a dictionary!')
+            return dict_of_lists
+
+        # Get lengths of lists and check them to be the same.
+        lengths = [len(item) for item in dict_of_lists.values()]
+        max_len = max(lengths)
+        for val_len in lengths:
+            if val_len != max_len and val_len > 1:
+                self.logger.error('Lists in dictionary must be of the same length!')
+                raise ValueError
+
+        # Convert dictionary of lists to a list of dictionaries.
+        list_of_dicts = []
+        i = 0
+        while i < max_len:
+            single_dict = {}
+            for key in dict_of_lists.keys():
+                if len(dict_of_lists[key]) > 1:
+                    single_dict[key] = dict_of_lists[key][i]
+                else:
+                    single_dict[key] = dict_of_lists[key]
+            list_of_dicts.append(single_dict)
+            i += 1
+
+        return list_of_dicts
+
+    def _uniform_grids(self, values, options):
+        """Checks and makes geographical grids to be regular.
+
+        Arguments:
+            values -- processing result's values as a masked array/array/list.
+            options -- dictionary of write options
+
+        Returns:
+            values_regular, options_regular -- data and options on regular grids.
+        """
+
+        if values.ndim > 1:   # If it is a grid, check it for uniformity.
+            self.logger.info('Checking grid uniformity...')
+            eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
+
+            if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
+                should_regrid = True
+            else:
+                lons = np.sort(options['longitudes'])
+                dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
+                lats = np.sort(options['latitudes'])
+                dlats = [lats[i+1] - lats[i] for i in range(len(lats)-1)]
+                if ((np.std(dlons) > eps) or (np.std(dlats) > eps)):
+                    should_regrid = True
+                else:
+                    should_regrid = False
+            self.logger.info('Done!')
+        else:
+            should_regrid = False
+
+        # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
+        if should_regrid:
+            self.logger.info('Non-uniform grid. Regridding...')
+            options_regular = deepcopy(options)
+
+            # Create a uniform grid
+            dlon_regular = np.min(dlons) / 2.0  # Half the step to avoid a strange latitudinal shift.
+            dlat_regular = np.min(dlats) / 2.0
+            nlons_regular = int(np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1))
+            nlats_regular = int(np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1))
+            options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + min(lons)
+            options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + min(lats)
+
+            # Prepare data
+            llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
+            llon_regular, llat_regular = np.meshgrid(options_regular['longitudes'], options_regular['latitudes'])
+            interp = griddata((llon.ravel(), llat.ravel()), values.ravel(),
+                              (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
+            values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
+            values_regular.fill_value = values.fill_value
+            self.logger.info('Done!')
+        else:
+            values_regular = values
+            options_regular = options
+
+        return values_regular, options_regular
+
     def read(self, options):
         """Reads image-file into an array.
 
@@ -40,65 +134,39 @@ class DataImage(Data):
 
         return result
 
-    def write(self, all_values, all_options):
+    def write(self, all_values, all_options_dict):
         """Writes data (and metadata) to an output image-file. Supports values from several UIDs.
 
         Arguments:
             all_values -- processing result's values as a masked array/array/list.
-            all_options -- dictionary of write options
+            all_options_dict -- dictionary of write options
 
         """
 
         self.logger.info('Writing image...')
-        self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if all_values[0].ndim == 1 else 'raster'
+
+        # Set data kind to define the kind of the legend (for vector or raster data).
+        if all_options_dict['multiband']:
+            self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if all_values[0].ndim == 1 else 'raster'
+        else:
+            self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if all_values.ndim == 1 else 'raster'
         legend = SLDLegend(self._data_info)
 
-        all_values_regular = deepcopy(all_options)  # Make a copy for regular grid
-        all_options_regular = deepcopy(all_options)  # Make a copy for regular grid
-
-        for values, options, values_regular, options_regular in zip(all_values, all_options, all_values_regular, all_options_regular):
-            if values.ndim > 1:   # If it is a grid, check it for uniformity.
-                self.logger.info('Checking grid uniformity...')
-                eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
-
-                if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
-                    should_regrid = True
-                else:
-                    lons = np.sort(options['longitudes'])
-                    dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
-                    lats = np.sort(options['latitudes'])
-                    dlats = [lats[i+1] - lats[i] for i in range(len(lats)-1)]
-                    if ((np.std(dlons) > eps) or (np.std(dlats) > eps)):
-                        should_regrid = True
-                    else:
-                        should_regrid = False
-                self.logger.info('Done!')
-            else:
-                should_regrid = False
-
-            # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
-            if should_regrid:
-                self.logger.info('Non-uniform grid. Regridding...')
-
-                # Create a uniform grid
-                dlon_regular = np.min(dlons) / 2.0  # Half the step to avoid a strange latitudinal shift.
-                dlat_regular = np.min(dlats) / 2.0
-                nlons_regular = int(np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1))
-                nlats_regular = int(np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1))
-                options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + min(lons)
-                options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + min(lats)
-
-                # Prepare data
-                llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
-                llon_regular, llat_regular = np.meshgrid(options_regular['longitudes'], options_regular['latitudes'])
-                interp = griddata((llon.ravel(), llat.ravel()), values.ravel(),
-                                  (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
-                values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
-                values_regular.fill_value = values.fill_value
-                self.logger.info('Done!')
+        # Make geographical grids uniform.
+        if all_options['multiband']:
+            all_values_regular = []
+            all_options_regular = []
+            # In multiband case all_options_dict is a dictionary of lists. Convert it to a list of dictionaries.
+            all_options = self._transpose_dict(all_options_dict)
+            for values, options in zip(all_values, all_options):
+                val_reg, opt_reg = self._uniform_grids(values, options)
+                all_values_regular.append(val_reg)
+                all_options_regular.append(opt_reg)
+        else:
+            all_values_regular, all_options_regular = self._uniform_grids(all_values, all_options)
 
         # Write image file.
-        if self._image.multiband_support:
+        if self._image.multiband_support or not all_options_dict['multiband']:  # Image supports multiband write or only one variable.
             self._image.write(all_values_regular, all_options_regular)
 
             # Write legend into an SLD-file.
@@ -107,7 +175,7 @@ class DataImage(Data):
                 self.logger.info('Writing legend...')
                 legend.write(all_values_regular, all_options_regular)
                 self.logger.info('Done!')
-        else:
+        else:  # Image does NOT support multiband write and many variables to write.
             for values_regular, options_regular in zip(all_values_regular, all_options_regular):
                 self._image.write(values_regular, options_regular)
 

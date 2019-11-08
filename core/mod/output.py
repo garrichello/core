@@ -30,6 +30,8 @@ class cvcOutput:
                                  Destination description should be passed as _output_ argument to process cvcOutput.""")
             raise ValueError('No output dataset specified. Aborting!')
 
+        output_info = self._data_helper.get_data_info(output_uids[0])
+        
         for in_uid in input_uids:
             time_segments = self._data_helper.get_segments(in_uid)
             vertical_levels = self._data_helper.get_levels(in_uid)

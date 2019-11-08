@@ -81,7 +81,7 @@ class DataAccess():
         if self._inputs is None:
             self._input_uids = None
         else:
-            for input_ in self._inputs:
+            for input_num, input_ in enumerate(self._inputs):
                 uid = input_['@uid']
                 if not uid in self._input_uids:
                     self._input_uids.append(uid)
@@ -92,7 +92,7 @@ class DataAccess():
                 input_info = self._get_metadata(metadb_info, input_)
                 #  Data access class name is: 'Data' + <data type name> (e.g., DataNetcdf)
                 data_class_name = 'Data' + input_info['@data_type'].capitalize()
-                self.logger.info('Input data module: %s', data_class_name)
+                self.logger.info('Input data module #%s: %s', input_num+1, data_class_name)
                 module_name = make_module_name(data_class_name)
                 data_class = load_module(module_name, data_class_name, package_name=self.__module__)
                 if input_['data'].get('@object') is None:
@@ -109,7 +109,7 @@ class DataAccess():
         if outputs is None:
             self._output_uids = None
         else:
-            for output_ in self._outputs:
+            for output_num, output_ in enumerate(self._outputs):
                 uid = output_['@uid']
                 if not uid in self._output_uids:
                     self._output_uids.append(uid)
@@ -120,7 +120,7 @@ class DataAccess():
                 output_info = self._get_metadata(metadb_info, output_)
                 #  Data access class name is: "Data" + <File type name> (e.g., DataNetcdf)
                 data_class_name = 'Data' + output_info['@data_type'].capitalize()
-                self.logger.info(' Output data module: %s', data_class_name)
+                self.logger.info('Output data module #%s: %s', output_num+1, data_class_name)
                 module_name = make_module_name(data_class_name)
                 data_class = load_module(module_name, data_class_name, package_name=self.__module__)
                 if output_['data'].get('@object') is None:

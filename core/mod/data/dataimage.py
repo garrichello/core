@@ -65,7 +65,7 @@ class DataImage(Data):
                     should_regrid = True
                 else:
                     should_regrid = False
-            self.logger.info('  Done!')
+            self.logger.info('Done!')
         else:
             should_regrid = False
 

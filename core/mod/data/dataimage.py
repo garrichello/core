@@ -9,7 +9,7 @@ import numpy as np
 from scipy.interpolate import griddata
 from core.ext import shapefile
 
-from core.base.common import load_module, make_filename
+from core.base.common import load_module, make_filename, make_raw_filename
 from core.base import SLDLegend
 from .data import Data
 
@@ -208,30 +208,16 @@ class ImageGeotiff():
         self._data_info = data_info
         self.multiband_support = True
 
-    def read(self, options):
-        """Reads Geotiff file into an array.
+    def _prepare_data(self, values, options):
+        """Prepares data for writing
 
         Arguments:
-            options -- dictionary of read options
+            values -- masked data array to be written
+            options -- write options including grids
+        
+        Returns:
+            data, longitudes, latitudes -- prepared data and geographical grids
         """
-
-
-    def write(self, values, options):
-        """Writes data array into a Geotiff file.
-
-        Arguments:
-            values -- processing result's values as a masked array/array/list.
-            options -- dictionary of write options:
-                ['level'] -- vertical level name
-                ['segment'] -- time segment description (as in input time segments taken from a task file)
-                ['times'] -- time grid as a list of datatime values
-                ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
-                ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
-        """
-
-        self.logger.info('Writing geoTIFF...')
-
-        # Prepare data array with masked values replaced with a fill value.
         data = np.ma.filled(values, fill_value=values.fill_value)
         longitudes = options['longitudes']
         latitudes = options['latitudes']
@@ -243,6 +229,43 @@ class ImageGeotiff():
             left_part = data[:, first_negative_latitude_idx:]
             right_part = data[:, :first_negative_latitude_idx]
             data = np.hstack((left_part, right_part))
+
+        return data, longitudes, latitudes
+
+    def read(self, options):
+        """Reads Geotiff file into an array.
+
+        Arguments:
+            options -- dictionary of read options
+        """
+
+
+    def write(self, all_values, all_options):
+        """Writes data array into a Geotiff file. Supports multiband write.
+
+        Arguments:
+            all_values -- processing result's values as a masked array/array/list. List of arrays in multiband case.
+            all_options -- dictionary of write options (list of dictionaries in multiband case):
+                ['level'] -- vertical level name
+                ['segment'] -- time segment description (as in input time segments taken from a task file)
+                ['times'] -- time grid as a list of datatime values
+                ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
+                ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
+        """
+
+        self.logger.info('Writing geoTIFF...')
+
+        # Check if it's a multiband case.
+        multiband_write = True if isinstance(all_values, list) else False
+
+        # Prepare data array with masked values replaced with a fill value.
+        if multiband_write:
+            all_data = []
+            for values, options in zip(all_values, all_options):
+                cur_data, longitudes, latitudes = self._prepare_data(values, options)
+                all_data.append(cur_data)
+        else:
+            all_data, longitudes, latitudes = self._prepare_data(all_values, all_options)
 
         # Prepare GeoTIFF driver.
         fmt = 'GTiff'
@@ -256,28 +279,40 @@ class ImageGeotiff():
                       Unable to write GeoTIFF.''', fmt)
             raise AssertionError
 
-        # Write image.
-        dims = data.shape
-        filename = make_filename(self._data_info, options)
+        # Prepare file name
+        filename = make_raw_filename(self._data_info, all_options)
 
-        if data.ndim == 2:
-            dataset = drv.Create(filename, dims[1], dims[0], 1, gdal.GDT_Float32)
-            if dataset is None:
-                self.logger.error('Error creating file: %s. Check the output path! Aborting...', filename)
-                raise FileNotFoundError("Can't write file!")
-            dataset.GetRasterBand(1).WriteArray(data)
-        elif data.ndim == 3:
-            dataset = drv.Create(filename, dims[2], dims[1], dims[0], gdal.GDT_Float32)
-            if dataset is None:
-                self.logger.error('Error creating file: %s. Check the output path! Aborting...', filename)
-                raise FileNotFoundError("Can't write file!")
-            band = 0
-            for data_slice in data:
-                band += 1
-                dataset.GetRasterBand(band).WriteArray(data_slice)
+        # Stack multiband data into 3-D array. Leftmost dimension is a band.
+        if multiband_write:
+            if all_data[0].ndim == 2:  # 2-D arrays stack to create 3-D data array
+                data_to_write = np.stack(all_data)
+            elif all_data[0].ndim == 3:  # 3-D arrays vstack to create 3-D data array also.
+                data_to_write = np.vstack(all_data)
+            else:
+                self.logger.error('Incorrect number of dimensions in data array: %s! Aborting...', all_data[0].ndim)
+                raise ValueError
         else:
-            self.logger.error('Incorrect number of dimensions in data array: %s! Aborting...', data.ndim)
+            data_to_write = all_data
+
+        # Only 2- and 3-D data arrays can be written to GeoTIFF
+        if data_to_write.ndim < 2 or data_to_write.ndim > 3:
+            self.logger.error('Incorrect number of dimensions in data array: %s! Aborting...', all_data[0].ndim)
             raise ValueError
+
+        # Correct number of dimensions. Should be 3!
+        if data_to_write.ndim == 2:
+            data_to_write = np.expand_dims(data_to_write, 0)  # If it's 2-D make it 3-D
+
+        # Write image.
+        dims = data_to_write.shape
+        dataset = drv.Create(filename, dims[2], dims[1], dims[0], gdal.GDT_Float32)
+        if dataset is None:
+            self.logger.error('Error creating file: %s. Check the output path! Aborting...', filename)
+            raise FileNotFoundError("Can't write file!")
+        band = 0
+        for data_slice in data_to_write:
+            band += 1
+            dataset.GetRasterBand(band).WriteArray(data_slice)
 
         # Prepare geokeys.
         gtype = 'EPSG:4326'

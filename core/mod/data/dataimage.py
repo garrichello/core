@@ -64,7 +64,7 @@ class DataImage(Data):
         while i < max_len:
             single_dict = {}
             for key in dict_of_lists.keys():
-                if len(dict_of_lists[key]) > 1:
+                if lengths[i] > 1:
                     single_dict[key] = dict_of_lists[key][i]
                 else:
                     single_dict[key] = dict_of_lists[key]

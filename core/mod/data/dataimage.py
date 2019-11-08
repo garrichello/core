@@ -7,6 +7,7 @@ from osgeo import osr
 import numpy as np
 from scipy.interpolate import griddata
 from core.ext import shapefile
+from copy import deepcopy
 
 from core.base.common import load_module, make_filename
 from core.base import SLDLegend
@@ -39,72 +40,83 @@ class DataImage(Data):
 
         return result
 
-    def write(self, values, options):
-        """Writes data (and metadata) to an output image-file.
+    def write(self, all_values, all_options):
+        """Writes data (and metadata) to an output image-file. Supports values from several UIDs.
 
         Arguments:
-            values -- processing result's values as a masked array/array/list.
-            options -- dictionary of write options
+            all_values -- processing result's values as a masked array/array/list.
+            all_options -- dictionary of write options
 
         """
 
         self.logger.info('Writing image...')
+        self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if all_values[0].ndim == 1 else 'raster'
+        legend = SLDLegend(self._data_info)
 
-        if values.ndim > 1:   # If it is a grid, check it for uniformity.
-            self.logger.info('Checking grid uniformity...')
-            eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
+        all_values_regular = deepcopy(all_options)  # Make a copy for regular grid
+        all_options_regular = deepcopy(all_options)  # Make a copy for regular grid
 
-            if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
-                should_regrid = True
-            else:
-                lons = np.sort(options['longitudes'])
-                dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
-                lats = np.sort(options['latitudes'])
-                dlats = [lats[i+1] - lats[i] for i in range(len(lats)-1)]
-                if ((np.std(dlons) > eps) or (np.std(dlats) > eps)):
+        for values, options, values_regular, options_regular in zip(all_values, all_options, all_values_regular, all_options_regular):
+            if values.ndim > 1:   # If it is a grid, check it for uniformity.
+                self.logger.info('Checking grid uniformity...')
+                eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
+
+                if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
                     should_regrid = True
                 else:
-                    should_regrid = False
-            self.logger.info('Done!')
-        else:
-            should_regrid = False
+                    lons = np.sort(options['longitudes'])
+                    dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
+                    lats = np.sort(options['latitudes'])
+                    dlats = [lats[i+1] - lats[i] for i in range(len(lats)-1)]
+                    if ((np.std(dlons) > eps) or (np.std(dlats) > eps)):
+                        should_regrid = True
+                    else:
+                        should_regrid = False
+                self.logger.info('Done!')
+            else:
+                should_regrid = False
 
-        # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
-        if should_regrid:
-            self.logger.info('Non-uniform grid. Regridding...')
-            options_regular = options.copy()
+            # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
+            if should_regrid:
+                self.logger.info('Non-uniform grid. Regridding...')
 
-            # Create a uniform grid
-            dlon_regular = np.min(dlons) / 2.0  # Half the step to avoid a strange latitudinal shift.
-            dlat_regular = np.min(dlats) / 2.0
-            nlons_regular = int(np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1))
-            nlats_regular = int(np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1))
-            options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + min(lons)
-            options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + min(lats)
+                # Create a uniform grid
+                dlon_regular = np.min(dlons) / 2.0  # Half the step to avoid a strange latitudinal shift.
+                dlat_regular = np.min(dlats) / 2.0
+                nlons_regular = int(np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1))
+                nlats_regular = int(np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1))
+                options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + min(lons)
+                options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + min(lats)
 
-            # Prepare data
-            llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
-            llon_regular, llat_regular = np.meshgrid(options_regular['longitudes'], options_regular['latitudes'])
-            interp = griddata((llon.ravel(), llat.ravel()), values.ravel(),
-                              (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
-            values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
-            values_regular.fill_value = values.fill_value
-            self.logger.info('Done!')
-        else:
-            values_regular = values
-            options_regular = options
+                # Prepare data
+                llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
+                llon_regular, llat_regular = np.meshgrid(options_regular['longitudes'], options_regular['latitudes'])
+                interp = griddata((llon.ravel(), llat.ravel()), values.ravel(),
+                                  (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
+                values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
+                values_regular.fill_value = values.fill_value
+                self.logger.info('Done!')
 
         # Write image file.
-        self._image.write(values_regular, options_regular)
+        if self._image.multiband_support:
+            self._image.write(all_values_regular, all_options_regular)
 
-        # Write legend into an SLD-file.
-        if (self._data_info['data']['graphics']['legend']['@kind'] == 'file' and
-                self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
-            self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if values_regular.ndim == 1 else 'raster'
-            legend = SLDLegend(self._data_info)
-            self.logger.info('Writing legend...')
-            legend.write(values_regular, options_regular)
-            self.logger.info('Done!')
+            # Write legend into an SLD-file.
+            if (self._data_info['data']['graphics']['legend']['@kind'] == 'file' and
+                    self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
+                self.logger.info('Writing legend...')
+                legend.write(all_values_regular, all_options_regular)
+                self.logger.info('Done!')
+        else:
+            for values_regular, options_regular in zip(all_values_regular, all_options_regular):
+                self._image.write(values_regular, options_regular)
+
+                # Write legend into an SLD-file.
+                if (self._data_info['data']['graphics']['legend']['@kind'] == 'file' and
+                        self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
+                    self.logger.info('Writing legend...')
+                    legend.write(values_regular, options_regular)
+                    self.logger.info('Done!')
 
         self.logger.info('Done!')
 
@@ -116,6 +128,7 @@ class ImageGeotiff():
     def __init__(self, data_info):
         self.logger = logging.getLogger()
         self._data_info = data_info
+        self.multiband_support = True
 
     def read(self, options):
         """Reads Geotiff file into an array.
@@ -218,6 +231,7 @@ class ImageShape:
     def __init__(self, data_info):
         self.logger = logging.getLogger()
         self._data_info = data_info
+        self.multiband_support = False
 
     def read(self, options):
         """Reads ESRI shapefile into an array.

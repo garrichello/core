@@ -41,18 +41,18 @@ class DataImage(Data):
             return dict_of_lists
 
         # Get lengths of lists.
-        lengths = []
+        lengths = {}
         max_len = 0
-        for item in dict_of_lists.values():
-            if isinstance(item, list):
-                item_len = len(item)
+        for key, value in dict_of_lists.items():
+            if isinstance(value, list):
+                val_len = len(value)
             else:
-                item_len = 1  # If it's not a list set it's length to 1
-            max_len = item_len if max_len < item_len else max_len
-            lengths.append(item_len)
+                val_len = 1  # If it's not a list set it's length to 1
+            max_len = val_len if max_len < val_len else max_len
+            lengths[key] = val_len
 
         # Check lengths of lists to be the same. Ignore elements of length 1.
-        for val_len in lengths:
+        for val_len in lengths.values():
             if val_len != max_len and val_len > 1:
                 self.logger.error('Lists in dictionary must be of the same length!')
                 raise ValueError
@@ -64,7 +64,7 @@ class DataImage(Data):
         while i < max_len:
             single_dict = {}
             for key in dict_of_lists.keys():
-                if lengths[i] > 1:
+                if lengths[key] > 1:
                     single_dict[key] = dict_of_lists[key][i]
                 else:
                     single_dict[key] = dict_of_lists[key]

@@ -116,7 +116,7 @@ def list_remove_all(list_, item_to_remove):
     return [item for item in list_ if item != item_to_remove]
 
 
-def make_filename(data_info, options):
+def make_filename(data_info, all_options):
     """Constructs a file name for writing raw output.
     It's used in write-methods of various data-access classes.
     Names of vertical levels are included into the filename.
@@ -130,13 +130,17 @@ def make_filename(data_info, options):
         filename -- constructed filename which includes level name and time segment.
 
     """
+    if isinstance(all_options, list):
+        options = all_options[0]
+    else:
+        options = all_options
     (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
     filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], options['segment']['@beginning'],
                                       options['segment']['@ending'], file_ext)
     return filename
 
 
-def make_raw_filename(data_info, options):
+def make_raw_filename(data_info, all_options):
     """Constructs a file name for writing raw output.
     It's used in write-methods of various data-access classes.
     Names of vertical levels are NOT included into the filename.
@@ -150,6 +154,10 @@ def make_raw_filename(data_info, options):
         filename -- constructed filename which includes level name and time segment.
 
     """
+    if isinstance(all_options, list):
+        options = all_options[0]
+    else:
+        options = all_options
     (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
     filename = '{}_{}-{}{}'.format(file_root, options['segment']['@beginning'],
                                    options['segment']['@ending'], file_ext)

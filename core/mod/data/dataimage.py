@@ -40,15 +40,25 @@ class DataImage(Data):
             self.logger.debug('It\'s not a dictionary!')
             return dict_of_lists
 
-        # Get lengths of lists and check them to be the same.
-        lengths = [len(item) for item in dict_of_lists.values()]
-        max_len = max(lengths)
+        # Get lengths of lists.
+        lengths = []
+        max_len = 0
+        for item in dict_of_lists.values():
+            if isinstance(item, list):
+                item_len = len(item)
+            else:
+                item_len = 1  # If it's not a list set it's length to 1
+            max_len = item_len if max_len < item_len else max_len
+            lengths.append(item_len)
+
+        # Check lengths of lists to be the same. Ignore elements of length 1.
         for val_len in lengths:
             if val_len != max_len and val_len > 1:
                 self.logger.error('Lists in dictionary must be of the same length!')
                 raise ValueError
 
-        # Convert dictionary of lists to a list of dictionaries.
+        # Convert dictionary of lists to a list of dictionaries. 
+        # Copy elements of length 1 to all lists.
         list_of_dicts = []
         i = 0
         while i < max_len:

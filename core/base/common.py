@@ -48,7 +48,7 @@ def load_module(module_name, class_name, package_name=None):
         try:
             class_ = getattr(module_, class_name)
         except AttributeError:
-            logger.error(' Class %s does not exist', class_name)
+            logger.error('Class %s does not exist', class_name)
             raise
     except ImportError:
         logger.error('Module %s does not exist', load_module_name)

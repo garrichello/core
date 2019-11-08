@@ -86,13 +86,13 @@ class DataAccess():
                 if not uid in self._input_uids:
                     self._input_uids.append(uid)
                 else:
-                    self.logger.error(' Error! Duplicate input data UID: %s. Aborting.', uid)
+                    self.logger.error('Error! Duplicate input data UID: %s. Aborting.', uid)
                     raise ValueError
                 # Get additional info about an input from the metadata database
                 input_info = self._get_metadata(metadb_info, input_)
                 #  Data access class name is: 'Data' + <data type name> (e.g., DataNetcdf)
                 data_class_name = 'Data' + input_info['@data_type'].capitalize()
-                self.logger.info(' Input data module: %s', data_class_name)
+                self.logger.info('Input data module: %s', data_class_name)
                 module_name = make_module_name(data_class_name)
                 data_class = load_module(module_name, data_class_name, package_name=self.__module__)
                 if input_['data'].get('@object') is None:
@@ -114,7 +114,7 @@ class DataAccess():
                 if not uid in self._output_uids:
                     self._output_uids.append(uid)
                 else:
-                    self.logger.error(' Error! Duplicate output data UID: %s. Aborting.', uid)
+                    self.logger.error('Error! Duplicate output data UID: %s. Aborting.', uid)
                     raise ValueError
                 # Get additional info about an output from the metadata database
                 output_info = self._get_metadata(metadb_info, output_)
@@ -302,7 +302,7 @@ class DataAccess():
             try:
                 input_idx = self._input_uids.index(uid)
             except ValueError:
-                self.logger.error('(DataAccess::get_segments) No such input UID: %s', uid)
+                self.logger.error('No such input UID: %s', uid)
                 raise
             segments = self._inputs[input_idx]['data']['time']['segment']
         else:
@@ -319,7 +319,7 @@ class DataAccess():
             try:
                 input_idx = self._input_uids.index(uid)
             except ValueError:
-                self.logger.error('(DataAccess::get_segments) No such input UID: %s', uid)
+                self.logger.error('No such input UID: %s', uid)
                 raise
             if isinstance(self._inputs[input_idx]['data']['levels']['@values'], set):
                 levels = list(self._inputs[input_idx]['data']['levels']['@values'])
@@ -339,7 +339,7 @@ class DataAccess():
             try:
                 input_idx = self._input_uids.index(uid)
             except ValueError:
-                self.logger.error('(DataAccess::get_data_info) No such input UID: %s', uid)
+                self.logger.error('No such input UID: %s', uid)
                 raise
             data = self._inputs[input_idx]['data']
         else:
@@ -397,6 +397,6 @@ class DataAccess():
             if data_type.upper() == 'DB':  # We assume that stations are stored only in a PostGIS database.
                 is_stations = True
         else:
-            self.logger.warning('(DataAccess::is_stations) Warning: UID %s is not defined in the task file. False was returned.', uid)
+            self.logger.warning('Warning: UID %s is not defined in the task file. False was returned.', uid)
 
         return is_stations

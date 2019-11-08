@@ -152,7 +152,7 @@ class MainApp:
     def _process(self):
         """Runs modules in the order specified in a task file."""
 
-        self.logger.info('(MainApp::process) Start the processing.')
+        self.logger.info('Start the processing.')
 
         for task_name in self._task:
             task = self._task[task_name]

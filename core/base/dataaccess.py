@@ -353,7 +353,7 @@ class DataAccess():
         return data
 
     def put(self, uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None, fill_value=None,
-            description=None, meta=None):
+            description=None, meta=None, multiband=False):
         """Writes data and metadata to an output data storage (array).
 
         Arguments:
@@ -380,6 +380,7 @@ class DataAccess():
             values.fill_value = fill_value
         options['description'] = copy(description)
         options['meta'] = copy(meta)
+        options['multiband'] = multiband
         self._data_objects[uid].write(values, options)
 
     def output_uids(self):

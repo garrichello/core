@@ -84,6 +84,6 @@ class cvcOutput:
         if output_info['@type'] == 'image':  # Pass everything at once.
             self._data_helper.put(output_uids[0], all_values, level=all_levels, segment=all_segments,
                                   longitudes=all_longitudes, latitudes=all_latitudes,
-                                  times=all_times, description=all_descriptions, meta=all_metas)
+                                  times=all_times, description=all_descriptions, meta=all_metas, multiband=True)
 
         self.logger.info('Finished!')

@@ -153,7 +153,7 @@ class DataImage(Data):
         legend = SLDLegend(self._data_info)
 
         # Make geographical grids uniform.
-        if all_options['multiband']:
+        if all_options_dict['multiband']:
             all_values_regular = []
             all_options_regular = []
             # In multiband case all_options_dict is a dictionary of lists. Convert it to a list of dictionaries.

@@ -30,8 +30,15 @@ class cvcOutput:
                                  Destination description should be passed as _output_ argument to process cvcOutput.""")
             raise ValueError('No output dataset specified. Aborting!')
 
-        output_info = self._data_helper.get_data_info(output_uids[0])
-        
+        values = []
+        levels = []
+        segments = []
+        longitudes = []
+        latitudes = []
+        times = []
+        descriptions = []
+        metas = []
+
         for in_uid in input_uids:
             time_segments = self._data_helper.get_segments(in_uid)
             vertical_levels = self._data_helper.get_levels(in_uid)
@@ -51,15 +58,23 @@ class cvcOutput:
 
             for level_name in vertical_levels:
                 for segment in time_segments:
-                    values = result['data'][level_name][segment['@name']]['@values']
-
+                    cur_values = result['data'][level_name][segment['@name']]['@values']
                     # Convert Kelvin to Celsius if asked and appropriate
                     if convert_k2c:
-                        values = kelvin_to_celsius(values)
+                        cur_values = kelvin_to_celsius(cur_values)
+                    # Store all data and meta in lists
+                    values.append(cur_values)
+                    levels.append(level_name)
+                    segments.append(segment)
+                    longitudes.append(result['@longitude_grid'])
+                    latitudes.append(result['@latitude_grid'])
+                    times.append(result['data'][level_name][segment['@name']]['@time_grid'])
+                    descriptions.append(description)
+                    metas.append(result['meta'])
 
-                    self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
-                                          longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                          times=result['data'][level_name][segment['@name']]['@time_grid'],
-                                          description=description, meta=result['meta'])
+        # Pass everything to corresponding module
+        self._data_helper.put(output_uids[0], values, level=levels, segment=segments,
+                              longitudes=longitudes, latitudes=latitudes,
+                              times=times, description=descriptions, meta=metas)
 
         self.logger.info('Finished!')

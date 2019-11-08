@@ -335,15 +335,21 @@ class DataAccess():
         Arguments:
             uid -- UID of a processing module's input (as in a task file)
         """
+        data = None
         if self._input_uids is not None:
-            try:
-                input_idx = self._input_uids.index(uid)
-            except ValueError:
-                self.logger.error('No such input UID: %s', uid)
-                raise
-            data = self._inputs[input_idx]['data']
-        else:
-            data = None
+            if uid in self._input_uids:
+                idx = self._input_uids.index(uid)
+                data = self._inputs[idx]['data']
+        if self._output_uids is not None:
+            if uid in self._output_uids:
+                if data is not None:  # uid is both in inputs and outputs!
+                    self.logger.error('Requested UID %s is presented in both inputs and outputs. Check the task!', uid)
+                    raise ValueError
+                idx = self._output_uids.index(uid)
+                data = self._outputs[idx]['data']
+        if data is None:
+            self.logger.error('Requested UID %s is not found! Aborting', uid)
+            raise ValueError
         return data
 
     def put(self, uid, values, level=None, segment=None, times=None, longitudes=None, latitudes=None, fill_value=None,

@@ -3,13 +3,14 @@
 """
 
 from core.base.common import load_module, make_module_name
+from .data import Data
 
-
-class DataRaw:
+class DataRaw(Data):
     """ Provides reading/writing data from/to raw data files (bin, netcdf, xml, ascii...).
     """
 
     def __init__(self, data_info):
+        super().__init__(data_info)
         self._data_info = data_info
         data_class_name = 'Data' + data_info['data']['file']['@type'].capitalize()
         module_name = make_module_name(data_class_name)

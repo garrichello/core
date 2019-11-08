@@ -34,6 +34,7 @@ class CalcHTC(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _calc_half_htc(self, prcp_values, temp_values, threshold, start, end):
@@ -167,11 +168,11 @@ class CalcHTC(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcHTC::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcHTC::run) No input arguments!'
+        assert input_uids, 'No input arguments!'
 
         # Get parameters
         parameters = None
@@ -180,19 +181,19 @@ class CalcHTC(Calc):
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
         threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
 
-        print('(CalcHTC::run) Calculation mode: {}'.format(calc_mode))
-        print('(CalcHTC::run) Threshold: {}'.format(threshold))
+        self.logger.info('Calculation mode: %s', calc_mode)
+        self.logger.info('Threshold: %s', threshold)
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(CalcHTC::run) No output arguments!'
+        assert output_uids, 'No output arguments!'
 
         # Get time segments and levels
         time_segments = self._data_helper.get_segments(input_uids[PRCP_DATA_UID])
         prcp_levels = self._data_helper.get_levels(input_uids[PRCP_DATA_UID])
         temp_levels = self._data_helper.get_levels(input_uids[TEMP_DATA_UID])
         assert len(prcp_levels) == len(temp_levels), \
-            '(CalcHTC::run) Error! Number of vertical levels are not the same!'
+            'Error! Number of vertical levels are not the same!'
 
         data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
 
@@ -223,7 +224,7 @@ class CalcHTC(Calc):
                 elif calc_mode == 'data':
                     all_segments_values.append(one_segment_values)
                 else:
-                    print('(CalcHTC::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
+                    self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
                     raise ValueError
 
             # For data-wise analysis analyse segments analyses :)
@@ -239,4 +240,4 @@ class CalcHTC(Calc):
                                       longitudes=prcp_data['@longitude_grid'], latitudes=prcp_data['@latitude_grid'],
                                       fill_value=prcp_data['@fill_value'], meta=prcp_data['meta'])
 
-        print('(CalcHTC::run) Finished!')
+        self.logger.info('Finished!')

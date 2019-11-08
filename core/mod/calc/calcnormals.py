@@ -15,6 +15,7 @@ class CalcNormals(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _calc_normals(self, uid, level):
@@ -80,17 +81,17 @@ class CalcNormals(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcNormals::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcNormals::run) No input arguments!'
+        assert input_uids, 'Error! No input arguments!'
 
         level = self._data_helper.get_levels(input_uids[0])[0]  # Only the first vertical level is taken.
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(CalcNormals::run) No output arguments!'
+        assert output_uids, 'Error! No output arguments!'
 
         # Calculate normals
         normals = self._calc_normals(input_uids[0], level)
@@ -100,4 +101,4 @@ class CalcNormals(Calc):
                               times=normals['@day_grid'], fill_value=normals['@fill_value'],
                               meta=normals['meta'])
 
-        print('(CalcNormals::run) Finished!')
+        self.logger.info('Finished!')

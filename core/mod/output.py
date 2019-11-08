@@ -1,5 +1,6 @@
 """Class for output"""
 
+import logging
 from core.base.dataaccess import DataAccess
 
 from core.base.common import kelvin_to_celsius, celsius_to_kelvin
@@ -13,19 +14,20 @@ class cvcOutput:
     """
 
     def __init__(self, data_helper: DataAccess):
+        self.logger = logging.getLogger()
         self._data_helper = data_helper
 
     def run(self):
         """ Passes output data array to a write method of a data module (through data access helper0) """
 
-        print('(cvcOutput::run) Started!')
+        self.logger.info('Started!')
 
         input_uids = self._data_helper.input_uids()
 
         output_uids = self._data_helper.output_uids()
         if output_uids is None:
-            print("""(cvcOutput::run) No output is specified! Check the task file, may be you are using the old template?
-                                       Destination description should be passed as _output_ argument to process cvcOutput.""")
+            self.logger.error("""No output is specified! Check the task file, may be you are using the old template?
+                                 Destination description should be passed as _output_ argument to process cvcOutput.""")
             raise ValueError('No output dataset specified. Aborting!')
 
         for in_uid in input_uids:
@@ -58,4 +60,4 @@ class cvcOutput:
                                           times=result['data'][level_name][segment['@name']]['@time_grid'],
                                           description=description, meta=result['meta'])
 
-        print('(cvcOutput::run) Finished!')
+        self.logger.info('Finished!')

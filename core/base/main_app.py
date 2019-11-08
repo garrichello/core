@@ -77,7 +77,7 @@ class MainApp:
         self._task['task']['destination'] = listify(self._task['task']['destination'])
         self._task['task']['processing'] = listify(self._task['task']['processing'])
 
-        print('Done!')
+        self.logger.info('Done!')
 
     def _dict_append(self, source, destination):
         if isinstance(source, dict):

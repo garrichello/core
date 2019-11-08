@@ -33,6 +33,7 @@ class CalcRnnmm(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def calc_rnnmm(self, values, time_grid, threshold):
@@ -58,11 +59,11 @@ class CalcRnnmm(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcRnnmm::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcRnnmm::run) No input arguments!'
+        assert input_uids, 'Error! No input arguments!'
 
         # Get parameters
         parameters = None
@@ -71,12 +72,12 @@ class CalcRnnmm(Calc):
         threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
-        print('(CalcRnnmm::run) Threshold: {}'.format(threshold))
-        print('(CalcRnnmm::run) Calculation mode: {}'.format(calc_mode))
+        self.logger.info('Threshold: %s', threshold)
+        self.logger.info('Calculation mode: %s', calc_mode)
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(CalcRnnmm::run) No output arguments!'
+        assert output_uids, 'Error! No output arguments!'
 
         # Get time segments and levels
         time_segments = self._data_helper.get_segments(input_uids[DATA_UID])
@@ -110,7 +111,7 @@ class CalcRnnmm(Calc):
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
-                    print('(CalcRnnmm::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
+                    self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
                     raise ValueError
 
             # For data-wise analysis analyse segments analyses :)
@@ -128,4 +129,4 @@ class CalcRnnmm(Calc):
                                       description=description)
 
 
-        print('(CalcRnnmm::run) Finished!')
+        self.logger.info('Finished!')

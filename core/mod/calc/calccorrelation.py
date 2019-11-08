@@ -25,6 +25,7 @@ class CalcCorrelation(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _calc_correlation(self, values_1, values_2, conf_level=0.95):
@@ -53,25 +54,25 @@ class CalcCorrelation(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcCorrelation::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcCorrelation::run) No input arguments!'
+        assert input_uids, 'Error! No input arguments!'
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(CalcCorrelation::run) No output arguments!'
+        assert output_uids, 'Error! No output arguments!'
 
         # Get time segments and levels for both datasets
         time_segments_1 = self._data_helper.get_segments(input_uids[DATA_1_UID])
         time_segments_2 = self._data_helper.get_segments(input_uids[DATA_2_UID])
         assert len(time_segments_1) == len(time_segments_2), \
-            '(CalcCorrelation::run) Error! Number of time segments are not the same!'
+            'Error! Number of time segments are not the same!'
         levels_1 = self._data_helper.get_levels(input_uids[DATA_1_UID])
         levels_2 = self._data_helper.get_levels(input_uids[DATA_2_UID])
         assert len(levels_1) == len(levels_2), \
-            '(CalcCorrelation::run) Error! Number of vertical levels are not the same!'
+            'Error! Number of vertical levels are not the same!'
 
         for data_1_level, data_2_level in zip(levels_1, levels_2):
             for data_1_segment, data_2_segment in zip(time_segments_1, time_segments_2):
@@ -101,4 +102,4 @@ class CalcCorrelation(Calc):
                                       fill_value=data_1['@fill_value'],
                                       meta=meta_sig)
 
-        print('(CalcCorrelation::run) Finished!')
+        self.logger.info('Finished!')

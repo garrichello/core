@@ -2,6 +2,7 @@
 
 import importlib
 import os.path
+import logging
 
 ZERO_CELSIUS_IN_KELVIN = 273.15  # 0 degC is 273.15 degK
 MOD_PACKAGE_PATH = 'mod'
@@ -10,6 +11,7 @@ DATA_SUBPACKAGE_NAME = 'data'
 CVC_PREFIX = 'cvc'
 CALC_PREFIX = 'calc'
 DATA_PREFIX = 'data'
+logger = logging.getLogger()
 
 def celsius_to_kelvin(temperature_in_celsius):
     """Converts temperature in Celsius to Kelvin
@@ -46,10 +48,10 @@ def load_module(module_name, class_name, package_name=None):
         try:
             class_ = getattr(module_, class_name)
         except AttributeError:
-            print('(MainApp::load_module) Class ' + class_name + ' does not exist')
+            logger.error(' Class %s does not exist', class_name)
             raise
     except ImportError:
-        print('(MainApp::load_module) Module ' + load_module_name + ' does not exist')
+        logger.error('Module %s does not exist', load_module_name)
         raise
     return class_
 

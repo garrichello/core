@@ -28,6 +28,7 @@ class CalcUnifyGrids(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _unify_time_grid(self, values, original_time_grid, target_time_grid, mode):
@@ -44,8 +45,7 @@ class CalcUnifyGrids(Calc):
             result -- transformed along time axis data values
         """
         if len(original_time_grid) < len(target_time_grid):
-            print('(CalcUnifyGrids::_unify_time_grid) Error! \
-                Original_time_grid must be finer (contain more points) than target_time_grid!')
+            self.logger.error('Error! Original_time_grid must be finer (contain more points) than target_time_grid!')
             raise ValueError
         elif len(original_time_grid) == len(target_time_grid):
             # Since this method doesn't provide interpolation yet, if lengths of grids are equal,
@@ -58,7 +58,7 @@ class CalcUnifyGrids(Calc):
         elif mode == 'sum':
             acc_func = ma.sum  # Sum original grid values between target grid points
         else:
-            print('(CalcUnifyGrids::_unify_time_grid) Error! Unknown time grid harmonization mode: {}. Aborting!'.format(mode))
+            self.logger.error('Error! Unknown time grid harmonization mode: %s. Aborting!', mode)
             raise ValueError
 
         # Create the result array.
@@ -119,7 +119,7 @@ class CalcUnifyGrids(Calc):
                     if j == len(result):
                         break
 
-        assert (i == len(values) and j == len(result)), '(CalcUnifyGrids::_unify_time_grid) Error! Time grids lengths are not equal!'
+        assert (i == len(values) and j == len(result)), 'Error! Time grids lengths are not equal!'
 
         return result
 
@@ -150,8 +150,7 @@ class CalcUnifyGrids(Calc):
         n_target_points = len(target_lons) * len(target_lats) if values.ndim > 2 else len(target_lons)
 
         if n_original_points < n_target_points and out_ndim == 3:
-            print('(CalcUnifyGrids::_unify_spatial_grid) Error! \
-                Original_grid must be finer (contain more points) than target_grid!')
+            self.logger.error('Error! Original_grid must be finer (contain more points) than target_grid!')
             raise ValueError
         elif n_original_points == n_target_points and out_ndim == 3:
             # If lengths are equal, and ranges are equal (prerequisite), and grids are regular (MUST!)
@@ -186,7 +185,7 @@ class CalcUnifyGrids(Calc):
 
         # 3. Stations -> Stations
         if values.ndim == 2 and out_ndim == 2:
-            print('(CalcUnifyGrids::_unify_spatial_grid) Spatial interpolation stations->stations is not implemented yet!')
+            self.logger.error('Spatial interpolation stations->stations is not implemented yet!')
             raise Exception
 
 #        result.fill_value = values.fill_value
@@ -216,8 +215,8 @@ class CalcUnifyGrids(Calc):
                 lats = lats[::-1]
                 values = values[:, ::-1, :]
             elif lats[1] == lats[0]:
-                print('(CalcUnifyGrids::run) Error! Latitude grid of dataset {} is not changing!'.format(
-                    data['data']['description']['@title']))
+                self.logger.error('Error! Latitude grid of dataset %s is not changing!',
+                                  data['data']['description']['@title'])
                 raise ValueError
 
         return values, time_grid, lats, lons, acc_mode
@@ -266,7 +265,7 @@ class CalcUnifyGrids(Calc):
             result['@latitude_grid'] = copy(lats_1)
             result['@fill_value'] = values_2.fill_value  # Take fill_value from the result of interpolation.
         else:
-            print('(CalcUnifyGrids::run) How did we get here?!')
+            self.logger.error('How did we get here?!')
             raise ValueError
 
         result['@values_1'] = values_1
@@ -278,25 +277,25 @@ class CalcUnifyGrids(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcUnifyGrids::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcUnifyGrids::run) No input arguments!'
+        assert input_uids, 'Error! No input arguments!'
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(CalcUnifyGrids::run) No output arguments!'
+        assert output_uids, 'Error! No output arguments!'
 
         # Get time segments and levels for both datasets
         time_segments_1 = self._data_helper.get_segments(input_uids[DATA_1_UID])
         time_segments_2 = self._data_helper.get_segments(input_uids[DATA_2_UID])
         assert len(time_segments_1) == len(time_segments_2), \
-            '(CalcUnifyGrids::run) Error! Number of time segments are not the same!'
+            'Error! Number of time segments are not the same!'
         levels_1 = self._data_helper.get_levels(input_uids[DATA_1_UID])
         levels_2 = self._data_helper.get_levels(input_uids[DATA_2_UID])
         assert len(levels_1) == len(levels_2), \
-            '(CalcUnifyGrids::run) Error! Number of vertical levels are not the same!'
+            'Error! Number of vertical levels are not the same!'
 
         for data_1_level, data_2_level in zip(levels_1, levels_2):
             for data_1_segment, data_2_segment in zip(time_segments_1, time_segments_2):
@@ -325,4 +324,4 @@ class CalcUnifyGrids(Calc):
                                       fill_value=unidata['@fill_value'],
                                       meta=unidata['meta'])
 
-        print('(CalcUnifyGrids::run) Finished!')
+        self.logger.info('Finished!')

@@ -1,6 +1,7 @@
 """Provides classes:
     DataImage, ImageGeotiff
 """
+import logging
 from osgeo import gdal
 from osgeo import osr
 import numpy as np
@@ -9,14 +10,16 @@ from core.ext import shapefile
 
 from core.base.common import load_module, make_filename
 from core.base import SLDLegend
+from .data import Data
 
-class DataImage:
+class DataImage(Data):
     """ Provides reading/writing data from/to graphical files.
     Supported formats: float geoTIFF.
 
     """
 
     def __init__(self, data_info):
+        super().__init__(data_info)
         image_class_name = 'Image' + data_info['data']['file']['@type'].capitalize()
         image_class = load_module(self.__module__, image_class_name)
         self._image = image_class(data_info)
@@ -45,10 +48,10 @@ class DataImage:
 
         """
 
-        print(' (DataImage::write) Writing image...')
+        self.logger.info(' Writing image...')
 
         if values.ndim > 1:   # If it is a grid, check it for uniformity.
-            print(' (DataImage::write)  Checking grid uniformity...')
+            self.logger.info('  Checking grid uniformity...')
             eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
 
             if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
@@ -62,13 +65,13 @@ class DataImage:
                     should_regrid = True
                 else:
                     should_regrid = False
-            print(' (DataImage::write)  Done!')
+            self.logger.info('  Done!')
         else:
             should_regrid = False
 
         # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
         if should_regrid:
-            print(' (DataImage::write)  Non-uniform grid. Regridding...')
+            self.logger.info('  Non-uniform grid. Regridding...')
             options_regular = options.copy()
 
             # Create a uniform grid
@@ -86,7 +89,7 @@ class DataImage:
                               (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
             values_regular.fill_value = values.fill_value
-            print(' (DataImage::write)  Done!')
+            self.logger.info('  Done!')
         else:
             values_regular = values
             options_regular = options
@@ -99,18 +102,19 @@ class DataImage:
                 self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
             self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if values_regular.ndim == 1 else 'raster'
             legend = SLDLegend(self._data_info)
-            print(' (DataImage::write)  Writing legend...')
+            self.logger.info('  Writing legend...')
             legend.write(values_regular, options_regular)
-            print(' (DataImage::write)  Done!')
+            self.logger.info('  Done!')
 
-        print(' (DataImage::write) Done!')
+        self.logger.info(' Done!')
 
 
-class ImageGeotiff:
+class ImageGeotiff():
     """ Provides reading/writing data from/to Geotiff files.
 
     """
     def __init__(self, data_info):
+        self.logger = logging.getLogger()
         self._data_info = data_info
 
     def read(self, options):
@@ -134,7 +138,7 @@ class ImageGeotiff:
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
 
-        print(' (ImageGeotiff::write)  Writing geoTIFF...')
+        self.logger.info('  Writing geoTIFF...')
 
         # Prepare data array with masked values replaced with a fill value.
         data = np.ma.filled(values, fill_value=values.fill_value)
@@ -156,9 +160,9 @@ class ImageGeotiff:
 
         # Check if driver supports Create() method.
         if (gdal.DCAP_CREATE not in metadata) or (metadata[gdal.DCAP_CREATE] != 'YES'):
-            print(''' (ImageGeotiff::write) Error!
-                      Driver {} does not support Create() method.
-                      Unable to write GeoTIFF.'''.format(fmt))
+            self.logger.error('''  Error!
+                      Driver %s does not support Create() method.
+                      Unable to write GeoTIFF.''', fmt)
             raise AssertionError
 
         # Write image.
@@ -168,20 +172,20 @@ class ImageGeotiff:
         if data.ndim == 2:
             dataset = drv.Create(filename, dims[1], dims[0], 1, gdal.GDT_Float32)
             if dataset is None:
-                print(' (ImageGeotiff::write)  Error creating file: {}. Check the output path! Aborting...'.format(filename))
+                self.logger.error('  Error creating file: %s. Check the output path! Aborting...', filename)
                 raise FileNotFoundError("Can't write file!")
             dataset.GetRasterBand(1).WriteArray(data)
         elif data.ndim == 3:
             dataset = drv.Create(filename, dims[2], dims[1], dims[0], gdal.GDT_Float32)
             if dataset is None:
-                print(' (ImageGeotiff::write)  Error creating file: {}. Check the output path! Aborting...'.format(filename))
+                self.logger.error('  Error creating file: %s. Check the output path! Aborting...', filename)
                 raise FileNotFoundError("Can't write file!")
             band = 0
             for data_slice in data:
                 band += 1
                 dataset.GetRasterBand(band).WriteArray(data_slice)
         else:
-            print(' (ImageGeotiff::write)  Incorrect number of dimensions in data array: {}! Aborting...'.format(data.ndim))
+            self.logger.error('  Incorrect number of dimensions in data array: %s! Aborting...', data.ndim)
             raise ValueError
 
         # Prepare geokeys.
@@ -204,7 +208,7 @@ class ImageGeotiff:
 
         dataset = None
 
-        print(' (ImageGeotiff::write)  Done!')
+        self.logger.info('  Done!')
 
 
 class ImageShape:
@@ -212,6 +216,7 @@ class ImageShape:
 
     """
     def __init__(self, data_info):
+        self.logger = logging.getLogger()
         self._data_info = data_info
 
     def read(self, options):
@@ -244,7 +249,7 @@ class ImageShape:
                         ['@elevations'] -- elevations of stations
 
         """
-        print(' (ImageShape::write)  Writing ESRI Shapefile...')
+        self.logger.info('  Writing ESRI Shapefile...')
 
         filename = make_filename(self._data_info, options)
         with shapefile.Writer(filename) as shape_writer:
@@ -268,4 +273,4 @@ class ImageShape:
 
                 shape_writer.close()
 
-        print(' (ImageShape::write)  Done!')
+        self.logger.info('  Done!')

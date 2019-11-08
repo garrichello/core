@@ -26,14 +26,14 @@ class cvcCalcTiMean(CalcBasicStat):
     """
 
     def __init__(self, data_helper: DataAccess):
-        self._data_helper = data_helper
         super().__init__(data_helper)
+        self._data_helper = data_helper
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(cvcCalcTiMean::run) Started!')
+        self.logger.info('Started!')
 
         self._run(CALC_MODE)
 
-        print('(cvcCalcTiMean::run) Finished!')
+        self.logger.info('Finished!')

@@ -11,6 +11,7 @@ class DataArray(Data):
     """
 
     def __init__(self, data_info):
+        super().__init__(data_info)
         self._data_info = data_info
 
         # Create a new levels element in the data info discarding anything specified in the task file.
@@ -20,8 +21,6 @@ class DataArray(Data):
         # Create a new time segment element in data info discarding anything specified in the task file.
         self._data_info['data']['time'] = {}
         self._data_info['data']['time']['segment'] = []
-
-        super().__init__(data_info)
 
     def read(self, options):
         """Reads an array.
@@ -35,7 +34,7 @@ class DataArray(Data):
             result['array'] -- data array
         """
 
-        print(' (DataArray::read) Reading memory data array {}...'.format(self._data_info['data']['@uid']))
+        self.logger.info(' Reading memory data array %s...', self._data_info['data']['@uid'])
 
         # Levels must be a list or None.
         levels_to_read = listify(options['levels'])
@@ -52,28 +51,28 @@ class DataArray(Data):
         # Process each vertical level separately.
         level_name = None
         for level_name in levels_to_read:
-            print(' (DataArray::read)  Reading level: \'{0}\''.format(level_name))
+            self.logger.info('  Reading level: \'%s\'', level_name)
 
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             segment = None
             for segment in segments_to_read:
-                print(' (DataArray::read)  Reading time segment \'{0}\''.format(segment['@name']))
-                print(' (DataArray::read)   Min data value: {}, max data value: {}'.format(
-                    self._data_info['data'][level_name][segment['@name']]['@values'].min(),
-                    self._data_info['data'][level_name][segment['@name']]['@values'].max()))
+                self.logger.info('  Reading time segment \'%s\'', segment['@name'])
+                self.logger.info('   Min data value: %s, max data value: %s',
+                                 self._data_info['data'][level_name][segment['@name']]['@values'].min(),
+                                 self._data_info['data'][level_name][segment['@name']]['@values'].max())
                 self._add_segment_data(level_name=level_name,
                                        values=self._data_info['data'][level_name][segment['@name']]['@values'],
                                        time_grid=self._data_info['data']['time'].get('@grid'),
                                        time_segment=segment)
-                print(' (DataArray::read)  Done!')
+                self.logger.info('  Done!')
 
         self._add_metadata(longitude_grid=self._data_info['data']['@longitudes'],
                            latitude_grid=self._data_info['data']['@latitudes'],
                            fill_value=self._data_info['data'][level_name][segment['@name']]['@values'].fill_value,
                            description=self._data_info['data']['description'], meta=self._data_info['meta'])
 
-        print(' (DataArray::read) Done!')
+        self.logger.info(' Done!')
 
         return self._get_result_data()
 
@@ -96,7 +95,7 @@ class DataArray(Data):
                 meta -- additional metadata passed from data readers to data writers through data processors
         """
 
-        print(' (DataArray:write) Creating memory data array...')
+        self.logger.info(' (DataArray:write) Creating memory data array...')
 
         level = options['level']
         segment = options['segment']
@@ -140,4 +139,4 @@ class DataArray(Data):
             self._data_info['data']['description'] = description
         self._data_info['meta'] = meta
 
-        print(' (DataArray::write) Done!')
+        self.logger.info(' Done!')

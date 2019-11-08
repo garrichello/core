@@ -57,6 +57,7 @@ class CalcExceedance(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _remove_feb29(self, values, time_grid):
@@ -97,11 +98,11 @@ class CalcExceedance(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcExceedance::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcExceedance::run) No input arguments!'
+        assert input_uids, 'Error! No input arguments!'
 
         # Get parameters
         parameters = None
@@ -112,11 +113,11 @@ class CalcExceedance(Calc):
         condition = self._get_parameter('Condition', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
-        print('(CalcExceedance::run) Calculation feature: {}'.format(feature))
-        print('(CalcExceedance::run) Exceedance: {}'.format(exceedance))
+        self.logger.info('Calculation feature: %s', feature)
+        self.logger.info('Exceedance: %s', exceedance)
         if condition is not None:
-            print('(CalcExceedance::run) Condition: {}'.format(condition))
-        print('(CalcExceedance::run) Calculation mode: {}'.format(calc_mode))
+            self.logger.info('Condition: %s', condition)
+        self.logger.info('Calculation mode: %s', calc_mode)
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
@@ -142,7 +143,7 @@ class CalcExceedance(Calc):
         elif exceedance == 'high':
             comparison_func = operator.gt
         else:
-            print('(CalcExceedance::run) Error! Unknown exceedance value: \'{}\''.format(exceedance))
+            self.logger.error('Error! Unknown exceedance value: \'%s\'', exceedance)
             raise ValueError
 
         data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments.
@@ -191,7 +192,7 @@ class CalcExceedance(Calc):
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
-                    print('(CalcExceedance::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
+                    self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
                     raise ValueError
 
             # For data-wise analysis analyse segments analyses :)
@@ -207,4 +208,4 @@ class CalcExceedance(Calc):
                                       longitudes=study_data['@longitude_grid'], latitudes=study_data['@latitude_grid'],
                                       fill_value=study_data['@fill_value'], meta=study_data['meta'])
 
-        print('(CalcExceedance::run) Finished!')
+        self.logger.info('Finished!')

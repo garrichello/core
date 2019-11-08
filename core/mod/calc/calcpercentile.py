@@ -18,6 +18,7 @@ class CalcPercentile(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _calc_percentile(self, uid, n, level, condition=None):
@@ -92,11 +93,11 @@ class CalcPercentile(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcPercentile::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcPercentile::run) No input arguments!'
+        assert input_uids, 'Error! No input arguments!'
 
         level = self._data_helper.get_levels(input_uids[DATA_UID])[0]  # Only the first vertical level is taken.
 
@@ -107,9 +108,12 @@ class CalcPercentile(Calc):
         threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
         condition = self._get_parameter('Condition', parameters, DEFAULT_VALUES)
 
+        self.logger.info('Threshold: %s', threshold)
+        self.logger.info('Condition: %s', condition)
+
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(CalcPercentile::run) No output arguments!'
+        assert output_uids, 'Error! No output arguments!'
 
         # Calculate percentile
         percentile = self._calc_percentile(input_uids[DATA_UID], threshold, level, condition)
@@ -119,4 +123,4 @@ class CalcPercentile(Calc):
                               times=percentile['@day_grid'], fill_value=percentile['@fill_value'],
                               meta=percentile['meta'])
 
-        print('(CalcPercentile::run) Finished!')
+        self.logger.info('Finished!')

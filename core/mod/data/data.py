@@ -1,7 +1,7 @@
 """Provides classes
     Data
 """
-
+import logging
 import numpy as np
 from matplotlib.path import Path
 
@@ -13,6 +13,7 @@ class Data:
     """ Provides common methods for data access modules (classes).
     """
     def __init__(self, data_info):
+        self.logger = logging.getLogger()
         self._data_info = data_info
         self._read_result = {}   # Data arrays, grids and some additional information read in a child class.
         self._read_result['data'] = {}  # Contains data arrays read at each vertical level.
@@ -26,13 +27,13 @@ class Data:
         try:
             ROI_lats = [float(lat_string) for lat_string in ROI_lats_string]
         except ValueError:
-            print(' (Data::__init__): Bad latitude value (not a number) in data: {0}'.format(self._data_info['data']['@uid']))
+            self.logger.error(' Bad latitude value (not a number) in data: %s', self._data_info['data']['@uid'])
             raise
         ROI_lons_string = [p['@lon'] for p in self._data_info['data']['region']['point']]
         try:
             ROI_lons = [float(lon_string) for lon_string in ROI_lons_string]
         except ValueError:
-            print(' (Data::__init__): Bad longitude value (not a number) in data: {0}'.format(self._data_info['data']['@uid']))
+            self.logger.error(' Bad longitude value (not a number) in data: %s', self._data_info['data']['@uid'])
             raise
 
         self._ROI = [(lon, lat) for lon, lat in zip(ROI_lons, ROI_lats)]  # Region Of Interest.
@@ -81,7 +82,7 @@ class Data:
         self._data_by_segment[level_name][time_segment['@name']]['@time_grid'] = time_grid
         self._data_by_segment[level_name][time_segment['@name']]['segment'] = time_segment
 
-    def _add_metadata(self, longitude_grid, latitude_grid, fill_value, description, grid_type=None, dimensions=None, meta={}):
+    def _add_metadata(self, longitude_grid, latitude_grid, fill_value, description, grid_type=None, dimensions=None, meta=None):
         """ Stores main metadata for a read data array in a unified dictionary.
 
         Arguments:
@@ -102,7 +103,7 @@ class Data:
         self._read_result['@dimensions'] = dimensions
         self._read_result['@fill_value'] = fill_value
         self._read_result['data']['description'] = description
-        self._read_result['meta'] = meta
+        self._read_result['meta'] = {} if meta is None else meta
 
     def _get_result_data(self):
         """ Returns read data array accompanied with metadata.

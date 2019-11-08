@@ -8,15 +8,15 @@ from sqlalchemy.orm import sessionmaker
 from geoalchemy2 import *
 import numpy as np
 
-from core.base.common import listify, print  # pylint: disable=W0622
+from core.base.common import listify
 from .data import Data, GRID_TYPE_STATION
 
 class DataDb(Data):
     """ Provides methods for reading and writing geodatabase files.
     """
     def __init__(self, data_info):
-        self._data_info = data_info
         super().__init__(data_info)
+        self._data_info = data_info
 
     def construct_polygon(self):
         """ Constructs a string defining a PostGIS POLYGON element
@@ -41,7 +41,7 @@ class DataDb(Data):
             result['array'] -- data array
         """
 
-        print(' (DataDb::read) Accessing a PostGIS database...')
+        self.logger.info(' Accessing a PostGIS database...')
 
         # Set default fill value here
         fill_value = -999
@@ -63,7 +63,7 @@ class DataDb(Data):
 
         # Process each vertical level separately.
         for level_name in levels_to_read:
-            print(' (DataDb::read)  Reading level: \'{0}\''.format(level_name))
+            self.logger.info('  Reading level: \'%s\'', level_name)
             file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']
             (db_name, _, _, _, _) = file_name_template.split('/')
             db_url = 'postgresql://{}'.format(db_name.replace(':', '/'))
@@ -79,7 +79,7 @@ class DataDb(Data):
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
-                print(' (DataDb::read)  Reading time segment \'{0}\''.format(segment['@name']))
+                self.logger.info('  Reading time segment \'%s\'', segment['@name'])
 
                 # Date is stored in the PostGIS DB as integers of form YYYYMMDD.
                 # So convert string dates into integers and cut off hours.
@@ -116,7 +116,7 @@ class DataDb(Data):
                     station_indices = np.where(all_stations_codes == station_code)[0]
                     # 0-th element should always reference to data values.
                     station_values = np.ma.MaskedArray([res[i][0] for i in station_indices])
-                    values = station_values if values is None else np.vstack((values, station_values))  
+                    values = station_values if values is None else np.vstack((values, station_values))
                     # Station location is taken from the first row in the query response corresponding this station.
                     station_location = res[station_indices[0]].location.replace('(', '').replace(')', '').split(' ')
                     longitudes.append(float(station_location[2]))
@@ -143,7 +143,7 @@ class DataDb(Data):
                            grid_type=GRID_TYPE_STATION, fill_value=fill_value, dimensions=('time', 'station'),
                            description=self._data_info['data']['description'], meta=meta)
 
-        print(' (DataDb::read) Done!')
+        self.logger.info(' Done!')
 
         return self._get_result_data()
 
@@ -161,9 +161,8 @@ class DataDb(Data):
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
 
-        print(' (DataDB::write) Writing data to a PostGIS database...')
-        print(values)
-        print(options)
-        print(' (DataDb::write) Done!')
+        self.logger.info(' Writing data to a PostGIS database...')
+        self.logger.info(values)
+        self.logger.info(options)
+        self.logger.info(' Done!')
         raise NotImplementedError
-

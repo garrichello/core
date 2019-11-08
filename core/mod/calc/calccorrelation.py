@@ -82,8 +82,10 @@ class CalcCorrelation(Calc):
                 values_1 = data_1['data'][data_1_level][data_1_segment['@name']]['@values']
                 values_2 = data_2['data'][data_2_level][data_2_segment['@name']]['@values']
                 meta_corr_coef = {**data_1['meta'], **data_2['meta']}  # Combine meta from both datasets.
+                meta_corr_coef['varname'] = 'corr_coef'  # Variable name in netCDF file
                 meta_sig = {**data_1['meta'], **data_2['meta']}  # Combine meta from both datasets.
                 meta_sig['legend_override'] = {1: 'Significant', 0: 'Not significant'}
+                meta_sig['varname'] = 'significance'  # Variable name in netCDF file
 
                 # Perform calculation for the current time segment.
                 corr_coef, significance = self._calc_correlation(values_1, values_2)

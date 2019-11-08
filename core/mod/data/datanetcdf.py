@@ -470,6 +470,7 @@ class DataNetcdf(Data):
             # Check if the current level is present in the file.
             if level_value in levels_list:
                 level_idx = levels_list.index(level_value)
+                dim_list.insert(0, 'level')  # If level is present, add dimension level
             else:
                 level_idx = levels.size
 

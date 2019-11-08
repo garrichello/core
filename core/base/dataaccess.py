@@ -370,17 +370,28 @@ class DataAccess():
                 ['units'] -- units of the data (e.g., K)
             meta -- additional metadata passed from data readers to data writers through data processors
         """
-        options = {}
-        options['level'] = level
-        options['segment'] = copy(segment)
-        options['times'] = copy(times)
-        options['longitudes'] = copy(longitudes)
-        options['latitudes'] = copy(latitudes)
-        if fill_value is not None:
-            values.fill_value = fill_value
-        options['description'] = copy(description)
-        options['meta'] = copy(meta)
-        self._data_objects[uid].write(values, options)
+        all_values = listify(values)
+        all_levels = listify(level)
+        all_segments = listify(segment)
+        all_times = listify(times)
+        all_longitudes = listify(longitudes)
+        all_latitudes = listify(latitudes)
+        all_descriptions = listify(description)
+        all_metas = listify(meta)
+        all_options = []
+        for i in enumerate(values):
+            all_options.append({})
+            all_options[i]['level'] = all_levels[i]
+            all_options[i]['segment'] = copy(all_segments[i])
+            all_options[i]['times'] = copy(all_times[i])
+            all_options[i]['longitudes'] = copy(all_longitudes[i])
+            all_options[i]['latitudes'] = copy(all_latitudes[i])
+            if fill_value is not None:
+                all_values[i].fill_value = fill_value
+            all_options[i]['description'] = copy(all_descriptions[i])
+            all_options[i]['meta'] = copy(all_metas[i])
+
+        self._data_objects[uid].write(all_values, all_options)
 
     def output_uids(self):
         """Returns a list of UIDs of processing module outputs (as in a task file)"""

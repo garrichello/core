@@ -2,12 +2,12 @@
     DataImage, ImageGeotiff
 """
 import logging
+from copy import deepcopy
 from osgeo import gdal
 from osgeo import osr
 import numpy as np
 from scipy.interpolate import griddata
 from core.ext import shapefile
-from copy import deepcopy
 
 from core.base.common import load_module, make_filename
 from core.base import SLDLegend

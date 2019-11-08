@@ -40,13 +40,13 @@ class DataParameter(Data):
             result -- dictionary containing parameters from a task file
         """
 
-        self.logger.info(' Reading parameters...')
+        self.logger.info('Reading parameters...')
 
         parameters = listify(self._data_info['data']['param'])
         result = {}
         for parameter in parameters:
             result[parameter['@uid']] = self._type_cast(parameter['#text'], parameter['@type'])
 
-        self.logger.info(' Done')
+        self.logger.info('Done')
 
         return result

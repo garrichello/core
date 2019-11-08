@@ -27,13 +27,13 @@ class Data:
         try:
             ROI_lats = [float(lat_string) for lat_string in ROI_lats_string]
         except ValueError:
-            self.logger.error(' Bad latitude value (not a number) in data: %s', self._data_info['data']['@uid'])
+            self.logger.error('Bad latitude value (not a number) in data: %s', self._data_info['data']['@uid'])
             raise
         ROI_lons_string = [p['@lon'] for p in self._data_info['data']['region']['point']]
         try:
             ROI_lons = [float(lon_string) for lon_string in ROI_lons_string]
         except ValueError:
-            self.logger.error(' Bad longitude value (not a number) in data: %s', self._data_info['data']['@uid'])
+            self.logger.error('Bad longitude value (not a number) in data: %s', self._data_info['data']['@uid'])
             raise
 
         self._ROI = [(lon, lat) for lon, lat in zip(ROI_lons, ROI_lats)]  # Region Of Interest.

@@ -41,7 +41,7 @@ class DataDb(Data):
             result['array'] -- data array
         """
 
-        self.logger.info(' Accessing a PostGIS database...')
+        self.logger.info('Accessing a PostGIS database...')
 
         # Set default fill value here
         fill_value = -999
@@ -63,7 +63,7 @@ class DataDb(Data):
 
         # Process each vertical level separately.
         for level_name in levels_to_read:
-            self.logger.info('  Reading level: \'%s\'', level_name)
+            self.logger.info('Reading level: \'%s\'', level_name)
             file_name_template = self._data_info['data']['levels'][level_name]['@file_name_template']
             (db_name, _, _, _, _) = file_name_template.split('/')
             db_url = 'postgresql://{}'.format(db_name.replace(':', '/'))
@@ -79,7 +79,7 @@ class DataDb(Data):
             # Process each time segment separately.
             self._init_segment_data(level_name)  # Initialize a data dictionary for the vertical level 'level_name'.
             for segment in segments_to_read:
-                self.logger.info('  Reading time segment \'%s\'', segment['@name'])
+                self.logger.info('Reading time segment \'%s\'', segment['@name'])
 
                 # Date is stored in the PostGIS DB as integers of form YYYYMMDD.
                 # So convert string dates into integers and cut off hours.
@@ -143,7 +143,7 @@ class DataDb(Data):
                            grid_type=GRID_TYPE_STATION, fill_value=fill_value, dimensions=('time', 'station'),
                            description=self._data_info['data']['description'], meta=meta)
 
-        self.logger.info(' Done!')
+        self.logger.info('Done!')
 
         return self._get_result_data()
 
@@ -161,8 +161,8 @@ class DataDb(Data):
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
 
-        self.logger.info(' Writing data to a PostGIS database...')
+        self.logger.info('Writing data to a PostGIS database...')
         self.logger.info(values)
         self.logger.info(options)
-        self.logger.info(' Done!')
+        self.logger.info('Done!')
         raise NotImplementedError

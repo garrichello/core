@@ -48,10 +48,10 @@ class DataImage(Data):
 
         """
 
-        self.logger.info(' Writing image...')
+        self.logger.info('Writing image...')
 
         if values.ndim > 1:   # If it is a grid, check it for uniformity.
-            self.logger.info('  Checking grid uniformity...')
+            self.logger.info('Checking grid uniformity...')
             eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
 
             if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
@@ -71,7 +71,7 @@ class DataImage(Data):
 
         # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
         if should_regrid:
-            self.logger.info('  Non-uniform grid. Regridding...')
+            self.logger.info('Non-uniform grid. Regridding...')
             options_regular = options.copy()
 
             # Create a uniform grid
@@ -89,7 +89,7 @@ class DataImage(Data):
                               (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
             values_regular.fill_value = values.fill_value
-            self.logger.info('  Done!')
+            self.logger.info('Done!')
         else:
             values_regular = values
             options_regular = options
@@ -102,11 +102,11 @@ class DataImage(Data):
                 self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
             self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if values_regular.ndim == 1 else 'raster'
             legend = SLDLegend(self._data_info)
-            self.logger.info('  Writing legend...')
+            self.logger.info('Writing legend...')
             legend.write(values_regular, options_regular)
-            self.logger.info('  Done!')
+            self.logger.info('Done!')
 
-        self.logger.info(' Done!')
+        self.logger.info('Done!')
 
 
 class ImageGeotiff():
@@ -138,7 +138,7 @@ class ImageGeotiff():
                 ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
         """
 
-        self.logger.info('  Writing geoTIFF...')
+        self.logger.info('Writing geoTIFF...')
 
         # Prepare data array with masked values replaced with a fill value.
         data = np.ma.filled(values, fill_value=values.fill_value)
@@ -160,7 +160,7 @@ class ImageGeotiff():
 
         # Check if driver supports Create() method.
         if (gdal.DCAP_CREATE not in metadata) or (metadata[gdal.DCAP_CREATE] != 'YES'):
-            self.logger.error('''  Error!
+            self.logger.error('''Error!
                       Driver %s does not support Create() method.
                       Unable to write GeoTIFF.''', fmt)
             raise AssertionError
@@ -172,20 +172,20 @@ class ImageGeotiff():
         if data.ndim == 2:
             dataset = drv.Create(filename, dims[1], dims[0], 1, gdal.GDT_Float32)
             if dataset is None:
-                self.logger.error('  Error creating file: %s. Check the output path! Aborting...', filename)
+                self.logger.error('Error creating file: %s. Check the output path! Aborting...', filename)
                 raise FileNotFoundError("Can't write file!")
             dataset.GetRasterBand(1).WriteArray(data)
         elif data.ndim == 3:
             dataset = drv.Create(filename, dims[2], dims[1], dims[0], gdal.GDT_Float32)
             if dataset is None:
-                self.logger.error('  Error creating file: %s. Check the output path! Aborting...', filename)
+                self.logger.error('Error creating file: %s. Check the output path! Aborting...', filename)
                 raise FileNotFoundError("Can't write file!")
             band = 0
             for data_slice in data:
                 band += 1
                 dataset.GetRasterBand(band).WriteArray(data_slice)
         else:
-            self.logger.error('  Incorrect number of dimensions in data array: %s! Aborting...', data.ndim)
+            self.logger.error('Incorrect number of dimensions in data array: %s! Aborting...', data.ndim)
             raise ValueError
 
         # Prepare geokeys.
@@ -208,7 +208,7 @@ class ImageGeotiff():
 
         dataset = None
 
-        self.logger.info('  Done!')
+        self.logger.info('Done!')
 
 
 class ImageShape:

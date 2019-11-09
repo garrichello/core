@@ -62,11 +62,15 @@ class MainApp:
 
         # Modify task id in task file.
         self._task['task']['@uid'] = str(task_id)
-        # Change location and names of output files.
+
+        # Make task dir
+        task_dir = os.path.join(self.config['RPC']['pool_dir'], str(task_id))
+        os.makedirs(task_dir, exist_ok=True)
+
+        # Change location of output files.
         for destination in self._task['task']['destination']:
-            _, ext = os.path.splitext(destination['file']['@name'])
-            pool_dir = self.config['RPC']['pool_dir']
-            destination['file']['@name'] = os.path.join(pool_dir, str(task_id), str(task_id)+ext.lower())
+            file_name = os.path.splitext(destination['file']['@name'])
+            destination['file']['@name'] = os.path.join(task_dir, file_name)
 
         self._process()
 

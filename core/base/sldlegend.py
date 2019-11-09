@@ -187,11 +187,12 @@ class SLDLegend:
             feature_type_style['Rule'] = {}
             feature_type_style['Rule']['RasterSymbolizer'] = {}
             feature_type_style['Rule']['RasterSymbolizer']['Opacity'] = 0.8
+            colormap_entry = []
             if legend_data['fill_value'].dtype != np.dtype('bool'):  # Transparent values are NOT bool!
-                colormap_entry = [{'@color': '#000000',
-                                   '@quantity': legend_data['fill_value'],
-                                   '@label': '',
-                                   '@opacity': '0.0'}]
+                colormap_entry.append({'@color': '#000000',
+                                       '@quantity': legend_data['fill_value'],
+                                       '@label': '',
+                                       '@opacity': '0.0'})
             for i, _ in reversed(list(enumerate(legend_data['values']))):
                 colormap_entry.append({'@color': legend_data['rgb'][i],
                                        '@quantity': legend_data['values'][i],

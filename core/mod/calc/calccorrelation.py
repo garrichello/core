@@ -101,7 +101,7 @@ class CalcCorrelation(Calc):
                                       level=data_1_level, segment=data_1_segment,
                                       longitudes=data_1['@longitude_grid'],
                                       latitudes=data_1['@latitude_grid'],
-                                      fill_value=data_1['@fill_value'],
+                                      fill_value=0,  # Insignificant data are missing data!
                                       meta=meta_sig)
 
         self.logger.info('Finished!')

@@ -28,8 +28,10 @@ class MainApp:
         self._destination_uid_list = []
         self._task_id = None
 
+        # Read main configuration file.
         self.config = ConfigParser()
-        self.config.read('../core_config.ini')
+        self.config.read(os.path.join(str(os.path.dirname(__file__)), 
+                                      '../core_config.ini'))
 
     def run(self, args):
         """Run this function to run the Core."""

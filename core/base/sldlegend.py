@@ -194,9 +194,12 @@ class SLDLegend:
                                        '@label': '',
                                        '@opacity': '0.0'})
             for i, _ in reversed(list(enumerate(legend_data['values']))):
+                # Missing values are transparent
+                entry_opacity = 0.0 if legend_data['values'][i] == legend_data['fill_value'] else 1.0
                 colormap_entry.append({'@color': legend_data['rgb'][i],
                                        '@quantity': legend_data['values'][i],
-                                       '@label': legend_data['labels'][i]})
+                                       '@label': legend_data['labels'][i],
+                                       '@opacity': entry_opacity})
             feature_type_style['Rule']['RasterSymbolizer']['ColorMap'] = {}
             feature_type_style['Rule']['RasterSymbolizer']['ColorMap']['ColorMapEntry'] = colormap_entry
             named_layer_entry['UserStyle']['FeatureTypeStyle'] = feature_type_style

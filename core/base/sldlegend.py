@@ -134,10 +134,7 @@ class SLDLegend:
             legend_data['labels'] = cur_leg_lab
             legend_data['rgb'] = cur_rgb_val
             legend_data['layer_name'] = options['description']['@name']
-            fill_value = values.fill_value
-            if fill_value.dtype == np.dtype('bool'):  # Convert boolean fill value to numeric.
-                fill_value = int(fill_value)
-            legend_data['fill_value'] = fill_value
+            legend_data['fill_value'] = values.fill_value
             legend_properties.append(legend_data)
 
         # Use legend options to make legend filename(s).
@@ -190,10 +187,11 @@ class SLDLegend:
             feature_type_style['Rule'] = {}
             feature_type_style['Rule']['RasterSymbolizer'] = {}
             feature_type_style['Rule']['RasterSymbolizer']['Opacity'] = 0.8
-            colormap_entry = [{'@color': '#000000',
-                               '@quantity': legend_data['fill_value'],
-                               '@label': '',
-                               '@opacity': '0.0'}]
+            if legend_data['fill_value'] != np.dtype('bool'):  # Transparent values are NOT bool!
+                colormap_entry = [{'@color': '#000000',
+                                   '@quantity': legend_data['fill_value'],
+                                   '@label': '',
+                                   '@opacity': '0.0'}]
             for i, _ in reversed(list(enumerate(legend_data['values']))):
                 colormap_entry.append({'@color': legend_data['rgb'][i],
                                        '@quantity': legend_data['values'][i],

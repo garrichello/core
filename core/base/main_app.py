@@ -85,7 +85,7 @@ class MainApp:
         zipfile_name = os.path.join(pool_dir, str(task_id)+'.zip')
         with ZipFile(zipfile_name, 'w') as result_zip:
             for file_name in os.listdir(task_dir):
-                result_zip.write(file_name)
+                result_zip.write(os.path.join(task_dir, file_name))
         result_zip.close()
 
         self.logger.info('Job is done. Exiting.')

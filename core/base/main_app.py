@@ -69,7 +69,7 @@ class MainApp:
 
         # Change location of output files.
         for destination in self._task['task']['destination']:
-            file_name = destination['file']['@name']
+            file_name = os.path.basename(destination['file']['@name'])
             destination['file']['@name'] = os.path.join(task_dir, file_name)
 
         self._process()

@@ -175,7 +175,7 @@ class SLDLegend:
             'http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd'
 
         sld['StyledLayerDescriptor']['NamedLayer'] = []
-        for legend_data in legend_properties:
+        for channel, legend_data in enumerate(legend_properties):
             named_layer_entry = {}
             named_layer_entry['Name'] = legend_data['layer_name']
             named_layer_entry['UserStyle'] = {}
@@ -200,8 +200,12 @@ class SLDLegend:
                                        '@quantity': legend_data['values'][i],
                                        '@label': legend_data['labels'][i],
                                        '@opacity': entry_opacity})
+            channel_selection = {}
+            channel_selection['GrayChannel'] = {}
+            channel_selection['GrayChannel']['SourceChannelName'] = channel
             feature_type_style['Rule']['RasterSymbolizer']['ColorMap'] = {}
             feature_type_style['Rule']['RasterSymbolizer']['ColorMap']['ColorMapEntry'] = colormap_entry
+            feature_type_style['Rule']['RasterSymbolizer']['ChannelSelection'] = channel_selection
             named_layer_entry['UserStyle']['FeatureTypeStyle'] = feature_type_style
             sld['StyledLayerDescriptor']['NamedLayer'].append(named_layer_entry)
 

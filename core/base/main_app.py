@@ -6,6 +6,7 @@ import logging
 import os
 from configparser import ConfigParser
 from zipfile import ZipFile
+from io import BytesIO
 
 import collections
 import xmltodict
@@ -83,17 +84,15 @@ class MainApp:
 
         # Compress results.
         os.chdir(task_dir)
-        result_files = os.listdir()
-        zipfile_name = str(task_id)+'.zip'
-        zip_data = bytes()
-        with ZipFile(zipfile_name, 'w') as result_zip:
-            for file_name in result_files:
-                result_zip.writestr(file_name, zip_data)
+        mem_zip = BytesIO()
+        with ZipFile(mem_zip, 'w') as result_zip:
+            for file_name in os.listdir():
+                result_zip.write(file_name)
         result_zip.close()
 
         self.logger.info('Job is done. Exiting.')
 
-        return zip_data
+        return mem_zip
 
     def _read_task(self, task_file_name):
         """Reads the task file and creates all necessary structures."""

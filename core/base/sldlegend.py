@@ -127,7 +127,6 @@ class SLDLegend:
 
         # Prepare legend values.
         legend_properties = []
-        layer_num = 0
         for values, options in zip(listify(all_values), listify(all_options)):
             layer_num += 1
             cur_leg_val, cur_leg_lab, cur_rgb_val = self._make_legend_values(values, options)
@@ -135,8 +134,7 @@ class SLDLegend:
             legend_data['values'] = cur_leg_val
             legend_data['labels'] = cur_leg_lab
             legend_data['rgb'] = cur_rgb_val
-            varname = self._get_meta_value(options, 'varname')
-            legend_data['layer_name'] = varname if varname is not None else 'Layer #{}'.format(layer_num)
+            legend_data['layer_name'] = options['description']['@name']
             fill_value = values.fill_value
             if fill_value.dtype == np.dtype('bool'):  # Convert boolean fill value to numeric.
                 fill_value = int(fill_value)

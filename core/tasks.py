@@ -25,7 +25,11 @@ def run_plain_xml(self, task_xml):
     logger.info('%s v.%s', core.__prog__, core.__version__)
 
     application = core.MainApp()  # Instance of the Core
-    application.run_task(task_xml, self.request.id)  # Run the Core!
+    result = application.run_task(task_xml, self.request.id)  # Run the Core!
+
+    with open('output.zip', 'wb') as out_file:
+        out_file.write(result)
+    out_file.close()
 
     return 'TASK COMPLETED!'
 

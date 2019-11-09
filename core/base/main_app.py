@@ -31,7 +31,7 @@ class MainApp:
 
         # Read main configuration file.
         self.config = ConfigParser()
-        self.config.read(os.path.join(str(os.path.dirname(__file__)), 
+        self.config.read(os.path.join(str(os.path.dirname(__file__)),
                                       '../core_config.ini'))
 
     def run(self, args):
@@ -85,12 +85,15 @@ class MainApp:
         os.chdir(task_dir)
         result_files = os.listdir()
         zipfile_name = str(task_id)+'.zip'
+        zip_data = bytes()
         with ZipFile(zipfile_name, 'w') as result_zip:
             for file_name in result_files:
-                result_zip.write(file_name)
+                result_zip.writestr(file_name, zip_data)
         result_zip.close()
 
         self.logger.info('Job is done. Exiting.')
+
+        return zip_data
 
     def _read_task(self, task_file_name):
         """Reads the task file and creates all necessary structures."""

@@ -9,7 +9,7 @@ import numpy as np
 from scipy.interpolate import griddata
 from core.ext import shapefile
 
-from core.base.common import load_module, make_filename, make_raw_filename, listify
+from core.base.common import load_module, make_filename, make_raw_filename, listify, unlistify
 from core.base import SLDLegend
 from .data import Data
 
@@ -67,7 +67,7 @@ class DataImage(Data):
                 if lengths[key] > 1:
                     single_dict[key] = dict_of_lists[key][i]
                 else:
-                    single_dict[key] = dict_of_lists[key]
+                    single_dict[key] = unlistify(dict_of_lists[key])
             list_of_dicts.append(single_dict)
             i += 1
 
@@ -148,7 +148,7 @@ class DataImage(Data):
         """Writes data (and metadata) to an output image-file. Supports values from several UIDs.
 
         Arguments:
-            all_values -- processing result's values as a masked array/array/list (list of arrays in multiband case)
+            all_values -- processing result's values as a list of masked array/array/list
             all_options_dict -- dictionary of write options (list of dictionaries in multiband case)
 
         """
@@ -160,7 +160,7 @@ class DataImage(Data):
         all_options_regular = []
         # In multiband case all_options_dict is a dictionary of lists. Convert it to a list of dictionaries.
         all_options = self._transpose_dict(all_options_dict)
-        for values, options in zip(listify(all_values), listify(all_options)):
+        for values, options in zip(all_values, listify(all_options)):
             val_reg, opt_reg = self._uniform_grids(values, options)
             all_values_regular.append(val_reg)
             all_options_regular.append(opt_reg)

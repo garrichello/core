@@ -5,6 +5,8 @@ It creates an instance of the MainApp class and starts the Core with a given tas
 """
 from __future__ import absolute_import, unicode_literals
 
+import base64
+
 from celery import Celery
 from celery.utils.log import get_task_logger
 
@@ -24,14 +26,21 @@ def run_plain_xml(self, task_xml):
 
     logger.info('%s v.%s', core.__prog__, core.__version__)
 
-    application = core.MainApp()  # Instance of the Core
-    result = application.run_task(task_xml, self.request.id)  # Run the Core!
+    # Instantiate the Core!
+    application = core.MainApp()
 
+    # Run the task processing by the Core!
+    # Result is a zip-file as bytes.
+    result_zip = application.run_task(task_xml, self.request.id)
+
+    # Control write of result zip-file.
     with open('output.zip', 'wb') as out_file:
-        out_file.write(result)
+        out_file.write(result_zip)
     out_file.close()
 
-    return 'TASK COMPLETED!'
+    logger.info('Task %s is finished.', self.request.id)
+
+    return base64.b64encode(result_zip).decode('utf-8')
 
 if __name__ == '__main__':
     app.start()

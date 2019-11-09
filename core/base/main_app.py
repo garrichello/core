@@ -5,8 +5,8 @@ from copy import deepcopy
 import logging
 import os
 from configparser import ConfigParser
-from zipfile import ZipFile
-from io import BytesIO
+from zipfile import ZipFile, ZIP_DEFLATED
+import io
 
 import collections
 import xmltodict
@@ -82,17 +82,22 @@ class MainApp:
         # Run task processing.
         self._process()
 
-        # Compress results.
-        os.chdir(task_dir)
-        mem_zip = BytesIO()
-        with ZipFile(mem_zip, 'w') as result_zip:
+        # Compress results in memory.
+        os.chdir(task_dir)  # Move to the results directory.
+        mem_zip = io.BytesIO()  # Zip-in-memeory buffer.
+        with ZipFile(mem_zip, 'w', ZIP_DEFLATED) as zip_file:
+            # Read result files and add them to the zip-file.
             for file_name in os.listdir():
-                result_zip.write(file_name)
-        result_zip.close()
+                with open(file_name, 'rb') as result_file:
+                    file_data = result_file.read()
+                zip_file.writestr(file_name, file_data)
+
+        zip_buffer = mem_zip.getvalue()  # Get zip-file as plain bytes.
+        self.logger.info('Zip-file length is %s bytes', len(zip_buffer))
 
         self.logger.info('Job is done. Exiting.')
 
-        return mem_zip
+        return zip_buffer
 
     def _read_task(self, task_file_name):
         """Reads the task file and creates all necessary structures."""

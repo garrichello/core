@@ -9,7 +9,7 @@ import numpy as np
 from scipy.interpolate import griddata
 from core.ext import shapefile
 
-from core.base.common import load_module, make_filename, make_raw_filename
+from core.base.common import load_module, make_filename, make_raw_filename, listify
 from core.base import SLDLegend
 from .data import Data
 
@@ -57,7 +57,7 @@ class DataImage(Data):
                 self.logger.error('Lists in dictionary must be of the same length!')
                 raise ValueError
 
-        # Convert dictionary of lists to a list of dictionaries. 
+        # Convert dictionary of lists to a list of dictionaries.
         # Copy elements of length 1 to all lists.
         list_of_dicts = []
         i = 0
@@ -148,53 +148,45 @@ class DataImage(Data):
         """Writes data (and metadata) to an output image-file. Supports values from several UIDs.
 
         Arguments:
-            all_values -- processing result's values as a masked array/array/list.
-            all_options_dict -- dictionary of write options
+            all_values -- processing result's values as a masked array/array/list (list of arrays in multiband case)
+            all_options_dict -- dictionary of write options (list of dictionaries in multiband case)
 
         """
 
         self.logger.info('Writing image...')
 
+        # Make geographical grids uniform.
+        all_values_regular = []
+        all_options_regular = []
+        # In multiband case all_options_dict is a dictionary of lists. Convert it to a list of dictionaries.
+        all_options = self._transpose_dict(all_options_dict)
+        for values, options in zip(listify(all_values), listify(all_options)):
+            val_reg, opt_reg = self._uniform_grids(values, options)
+            all_values_regular.append(val_reg)
+            all_options_regular.append(opt_reg)
+
         # Set data kind to define the kind of the legend (for vector or raster data).
-        if all_options_dict['multiband']:
-            self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if all_values[0].ndim == 1 else 'raster'
-        else:
-            self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if all_values.ndim == 1 else 'raster'
+        self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if all_values_regular[0].ndim == 1 else 'raster'
         legend = SLDLegend(self._data_info)
 
-        # Make geographical grids uniform.
-        if all_options_dict['multiband']:
-            all_values_regular = []
-            all_options_regular = []
-            # In multiband case all_options_dict is a dictionary of lists. Convert it to a list of dictionaries.
-            all_options = self._transpose_dict(all_options_dict)
-            for values, options in zip(all_values, all_options):
-                val_reg, opt_reg = self._uniform_grids(values, options)
-                all_values_regular.append(val_reg)
-                all_options_regular.append(opt_reg)
-        else:
-            all_values_regular, all_options_regular = self._uniform_grids(all_values, all_options)
+        write_xml_legend = self._data_info['data']['graphics']['legend']['@kind'] == 'file' and \
+                           self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'
 
         # Write image file.
-        if self._image.multiband_support or not all_options_dict['multiband']:  # Image supports multiband write or only one variable.
+        if self._image.multiband_support:  # Image supports multiband write.
             self._image.write(all_values_regular, all_options_regular)
 
             # Write legend into an SLD-file.
-            if (self._data_info['data']['graphics']['legend']['@kind'] == 'file' and
-                    self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
-                self.logger.info('Writing legend...')
+            if write_xml_legend:
                 legend.write(all_values_regular, all_options_regular)
-                self.logger.info('Done!')
-        else:  # Image does NOT support multiband write and many variables to write.
+
+        else:  # Image does NOT support multiband write.
             for values_regular, options_regular in zip(all_values_regular, all_options_regular):
                 self._image.write(values_regular, options_regular)
 
                 # Write legend into an SLD-file.
-                if (self._data_info['data']['graphics']['legend']['@kind'] == 'file' and
-                        self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
-                    self.logger.info('Writing legend...')
+                if write_xml_legend:
                     legend.write(values_regular, options_regular)
-                    self.logger.info('Done!')
 
         self.logger.info('Done!')
 
@@ -214,7 +206,7 @@ class ImageGeotiff():
         Arguments:
             values -- masked data array to be written
             options -- write options including grids
-        
+
         Returns:
             data, longitudes, latitudes -- prepared data and geographical grids
         """
@@ -240,12 +232,12 @@ class ImageGeotiff():
         """
 
 
-    def write(self, all_values, all_options):
+    def write(self, all_values: list, all_options: list):
         """Writes data array into a Geotiff file. Supports multiband write.
 
         Arguments:
-            all_values -- processing result's values as a masked array/array/list. List of arrays in multiband case.
-            all_options -- dictionary of write options (list of dictionaries in multiband case):
+            all_values -- processing result's values as a list of masked arrays/arrays/lists.
+            all_options -- list dictionaries of write options:
                 ['level'] -- vertical level name
                 ['segment'] -- time segment description (as in input time segments taken from a task file)
                 ['times'] -- time grid as a list of datatime values
@@ -256,16 +248,13 @@ class ImageGeotiff():
         self.logger.info('Writing geoTIFF...')
 
         # Check if it's a multiband case.
-        multiband_write = True if isinstance(all_values, list) else False
+#        multiband_write = True if isinstance(all_values, list) else False
 
         # Prepare data array with masked values replaced with a fill value.
-        if multiband_write:
-            all_data = []
-            for values, options in zip(all_values, all_options):
-                cur_data, longitudes, latitudes = self._prepare_data(values, options)
-                all_data.append(cur_data)
-        else:
-            all_data, longitudes, latitudes = self._prepare_data(all_values, all_options)
+        all_data = []
+        for values, options in zip(all_values, all_options):
+            cur_data, longitudes, latitudes = self._prepare_data(values, options)
+            all_data.append(cur_data)
 
         # Prepare GeoTIFF driver.
         fmt = 'GTiff'
@@ -283,23 +272,20 @@ class ImageGeotiff():
         filename = make_raw_filename(self._data_info, all_options)
 
         # Stack multiband data into 3-D array. Leftmost dimension is a band.
-        if multiband_write:
-            if all_data[0].ndim == 2:  # 2-D arrays stack to create 3-D data array
-                data_to_write = np.stack(all_data)
-            elif all_data[0].ndim == 3:  # 3-D arrays vstack to create 3-D data array also.
-                data_to_write = np.vstack(all_data)
-            else:
-                self.logger.error('Incorrect number of dimensions in data array: %s! Aborting...', all_data[0].ndim)
-                raise ValueError
+        if all_data[0].ndim == 2:  # 2-D arrays stack to create 3-D data array
+            data_to_write = np.stack(all_data)
+        elif all_data[0].ndim == 3:  # 3-D arrays vstack to create 3-D data array also.
+            data_to_write = np.vstack(all_data)
         else:
-            data_to_write = all_data
+            self.logger.error('Incorrect number of dimensions in data array: %s! Aborting...', all_data[0].ndim)
+            raise ValueError
 
         # Only 2- and 3-D data arrays can be written to GeoTIFF
         if data_to_write.ndim < 2 or data_to_write.ndim > 3:
             self.logger.error('Incorrect number of dimensions in data array: %s! Aborting...', all_data[0].ndim)
             raise ValueError
 
-        # Correct number of dimensions. Should be 3!
+        # Fix number of dimensions. Should be 3!
         if data_to_write.ndim == 2:
             data_to_write = np.expand_dims(data_to_write, 0)  # If it's 2-D make it 3-D
 

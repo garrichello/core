@@ -5,6 +5,7 @@ from copy import deepcopy
 import logging
 import os
 from configparser import ConfigParser
+from zipfile import ZipFile
 
 import collections
 import xmltodict
@@ -64,7 +65,8 @@ class MainApp:
         self._task['task']['@uid'] = str(task_id)
 
         # Make task dir
-        task_dir = os.path.join(self.config['RPC']['pool_dir'], str(task_id))
+        pool_dir = self.config['RPC']['pool_dir']
+        task_dir = os.path.join(pool_dir, str(task_id))
         os.makedirs(task_dir, exist_ok=True)
 
         # Change location of output files.
@@ -76,7 +78,15 @@ class MainApp:
                 destination['graphics']['legend']['file']['@name'] = \
                     os.path.join(task_dir, sld_name)
 
+        # Run task processing.
         self._process()
+
+        # Compress results.
+        zipfile_name = os.path.join(pool_dir, str(task_id)+'.zip')
+        with ZipFile(zipfile_name, 'w') as result_zip:
+            for file_name in os.listdir(task_dir):
+                result_zip.write(file_name)
+        result_zip.close()
 
         self.logger.info('Job is done. Exiting.')
 

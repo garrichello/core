@@ -127,7 +127,7 @@ class SLDLegend:
 
         # Prepare legend values.
         legend_properties = []
-        for values, options in zip(listify(all_values), listify(all_options)):
+        for values, options in zip(all_values, all_options):
             cur_leg_val, cur_leg_lab, cur_rgb_val = self._make_legend_values(values, options)
             legend_data = {}
             legend_data['values'] = cur_leg_val

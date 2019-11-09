@@ -71,6 +71,10 @@ class MainApp:
         for destination in self._task['task']['destination']:
             file_name = os.path.basename(destination['file']['@name'])
             destination['file']['@name'] = os.path.join(task_dir, file_name)
+            if destination['@type'] == 'image':
+                sld_name = os.path.basename(destination['graphics']['legend']['file']['@name'])
+                destination['graphics']['legend']['file']['@name'] = \
+                    os.path.join(task_dir, sld_name)
 
         self._process()
 

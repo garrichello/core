@@ -3,6 +3,8 @@
 """
 from copy import deepcopy
 import logging
+import os
+from configparser import ConfigParser
 
 import collections
 import xmltodict
@@ -25,6 +27,9 @@ class MainApp:
         self._data_uid_list = []
         self._destination_uid_list = []
         self._task_id = None
+
+        self.config = ConfigParser()
+        self.config.read('../core_config.ini')
 
     def run(self, args):
         """Run this function to run the Core."""
@@ -52,6 +57,14 @@ class MainApp:
         self._task['task']['processing'] = listify(self._task['task']['processing'])
 
         self.logger.info('Done!')
+
+        # Modify task id in task file.
+        self._task['task']['@uid'] = str(task_id)
+        # Change location and names of output files.
+        for destination in self._task['task']['destination']:
+            _, ext = os.path.splitext(destination['file']['@name'])
+            pool_dir = self.config['RPC']['pool_dir']
+            destination['file']['@name'] = os.path.join(pool_dir, str(task_id), str(task_id)+ext.lower())
 
         self._process()
 

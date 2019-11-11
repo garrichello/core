@@ -4,6 +4,7 @@
 from copy import deepcopy
 import logging
 import os
+import shutil
 from configparser import ConfigParser
 from zipfile import ZipFile, ZIP_DEFLATED
 import io
@@ -66,8 +67,9 @@ class MainApp:
         self._task['task']['@uid'] = str(task_id)
 
         # Make task dir
-        pool_dir = self.config['RPC']['pool_dir']
-        task_dir = os.path.join(pool_dir, str(task_id))
+        original_cwd_dir = os.getcwd()  # Store current directory.
+        tmp_dir = self.config['RPC']['tmp_dir']
+        task_dir = os.path.join(tmp_dir, str(task_id))
         os.makedirs(task_dir, exist_ok=True)
 
         # Change location of output files.
@@ -79,21 +81,32 @@ class MainApp:
                 destination['graphics']['legend']['file']['@name'] = \
                     os.path.join(task_dir, sld_name)
 
-        # Run task processing.
-        self._process()
+        try:
+            # Run task processing.
+            self._process()
 
-        # Compress results in memory.
-        os.chdir(task_dir)  # Move to the results directory.
-        mem_zip = io.BytesIO()  # Zip-in-memeory buffer.
-        with ZipFile(mem_zip, 'w', ZIP_DEFLATED) as zip_file:
-            # Read result files and add them to the zip-file.
-            for file_name in os.listdir():
-                with open(file_name, 'rb') as result_file:
-                    file_data = result_file.read()
-                zip_file.writestr(file_name, file_data)
+            # Compress results in memory.
+            self.logger.info('Compress results...')
+            os.chdir(task_dir)  # Move to the results directory.
+            mem_zip = io.BytesIO()  # Zip-in-memeory buffer.
+            with ZipFile(mem_zip, 'w', ZIP_DEFLATED) as zip_file:
+                # Read result files and add them to the zip-file.
+                for file_name in os.listdir():
+                    with open(file_name, 'rb') as result_file:
+                        file_data = result_file.read()
+                    zip_file.writestr(file_name, file_data)
 
-        zip_buffer = mem_zip.getvalue()  # Get zip-file as plain bytes.
-        self.logger.info('Zip-file length is %s bytes', len(zip_buffer))
+            self.logger.info('Done!')
+
+            zip_buffer = mem_zip.getvalue()  # Get zip-file as plain bytes.
+            self.logger.info('Zip-file length is %s bytes', len(zip_buffer))
+
+        finally:
+            # Delete result files
+            self.logger.info('Clean temporary files...')
+            os.chdir(original_cwd_dir)  # Return to the original CWD.
+            shutil.rmtree(task_dir)  # Delete task directory with all its contents
+            self.logger.info('Done!')
 
         self.logger.info('Job is done. Exiting.')
 

@@ -6,15 +6,37 @@ It creates an instance of the MainApp class and starts the Core with a given tas
 from __future__ import absolute_import, unicode_literals
 
 import base64
+from configparser import ConfigParser
+import os
 
+import logging
+import logging.handlers
 from celery import Celery
-from celery.utils.log import get_task_logger
+from celery.signals import after_setup_logger
+from celery.app.log import TaskFormatter
 
 import core
 
-app = Celery('tasks')  # Instantiate Celery application (it runs tasks).
+# Read main configuration file.
+core_config = ConfigParser()
+core_config.read(os.path.join(str(os.path.dirname(__file__)),'core_config.ini'))
+
+app = Celery('core')  # Instantiate Celery application (it runs tasks).
 app.config_from_object('celeryconfig')  # Celery config is in celeryconfig.py file.
-logger = get_task_logger(__name__)
+
+logger = logging.getLogger()
+
+@after_setup_logger.connect
+def setup_loggers(logger, *args, **kwargs):
+    file_log_format = '[%(asctime)s] - %(task_id)s - %(levelname)-8s (%(module)s::%(funcName)s) %(message)s'
+    formatter = TaskFormatter(file_log_format, use_color=False)
+
+    error_log_file = os.path.join(core_config['RPC']['log_dir'], 'errors.log')
+    print('ERROR LOG IS WRITTEN HERE: ', error_log_file)
+    file_handler = logging.handlers.RotatingFileHandler(error_log_file, maxBytes=1048576, backupCount=5, encoding='utf8', delay=1)
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.ERROR)
+    logger.addHandler(file_handler)
 
 @app.task(bind=True)
 def run_plain_xml(self, task_xml):

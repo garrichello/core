@@ -6,7 +6,6 @@ import itertools
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2
@@ -18,6 +17,7 @@ class CalcBasicStat(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _data_time_key(self, data_time):
@@ -26,8 +26,8 @@ class CalcBasicStat(Calc):
     def _run(self, calc_mode):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcBasicStat::run) Started!')
-        print('(CalcBasicStat::run) Calculation mode: {}'.format(calc_mode))
+        self.logger.info('Started!')
+        self.logger.info('Calculation mode: %s', calc_mode)
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
@@ -40,7 +40,7 @@ class CalcBasicStat(Calc):
 
         # Check parameters
         if not calc_mode in parameters:
-            print('(CalcBasicStat::run) Error! No parameter \'{}\' in module parameters! Check task-file!'.format(calc_mode))
+            self.logger.error('Error! No parameter \'%s\' in module parameters! Check task-file!', calc_mode)
             raise ValueError
 
         # Get outputs
@@ -117,4 +117,4 @@ class CalcBasicStat(Calc):
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
                                       fill_value=result['@fill_value'], meta=result['meta'])
 
-        print('(CalcBasicStat::run) Finished!')
+        self.logger.info('Finished!')

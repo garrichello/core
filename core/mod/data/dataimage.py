@@ -1,54 +1,91 @@
 """Provides classes:
     DataImage, ImageGeotiff
 """
+import logging
+from copy import deepcopy
 from osgeo import gdal
 from osgeo import osr
 import numpy as np
 from scipy.interpolate import griddata
 from core.ext import shapefile
 
-from core.base.common import load_module, print, make_filename
+from core.base.common import load_module, make_filename, make_raw_filename, listify, unlistify
 from core.base import SLDLegend
+from .data import Data
 
-class DataImage:
+class DataImage(Data):
     """ Provides reading/writing data from/to graphical files.
     Supported formats: float geoTIFF.
 
     """
 
     def __init__(self, data_info):
+        super().__init__(data_info)
         image_class_name = 'Image' + data_info['data']['file']['@type'].capitalize()
         image_class = load_module(self.__module__, image_class_name)
         self._image = image_class(data_info)
         self._data_info = data_info
 
-    def read(self, options):
-        """Reads image-file into an array.
+    def _transpose_dict(self, dict_of_lists):
+        """ Converts dictionary of lists to a list of dictionaries.
 
         Arguments:
-            options -- dictionary of read options
+            dict_of_lists -- dictionary of lists
 
         Returns:
-            result['array'] -- data array
+            list_of_dicts -- list of dictionaries
         """
 
-        result = self._image.read(options)
+        if not isinstance(dict_of_lists, dict) or dict_of_lists is None:
+            self.logger.debug('It\'s not a dictionary!')
+            return dict_of_lists
 
-        return result
+        # Get lengths of lists.
+        lengths = {}
+        max_len = 0
+        for key, value in dict_of_lists.items():
+            if isinstance(value, list):
+                val_len = len(value)
+            else:
+                val_len = 1  # If it's not a list set it's length to 1
+            max_len = val_len if max_len < val_len else max_len
+            lengths[key] = val_len
 
-    def write(self, values, options):
-        """Writes data (and metadata) to an output image-file.
+        # Check lengths of lists to be the same. Ignore elements of length 1.
+        for val_len in lengths.values():
+            if val_len != max_len and val_len > 1:
+                self.logger.error('Lists in dictionary must be of the same length!')
+                raise ValueError
+
+        # Convert dictionary of lists to a list of dictionaries.
+        # Copy elements of length 1 to all lists.
+        list_of_dicts = []
+        i = 0
+        while i < max_len:
+            single_dict = {}
+            for key in dict_of_lists.keys():
+                if lengths[key] > 1:
+                    single_dict[key] = dict_of_lists[key][i]
+                else:
+                    single_dict[key] = unlistify(dict_of_lists[key])
+            list_of_dicts.append(single_dict)
+            i += 1
+
+        return list_of_dicts
+
+    def _uniform_grids(self, values, options):
+        """Checks and makes geographical grids to be regular.
 
         Arguments:
             values -- processing result's values as a masked array/array/list.
             options -- dictionary of write options
 
+        Returns:
+            values_regular, options_regular -- data and options on regular grids.
         """
 
-        print(' (DataImage::write) Writing image...')
-
         if values.ndim > 1:   # If it is a grid, check it for uniformity.
-            print(' (DataImage::write)  Checking grid uniformity...')
+            self.logger.info('Checking grid uniformity...')
             eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
 
             if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
@@ -62,14 +99,14 @@ class DataImage:
                     should_regrid = True
                 else:
                     should_regrid = False
-            print(' (DataImage::write)  Done!')
+            self.logger.info('Done!')
         else:
             should_regrid = False
 
         # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
         if should_regrid:
-            print(' (DataImage::write)  Non-uniform grid. Regridding...')
-            options_regular = options.copy()
+            self.logger.info('Non-uniform grid. Regridding...')
+            options_regular = deepcopy(options)
 
             # Create a uniform grid
             dlon_regular = np.min(dlons) / 2.0  # Half the step to avoid a strange latitudinal shift.
@@ -86,57 +123,93 @@ class DataImage:
                               (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
             values_regular.fill_value = values.fill_value
-            print(' (DataImage::write)  Done!')
+            self.logger.info('Done!')
         else:
             values_regular = values
             options_regular = options
 
+        return values_regular, options_regular
+
+    def read(self, options):
+        """Reads image-file into an array.
+
+        Arguments:
+            options -- dictionary of read options
+
+        Returns:
+            result['array'] -- data array
+        """
+
+        result = self._image.read(options)
+
+        return result
+
+    def write(self, all_values, all_options_dict):
+        """Writes data (and metadata) to an output image-file. Supports values from several UIDs.
+
+        Arguments:
+            all_values -- processing result's values as a list of masked array/array/list
+            all_options_dict -- dictionary of write options (list of dictionaries in multiband case)
+
+        """
+
+        self.logger.info('Writing image...')
+
+        # Make geographical grids uniform.
+        all_values_regular = []
+        all_options_regular = []
+        # In multiband case all_options_dict is a dictionary of lists. Convert it to a list of dictionaries.
+        all_options = self._transpose_dict(all_options_dict)
+        for values, options in zip(all_values, listify(all_options)):
+            val_reg, opt_reg = self._uniform_grids(values, options)
+            all_values_regular.append(val_reg)
+            all_options_regular.append(opt_reg)
+
+        # Set data kind to define the kind of the legend (for vector or raster data).
+        self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if all_values_regular[0].ndim == 1 else 'raster'
+        legend = SLDLegend(self._data_info)
+
+        write_xml_legend = self._data_info['data']['graphics']['legend']['@kind'] == 'file' and \
+                           self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'
+
         # Write image file.
-        self._image.write(values_regular, options_regular)
+        if self._image.multiband_support:  # Image supports multiband write.
+            self._image.write(all_values_regular, all_options_regular)
 
-        # Write legend into an SLD-file.
-        if (self._data_info['data']['graphics']['legend']['@kind'] == 'file' and
-                self._data_info['data']['graphics']['legend']['file']['@type'] == 'xml'):
-            self._data_info['data']['graphics']['legend']['@data_kind'] = 'station' if values_regular.ndim == 1 else 'raster'
-            legend = SLDLegend(self._data_info)
-            print(' (DataImage::write)  Writing legend...')
-            legend.write(values_regular, options_regular)
-            print(' (DataImage::write)  Done!')
+            # Write legend into an SLD-file.
+            if write_xml_legend:
+                legend.write(all_values_regular, all_options_regular)
 
-        print(' (DataImage::write) Done!')
+        else:  # Image does NOT support multiband write.
+            for values_regular, options_regular in zip(all_values_regular, all_options_regular):
+                self._image.write(values_regular, options_regular)
+
+                # Write legend into an SLD-file.
+                if write_xml_legend:
+                    legend.write(values_regular, options_regular)
+
+        self.logger.info('Done!')
 
 
-class ImageGeotiff:
+class ImageGeotiff():
     """ Provides reading/writing data from/to Geotiff files.
 
     """
     def __init__(self, data_info):
+        self.logger = logging.getLogger()
         self._data_info = data_info
+        self.multiband_support = True
 
-    def read(self, options):
-        """Reads Geotiff file into an array.
-
-        Arguments:
-            options -- dictionary of read options
-        """
-
-
-    def write(self, values, options):
-        """Writes data array into a Geotiff file.
+    def _prepare_data(self, values, options):
+        """Prepares data for writing
 
         Arguments:
-            values -- processing result's values as a masked array/array/list.
-            options -- dictionary of write options:
-                ['level'] -- vertical level name
-                ['segment'] -- time segment description (as in input time segments taken from a task file)
-                ['times'] -- time grid as a list of datatime values
-                ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
-                ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
+            values -- masked data array to be written
+            options -- write options including grids
+
+        Returns:
+            data, longitudes, latitudes -- prepared data and geographical grids
         """
-
-        print(' (ImageGeotiff::write)  Writing geoTIFF...')
-
-        # Prepare data array with masked values replaced with a fill value.
         data = np.ma.filled(values, fill_value=values.fill_value)
         longitudes = options['longitudes']
         latitudes = options['latitudes']
@@ -149,6 +222,40 @@ class ImageGeotiff:
             right_part = data[:, :first_negative_latitude_idx]
             data = np.hstack((left_part, right_part))
 
+        return data, longitudes, latitudes
+
+    def read(self, options):
+        """Reads Geotiff file into an array.
+
+        Arguments:
+            options -- dictionary of read options
+        """
+
+
+    def write(self, all_values: list, all_options: list):
+        """Writes data array into a Geotiff file. Supports multiband write.
+
+        Arguments:
+            all_values -- processing result's values as a list of masked arrays/arrays/lists.
+            all_options -- list dictionaries of write options:
+                ['level'] -- vertical level name
+                ['segment'] -- time segment description (as in input time segments taken from a task file)
+                ['times'] -- time grid as a list of datatime values
+                ['longitudes'] -- longitude grid (1-D or 2-D) as an array/list
+                ['latitudes'] -- latitude grid (1-D or 2-D) as an array/list
+        """
+
+        self.logger.info('Writing geoTIFF...')
+
+        # Check if it's a multiband case.
+#        multiband_write = True if isinstance(all_values, list) else False
+
+        # Prepare data array with masked values replaced with a fill value.
+        all_data = []
+        for values, options in zip(all_values, all_options):
+            cur_data, longitudes, latitudes = self._prepare_data(values, options)
+            all_data.append(cur_data)
+
         # Prepare GeoTIFF driver.
         fmt = 'GTiff'
         drv = gdal.GetDriverByName(fmt)
@@ -156,33 +263,42 @@ class ImageGeotiff:
 
         # Check if driver supports Create() method.
         if (gdal.DCAP_CREATE not in metadata) or (metadata[gdal.DCAP_CREATE] != 'YES'):
-            print(''' (ImageGeotiff::write) Error!
-                      Driver {} does not support Create() method.
-                      Unable to write GeoTIFF.'''.format(fmt))
+            self.logger.error('''Error!
+                      Driver %s does not support Create() method.
+                      Unable to write GeoTIFF.''', fmt)
             raise AssertionError
 
-        # Write image.
-        dims = data.shape
-        filename = make_filename(self._data_info, options)
+        # Prepare file name
+        filename = make_raw_filename(self._data_info, all_options)
 
-        if data.ndim == 2:
-            dataset = drv.Create(filename, dims[1], dims[0], 1, gdal.GDT_Float32)
-            if dataset is None:
-                print(' (ImageGeotiff::write)  Error creating file: {}. Check the output path! Aborting...'.format(filename))
-                raise FileNotFoundError("Can't write file!")
-            dataset.GetRasterBand(1).WriteArray(data)
-        elif data.ndim == 3:
-            dataset = drv.Create(filename, dims[2], dims[1], dims[0], gdal.GDT_Float32)
-            if dataset is None:
-                print(' (ImageGeotiff::write)  Error creating file: {}. Check the output path! Aborting...'.format(filename))
-                raise FileNotFoundError("Can't write file!")
-            band = 0
-            for data_slice in data:
-                band += 1
-                dataset.GetRasterBand(band).WriteArray(data_slice)
+        # Stack multiband data into 3-D array. Leftmost dimension is a band.
+        if all_data[0].ndim == 2:  # 2-D arrays stack to create 3-D data array
+            data_to_write = np.stack(all_data)
+        elif all_data[0].ndim == 3:  # 3-D arrays vstack to create 3-D data array also.
+            data_to_write = np.vstack(all_data)
         else:
-            print(' (ImageGeotiff::write)  Incorrect number of dimensions in data array: {}! Aborting...'.format(data.ndim))
+            self.logger.error('Incorrect number of dimensions in data array: %s! Aborting...', all_data[0].ndim)
             raise ValueError
+
+        # Only 2- and 3-D data arrays can be written to GeoTIFF
+        if data_to_write.ndim < 2 or data_to_write.ndim > 3:
+            self.logger.error('Incorrect number of dimensions in data array: %s! Aborting...', all_data[0].ndim)
+            raise ValueError
+
+        # Fix number of dimensions. Should be 3!
+        if data_to_write.ndim == 2:
+            data_to_write = np.expand_dims(data_to_write, 0)  # If it's 2-D make it 3-D
+
+        # Write image.
+        dims = data_to_write.shape
+        dataset = drv.Create(filename, dims[2], dims[1], dims[0], gdal.GDT_Float32)
+        if dataset is None:
+            self.logger.error('Error creating file: %s. Check the output path! Aborting...', filename)
+            raise FileNotFoundError("Can't write file!")
+        band = 0
+        for data_slice in data_to_write:
+            band += 1
+            dataset.GetRasterBand(band).WriteArray(data_slice)
 
         # Prepare geokeys.
         gtype = 'EPSG:4326'
@@ -204,7 +320,7 @@ class ImageGeotiff:
 
         dataset = None
 
-        print(' (ImageGeotiff::write)  Done!')
+        self.logger.info('Done!')
 
 
 class ImageShape:
@@ -212,7 +328,9 @@ class ImageShape:
 
     """
     def __init__(self, data_info):
+        self.logger = logging.getLogger()
         self._data_info = data_info
+        self.multiband_support = False
 
     def read(self, options):
         """Reads ESRI shapefile into an array.
@@ -244,7 +362,7 @@ class ImageShape:
                         ['@elevations'] -- elevations of stations
 
         """
-        print(' (ImageShape::write)  Writing ESRI Shapefile...')
+        self.logger.info('  Writing ESRI Shapefile...')
 
         filename = make_filename(self._data_info, options)
         with shapefile.Writer(filename) as shape_writer:
@@ -268,4 +386,4 @@ class ImageShape:
 
                 shape_writer.close()
 
-        print(' (ImageShape::write)  Done!')
+        self.logger.info('  Done!')

@@ -1,8 +1,9 @@
 """Class for output"""
 
+import logging
 from core.base.dataaccess import DataAccess
 
-from core.base.common import print, kelvin_to_celsius, celsius_to_kelvin  # pylint: disable=W0622
+from core.base.common import kelvin_to_celsius, celsius_to_kelvin
 
 MINIMUM_POSSIBLE_TEMPERATURE_K = celsius_to_kelvin(-90.0)  # -89.2 degC is the minimum registered temperature on Earth
 MAXIMUM_POSSIBLE_TEMPERATURE_K = celsius_to_kelvin(60.0)  # 56.7 degC is the maximum registered temperature on Earth
@@ -13,20 +14,32 @@ class cvcOutput:
     """
 
     def __init__(self, data_helper: DataAccess):
+        self.logger = logging.getLogger()
         self._data_helper = data_helper
 
     def run(self):
         """ Passes output data array to a write method of a data module (through data access helper0) """
 
-        print('(cvcOutput::run) Started!')
+        self.logger.info('Started!')
 
         input_uids = self._data_helper.input_uids()
 
         output_uids = self._data_helper.output_uids()
         if output_uids is None:
-            print("""(cvcOutput::run) No output is specified! Check the task file, may be you are using the old template?
-                                       Destination description should be passed as _output_ argument to process cvcOutput.""")
+            self.logger.error("""No output is specified! Check the task file, may be you are using the old template?
+                                 Destination description should be passed as _output_ argument to process cvcOutput.""")
             raise ValueError('No output dataset specified. Aborting!')
+
+        output_info = self._data_helper.get_data_info(output_uids[0])
+        if output_info['@type'] == 'image':  # For image output we'll pass everything at once. So collect'em all here!
+            all_values = []
+            all_levels = []
+            all_segments = []
+            all_longitudes = []
+            all_latitudes = []
+            all_times = []
+            all_descriptions = []
+            all_metas = []
 
         for in_uid in input_uids:
             time_segments = self._data_helper.get_segments(in_uid)
@@ -53,9 +66,24 @@ class cvcOutput:
                     if convert_k2c:
                         values = kelvin_to_celsius(values)
 
-                    self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
-                                          longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                          times=result['data'][level_name][segment['@name']]['@time_grid'],
-                                          description=description, meta=result['meta'])
+                    if output_info['@type'] == 'image':  # Collect all data and meta.
+                        all_values.append(values)
+                        all_levels.append(level_name)
+                        all_segments.append(segment)
+                        all_longitudes.append(result['@longitude_grid'])
+                        all_latitudes.append(result['@latitude_grid'])
+                        all_times.append(result['data'][level_name][segment['@name']]['@time_grid'])
+                        all_descriptions.append(description)
+                        all_metas.append(result['meta'])
+                    else:  # Pass one by one to a writer.
+                        self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
+                                              longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                              times=result['data'][level_name][segment['@name']]['@time_grid'],
+                                              description=description, meta=result['meta'])
 
-        print('(cvcOutput::run) Finished!')
+        if output_info['@type'] == 'image':  # Pass everything at once.
+            self._data_helper.put(output_uids[0], all_values, level=all_levels, segment=all_segments,
+                                  longitudes=all_longitudes, latitudes=all_latitudes,
+                                  times=all_times, description=all_descriptions, meta=all_metas)
+
+        self.logger.info('Finished!')

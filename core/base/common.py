@@ -1,10 +1,8 @@
 """Common functions and classes"""
 
 import importlib
-import datetime
 import os.path
-# Python 3 only
-import builtins
+import logging
 
 ZERO_CELSIUS_IN_KELVIN = 273.15  # 0 degC is 273.15 degK
 MOD_PACKAGE_PATH = 'mod'
@@ -13,6 +11,7 @@ DATA_SUBPACKAGE_NAME = 'data'
 CVC_PREFIX = 'cvc'
 CALC_PREFIX = 'calc'
 DATA_PREFIX = 'data'
+logger = logging.getLogger()
 
 def celsius_to_kelvin(temperature_in_celsius):
     """Converts temperature in Celsius to Kelvin
@@ -49,10 +48,10 @@ def load_module(module_name, class_name, package_name=None):
         try:
             class_ = getattr(module_, class_name)
         except AttributeError:
-            print('(MainApp::load_module) Class ' + class_name + ' does not exist')
+            logger.error('Class %s does not exist', class_name)
             raise
     except ImportError:
-        print('(MainApp::load_module) Module ' + load_module_name + ' does not exist')
+        logger.error('Module %s does not exist', load_module_name)
         raise
     return class_
 
@@ -117,20 +116,7 @@ def list_remove_all(list_, item_to_remove):
     return [item for item in list_ if item != item_to_remove]
 
 
-def print(*args, **kwargs):  # pylint: disable=W0622
-    """Prints out to a standard output a string prefixed with current date and time
-
-    Arguments:
-        string_ -- string to print
-
-    """
-    now = datetime.datetime.now()
-    date_time = '({0:02}/{1:02}/{2:04} {3:02}:{4:02}:{5:02}) '.format(
-        now.day, now.month, now.year, now.hour, now.minute, now.second)
-    builtins.print(date_time, end='')
-    return builtins.print(*args, **kwargs)
-
-def make_filename(data_info, options):
+def make_filename(data_info, all_options):
     """Constructs a file name for writing raw output.
     It's used in write-methods of various data-access classes.
     Names of vertical levels are included into the filename.
@@ -144,13 +130,17 @@ def make_filename(data_info, options):
         filename -- constructed filename which includes level name and time segment.
 
     """
+    if isinstance(all_options, list):
+        options = all_options[0]
+    else:
+        options = all_options
     (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
     filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], options['segment']['@beginning'],
                                       options['segment']['@ending'], file_ext)
     return filename
 
 
-def make_raw_filename(data_info, options):
+def make_raw_filename(data_info, all_options):
     """Constructs a file name for writing raw output.
     It's used in write-methods of various data-access classes.
     Names of vertical levels are NOT included into the filename.
@@ -164,6 +154,10 @@ def make_raw_filename(data_info, options):
         filename -- constructed filename which includes level name and time segment.
 
     """
+    if isinstance(all_options, list):
+        options = all_options[0]
+    else:
+        options = all_options
     (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
     filename = '{}_{}-{}{}'.format(file_root, options['segment']['@beginning'],
                                    options['segment']['@ending'], file_ext)

@@ -17,7 +17,7 @@ import numpy as np
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print, kelvin_to_celsius  # pylint: disable=W0622
+from core.base.common import kelvin_to_celsius
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2
@@ -32,6 +32,7 @@ class CalcGSL(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _calc_gsl(self, values, threshold):
@@ -62,11 +63,11 @@ class CalcGSL(Calc):
     def run(self):
         """ Main method of the class. Reads data array, process them and returns results. """
 
-        print('(CalcGSL::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcGSL::run) No input arguments!'
+        assert input_uids, 'Error No input arguments!'
 
         # Get parameters
         parameters = None
@@ -74,11 +75,11 @@ class CalcGSL(Calc):
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
-        print('(CalcGSL::run) Calculation mode: {}'.format(calc_mode))
+        self.logger.info('Calculation mode: %s', calc_mode)
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(CalcGSL::run) No output arguments!'
+        assert output_uids, 'Error! No output arguments!'
 
         # Get time segments and levels
         time_segments = self._data_helper.get_segments(input_uids[DATA_UID])
@@ -114,7 +115,7 @@ class CalcGSL(Calc):
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
-                    print('(CalcGSL::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
+                    self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
                     raise ValueError
 
             # For data-wise analysis analyse segments analyses :)
@@ -130,4 +131,4 @@ class CalcGSL(Calc):
                                       longitudes=data['@longitude_grid'], latitudes=data['@latitude_grid'],
                                       fill_value=data['@fill_value'], meta=data['meta'])
 
-        print('(CalcGSL::run) Finished!')
+        self.logger.info('Finished!')

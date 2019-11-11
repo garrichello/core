@@ -1,13 +1,15 @@
 """Provides classes:
     DataParameter
 """
-from core.base.common import listify, print
+from core.base.common import listify
+from .data import Data
 
-class DataParameter:
+class DataParameter(Data):
     """ Provides methods for reading and writing parameters in a task file.
     """
 
     def __init__(self, data_info):
+        super().__init__(data_info)
         self._data_info = data_info
 
     def _type_cast(self, string_value, cast_type):
@@ -38,13 +40,13 @@ class DataParameter:
             result -- dictionary containing parameters from a task file
         """
 
-        print(' (DataParameter::read) Reading parameters...')
+        self.logger.info('Reading parameters...')
 
         parameters = listify(self._data_info['data']['param'])
         result = {}
         for parameter in parameters:
             result[parameter['@uid']] = self._type_cast(parameter['#text'], parameter['@type'])
 
-        print(' (DataParameter::read) Done')
+        self.logger.info('Done')
 
         return result

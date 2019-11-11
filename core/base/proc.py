@@ -2,8 +2,9 @@
     Proc
 """
 
+import logging
 from .dataaccess import DataAccess
-from .common import load_module, make_module_name, print
+from .common import load_module, make_module_name
 
 class Proc:
     """Class Proc.
@@ -18,10 +19,12 @@ class Proc:
             outputs -- list of dictionaries describing output arguments of the processing module
             metadb_info -- dictionary describing metadata database (location and user credentials)
         """
+
+        self.logger = logging.getLogger()
         self._proc_class_name = proc_class_name
-        print('(Proc::__init__) Initializing processing module {}'.format(proc_class_name))
+        self.logger.info('Initializing processing module %s', proc_class_name)
         self._data_helper = DataAccess(inputs, outputs, metadb_info)
-        print('(Proc::__init__) Done!')
+        self.logger.info('Done!')
 
     def run(self):
         """Creates an instance of the processing module class and runs it
@@ -33,10 +36,10 @@ class Proc:
         processor = proc_class(self._data_helper)
 
         # And here we run the module.
-        print('(Proc::run) Starting processing module {}...'.format(self._proc_class_name))
+        self.logger.info('Starting processing module %s...', self._proc_class_name)
         try:
             processor.run()
         except AttributeError:
-            print('(Proc::run) No method \'run\' in the class ' + self._proc_class_name)
+            self.logger.error('No method \'run\' in the class %s', self._proc_class_name)
             raise
-        print('(Proc::run) Processing module {} exited.'.format(self._proc_class_name))
+        self.logger.info('Processing module %s exited.', self._proc_class_name)

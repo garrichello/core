@@ -20,7 +20,6 @@ from copy import deepcopy
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2
@@ -35,6 +34,7 @@ class CalcCDDCWD(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _calc_cddcwd(self, values, threshold, calc_type):
@@ -46,7 +46,7 @@ class CalcCDDCWD(Calc):
         elif calc_type == 'cwd':
             cmp_func = operator.ge
         else:
-            print('(CalcCDDCWD::run) Unknown calculation type: {}. Aborting!'.format(calc_type))
+            self.logger.error('Unknown calculation type: %s. Aborting!', calc_type)
             raise ValueError
 
         data_shape = values.shape[1:]
@@ -65,11 +65,11 @@ class CalcCDDCWD(Calc):
     def run(self):
         """ Main method of the class. Reads data array, process them and returns results. """
 
-        print('(CalcCDDCWD::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcCDDCWD::run) No input arguments!'
+        assert input_uids, 'Error! No input arguments!'
 
         # Get parameters
         parameters = None
@@ -78,8 +78,8 @@ class CalcCDDCWD(Calc):
         calc_type = self._get_parameter('Type', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
-        print('(CalcCDDCWD::run) Calculation type: {}'.format(calc_type.upper()))
-        print('(CalcCDDCWD::run) Calculation mode: {}'.format(calc_mode))
+        self.logger.info('Calculation type: %s', calc_type.upper())
+        self.logger.info('Calculation mode: %s', calc_mode)
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
@@ -119,7 +119,7 @@ class CalcCDDCWD(Calc):
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
-                    print('(CalcCDDCWD::run) Error! Unknown calculation mode: \'{}\''.format(calc_mode))
+                    self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
                     raise ValueError
 
             # For data-wise analysis analyse segments analyses :)
@@ -135,4 +135,4 @@ class CalcCDDCWD(Calc):
                                       longitudes=data['@longitude_grid'], latitudes=data['@latitude_grid'],
                                       fill_value=data['@fill_value'], meta=data['meta'])
 
-        print('(CalcCDDCWD::run) Finished!')
+        self.logger.info('Finished!')

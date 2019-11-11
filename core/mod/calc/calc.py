@@ -1,12 +1,15 @@
 """ Base class cvcCalc provides methods for all calculation classes
 """
 
+import logging
 from copy import deepcopy
 import numpy.ma as ma
 
 class Calc():
     """ Base class for all calculation methods
     """
+    def __init__(self):
+        self.logger = logging.getLogger()
 
     def make_global_segment(self, time_segments):
         """ Makes a global segment covering all input time segments

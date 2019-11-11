@@ -32,11 +32,21 @@ def setup_loggers(logger, *args, **kwargs):
     formatter = TaskFormatter(file_log_format, use_color=False)
 
     error_log_file = os.path.join(core_config['RPC']['log_dir'], 'errors.log')
-    print('ERROR LOG IS WRITTEN HERE: ', error_log_file)
-    file_handler = logging.handlers.RotatingFileHandler(error_log_file, maxBytes=1048576, backupCount=5, encoding='utf8', delay=1)
-    file_handler.setFormatter(formatter)
-    file_handler.setLevel(logging.ERROR)
-    logger.addHandler(file_handler)
+    print('ERROR LOG: ', error_log_file)
+    err_file_handler = logging.handlers.RotatingFileHandler(
+        error_log_file, maxBytes=1048576, backupCount=5, encoding='utf8', delay=1)
+    err_file_handler.setFormatter(formatter)
+    err_file_handler.setLevel(logging.ERROR)
+    logger.addHandler(err_file_handler)
+
+    if core_config['RPC']['enable_core_log'] == 'yes':
+        core_log_file = os.path.join(core_config['RPC']['log_dir'], 'core.log')
+        print('CORE LOG: ', core_log_file)
+        core_file_handler = logging.handlers.RotatingFileHandler(
+            core_log_file, maxBytes=10485760, backupCount=5, encoding='utf8', delay=0)
+        core_file_handler.setFormatter(formatter)
+        core_file_handler.setLevel(logging.INFO)
+        logger.addHandler(core_file_handler)
 
 @app.task(bind=True)
 def run_plain_xml(self, task_xml):

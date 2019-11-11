@@ -65,11 +65,6 @@ def run_plain_xml(self, task_xml):
     # Result is a zip-file as bytes.
     result_zip = application.run_task(task_xml, self.request.id)
 
-    # Control write of result zip-file.
-    with open('output.zip', 'wb') as out_file:
-        out_file.write(result_zip)
-    out_file.close()
-
     logger.info('Task %s is finished.', self.request.id)
 
     return base64.b64encode(result_zip).decode('utf-8')

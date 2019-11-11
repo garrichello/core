@@ -10,3 +10,5 @@ func_tests.sh
 virtualenv
 *.log
 templates_tests.sh
+debug
+debug.sh

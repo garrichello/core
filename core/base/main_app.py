@@ -2,12 +2,17 @@
     MainApp
 """
 from copy import deepcopy
+import logging
+import os
+from configparser import ConfigParser
+from zipfile import ZipFile, ZIP_DEFLATED
+import io
 
 import collections
 import xmltodict
 
 from .proc import Proc
-from .common import print, listify  # pylint: disable=W0622
+from .common import listify
 
 class MainApp:
     """Main application class. It does everything the application does."""
@@ -19,50 +24,91 @@ class MainApp:
             args - argparse's Namespace with command line arguments of the application.
         """
 
+        self.logger = logging.getLogger()
         self._task = {}
         self._data_uid_list = []
         self._destination_uid_list = []
+        self._task_id = None
+
+        # Read main configuration file.
+        self.config = ConfigParser()
+        self.config.read(os.path.join(str(os.path.dirname(__file__)),
+                                      '../core_config.ini'))
 
     def run(self, args):
         """Run this function to run the Core."""
 
-        print('(MainApp::run) Let\'s do it!')
+        self.logger.info('Let\'s do it!')
 
         task_file_name = args.task_file_name
         self._read_task(task_file_name)
         self._process()
 
-        print('(MainApp::run) Job is done. Exiting.')
+        self.logger.info('Job is done. Exiting.')
 
-    def run_task(self, task_string):
+    def run_task(self, task_string, task_id=None):
         """Reads the task from a string and creates all necessary structures."""
 
-        print('(MainApp::run) Let\'s do it!')
-        print("(MainApp::read_task) Read the task...")
+        self.logger.info('Let\'s do it!')
+        self.logger.info('Read the task...')
 
         self._task = xmltodict.parse(task_string)
+        self._task_id = task_id
 
         # Make them lists!
         self._task['task']['data'] = listify(self._task['task']['data'])
         self._task['task']['destination'] = listify(self._task['task']['destination'])
         self._task['task']['processing'] = listify(self._task['task']['processing'])
 
-        print("(MainApp::read_task) Done!")
+        self.logger.info('Done!')
 
+        # Modify task id in task file.
+        self._task['task']['@uid'] = str(task_id)
+
+        # Make task dir
+        pool_dir = self.config['RPC']['pool_dir']
+        task_dir = os.path.join(pool_dir, str(task_id))
+        os.makedirs(task_dir, exist_ok=True)
+
+        # Change location of output files.
+        for destination in self._task['task']['destination']:
+            file_name = os.path.basename(destination['file']['@name'])
+            destination['file']['@name'] = os.path.join(task_dir, file_name)
+            if destination['@type'] == 'image':
+                sld_name = os.path.basename(destination['graphics']['legend']['file']['@name'])
+                destination['graphics']['legend']['file']['@name'] = \
+                    os.path.join(task_dir, sld_name)
+
+        # Run task processing.
         self._process()
 
-        print('(MainApp::run) Job is done. Exiting.')
+        # Compress results in memory.
+        os.chdir(task_dir)  # Move to the results directory.
+        mem_zip = io.BytesIO()  # Zip-in-memeory buffer.
+        with ZipFile(mem_zip, 'w', ZIP_DEFLATED) as zip_file:
+            # Read result files and add them to the zip-file.
+            for file_name in os.listdir():
+                with open(file_name, 'rb') as result_file:
+                    file_data = result_file.read()
+                zip_file.writestr(file_name, file_data)
+
+        zip_buffer = mem_zip.getvalue()  # Get zip-file as plain bytes.
+        self.logger.info('Zip-file length is %s bytes', len(zip_buffer))
+
+        self.logger.info('Job is done. Exiting.')
+
+        return zip_buffer
 
     def _read_task(self, task_file_name):
         """Reads the task file and creates all necessary structures."""
 
-        print("(MainApp::read_task) Read the task file...")
+        self.logger.info('Read the task file...')
 
         try:
             with open(task_file_name) as file_descriptor:
                 self._task = xmltodict.parse(file_descriptor.read())
         except FileNotFoundError:
-            print('(MainApp::_read_task) Task file not found: ' + task_file_name)
+            self.logger.error('Task file not found: %s', task_file_name)
             raise
         except UnicodeDecodeError:
             with open(task_file_name, encoding='windows-1251') as file_descriptor:
@@ -73,7 +119,7 @@ class MainApp:
         self._task['task']['destination'] = listify(self._task['task']['destination'])
         self._task['task']['processing'] = listify(self._task['task']['processing'])
 
-        print("(MainApp::read_task) Done!")
+        self.logger.info('Done!')
 
     def _dict_append(self, source, destination):
         if isinstance(source, dict):
@@ -91,15 +137,14 @@ class MainApp:
             parent_uid -- parent data UID
             child_uid -- child data UID
 
-        Returns: 
+        Returns:
             'data' dictionary with properties of the parent data overridden with existing properties of a child.
         """
         child_idx = self._data_uid_list.index(child_uid)
         try:
             parent_idx = self._data_uid_list.index(parent_uid) # Search for a parent 'data' element.
         except ValueError:
-            print('(MainApp::_inherit_properties) Can\'t find parent data UID \'{}\' in child data \'{}\''.format(
-                parent_uid, child_uid))
+            self.logger.error('Can\'t find parent data UID \'%s\' in child data \'%s\'', parent_uid, child_uid)
         child_data = task['data'][child_idx]
         parent_data = task['data'][parent_idx]
         self._dict_append(parent_data, child_data)
@@ -142,15 +187,14 @@ class MainApp:
                 data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
                 arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.
             else:
-                print('(MainApp::process) Can\'t find data or destination UID: \''
-                      + argument_uid + '\' in processing \'' + proc_uid
-                      + '\' input \'' + arg['@uid'] + '\'')
+                self.logger.error('Can\'t find data or destination UID: \'%s\' in processing \'%s\' input \'%s\'',
+                                  argument_uid, proc_uid, arg['@uid'])
                 raise ValueError
 
     def _process(self):
         """Runs modules in the order specified in a task file."""
 
-        print('(MainApp::process) Start the processing.')
+        self.logger.info('Start the processing.')
 
         for task_name in self._task:
             task = self._task[task_name]
@@ -178,4 +222,4 @@ class MainApp:
                 # Run the processor which in turn should run the processing module.
                 processor.run()
 
-        print('(MainApp::process) Processing is finished.')
+        self.logger.info('Processing is finished.')

@@ -13,7 +13,6 @@ from scipy.stats import t as student_t
 import numpy.ma as ma
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2
@@ -26,6 +25,7 @@ class CalcCorrelation(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _calc_correlation(self, values_1, values_2, conf_level=0.95):
@@ -54,25 +54,25 @@ class CalcCorrelation(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcCorrelation::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcCorrelation::run) No input arguments!'
+        assert input_uids, 'Error! No input arguments!'
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(CalcCorrelation::run) No output arguments!'
+        assert output_uids, 'Error! No output arguments!'
 
         # Get time segments and levels for both datasets
         time_segments_1 = self._data_helper.get_segments(input_uids[DATA_1_UID])
         time_segments_2 = self._data_helper.get_segments(input_uids[DATA_2_UID])
         assert len(time_segments_1) == len(time_segments_2), \
-            '(CalcCorrelation::run) Error! Number of time segments are not the same!'
+            'Error! Number of time segments are not the same!'
         levels_1 = self._data_helper.get_levels(input_uids[DATA_1_UID])
         levels_2 = self._data_helper.get_levels(input_uids[DATA_2_UID])
         assert len(levels_1) == len(levels_2), \
-            '(CalcCorrelation::run) Error! Number of vertical levels are not the same!'
+            'Error! Number of vertical levels are not the same!'
 
         for data_1_level, data_2_level in zip(levels_1, levels_2):
             for data_1_segment, data_2_segment in zip(time_segments_1, time_segments_2):
@@ -82,8 +82,10 @@ class CalcCorrelation(Calc):
                 values_1 = data_1['data'][data_1_level][data_1_segment['@name']]['@values']
                 values_2 = data_2['data'][data_2_level][data_2_segment['@name']]['@values']
                 meta_corr_coef = {**data_1['meta'], **data_2['meta']}  # Combine meta from both datasets.
+                meta_corr_coef['varname'] = 'corr_coef'  # Variable name in netCDF file
                 meta_sig = {**data_1['meta'], **data_2['meta']}  # Combine meta from both datasets.
                 meta_sig['legend_override'] = {1: 'Significant', 0: 'Not significant'}
+                meta_sig['varname'] = 'significance'  # Variable name in netCDF file
 
                 # Perform calculation for the current time segment.
                 corr_coef, significance = self._calc_correlation(values_1, values_2)
@@ -99,7 +101,7 @@ class CalcCorrelation(Calc):
                                       level=data_1_level, segment=data_1_segment,
                                       longitudes=data_1['@longitude_grid'],
                                       latitudes=data_1['@latitude_grid'],
-                                      fill_value=data_1['@fill_value'],
+                                      fill_value=True,  # Significant data are missing (thus transparent) data!
                                       meta=meta_sig)
 
-        print('(CalcCorrelation::run) Finished!')
+        self.logger.info('Finished!')

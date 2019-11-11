@@ -3,7 +3,6 @@
 import numpy as np
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 1
@@ -14,25 +13,26 @@ class cvcCalcTrendTM(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(cvcCalcTrendTM::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(cvcCalcTrendTM::run) No input arguments!'
+        assert input_uids, 'Error! No input arguments!'
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(cvcCalcTrendTM::run) No output arguments!'
+        assert output_uids, 'Error! No output arguments!'
 
         # Get time segments
         time_segments = self._data_helper.get_segments(input_uids[0])
         if len(time_segments) < 2:
-            print("(cvcCalcTrendTM::run) Error! Don't know how to calculate trend: only one input time segment is given. Aborting...")
+            self.logger.error("Error! Don't know how to calculate trend: only one input time segment is given. Aborting...")
             raise AssertionError('Input data contains only one time segment!')
 
         # Get vertical levels
@@ -72,4 +72,4 @@ class cvcCalcTrendTM(Calc):
                                   description=description,
                                   fill_value=result['@fill_value'], meta=result['meta'])
 
-        print('(cvcCalcTrendTM::run) Finished!')
+        self.logger.info('Finished!')

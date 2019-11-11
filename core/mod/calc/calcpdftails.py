@@ -16,7 +16,6 @@ import datetime
 import numpy as np
 
 from core.base.dataaccess import DataAccess
-from core.base.common import print  # pylint: disable=W0622
 from core.mod.calc.calc import Calc
 
 START_THRESHOLD = 10
@@ -29,6 +28,7 @@ class CalcPDFtails(Calc):
     """
 
     def __init__(self, data_helper: DataAccess):
+        super().__init__()
         self._data_helper = data_helper
 
     def _calc_percentile(self, uid):
@@ -99,15 +99,15 @@ class CalcPDFtails(Calc):
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
-        print('(CalcPDFtails::run) Started!')
+        self.logger.info('Started!')
 
         # Get inputs
         input_uids = self._data_helper.input_uids()
-        assert input_uids, '(CalcPDFtails::run) No input arguments!'
+        assert input_uids, 'Error! No input arguments!'
 
         # Get outputs
         output_uids = self._data_helper.output_uids()
-        assert output_uids, '(CalcPDFtails::run) No output arguments!'
+        assert output_uids, 'Error! No output arguments!'
 
         # Calculate percentiles
         out_uid = 0
@@ -121,4 +121,4 @@ class CalcPDFtails(Calc):
                                       meta=percentile['meta'])
             out_uid += 1
 
-        print('(CalcPDFtails::run) Finished!')
+        self.logger.info('Finished!')

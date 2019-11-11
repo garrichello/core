@@ -100,7 +100,12 @@ class MainApp:
 
             zip_buffer = mem_zip.getvalue()  # Get zip-file as plain bytes.
             self.logger.info('Zip-file length is %s bytes', len(zip_buffer))
-
+        except:
+            log_dir = self.config['RPC']['log_dir']
+            err_task_file = os.path.join(log_dir, 'error_task_'+str(task_id)+'.xml')
+            with open(err_task_file, 'w') as out_file:
+                out_file.write(task_string)
+            raise
         finally:
             # Delete result files
             self.logger.info('Clean temporary files...')

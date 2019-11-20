@@ -71,15 +71,15 @@ class MainApp:
         tmp_dir = self.config['RPC']['tmp_dir']
         task_dir = os.path.join(tmp_dir, str(task_id))
         os.makedirs(task_dir, exist_ok=True)
+        os.chdir(task_dir)  # Move to the task directory!
 
         # Change location of output files.
         for destination in self._task['task']['destination']:
             file_name = os.path.basename(destination['file']['@name'])
-            destination['file']['@name'] = os.path.join(task_dir, file_name)
+            destination['file']['@name'] = file_name
             if destination['@type'] == 'image':
                 sld_name = os.path.basename(destination['graphics']['legend']['file']['@name'])
-                destination['graphics']['legend']['file']['@name'] = \
-                    os.path.join(task_dir, sld_name)
+                destination['graphics']['legend']['file']['@name'] = sld_name
 
         try:
             # Run task processing.
@@ -87,7 +87,6 @@ class MainApp:
 
             # Compress results in memory.
             self.logger.info('Compress results...')
-            os.chdir(task_dir)  # Move to the results directory.
             mem_zip = io.BytesIO()  # Zip-in-memeory buffer.
             with ZipFile(mem_zip, 'w', ZIP_DEFLATED) as zip_file:
                 # Read result files and add them to the zip-file.

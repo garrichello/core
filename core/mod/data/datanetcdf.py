@@ -402,11 +402,8 @@ class DataNetcdf(Data):
         varname = 'data' if varname is None else varname
 
         level_value = re.findall(r'\d+', options['level'])  # Take a numeric part.
-        level_value = int(level_value[0]) if level_value else options['level']  # Use numeric part if it's present. Otherwise use the whole name.
-        if isinstance(level_value, int):  # If we extracted numeric part, search for units.
-            level_units = re.findall(r'[a-zA-Z]+', options['level'])  # Take an alpha part.
-        else:  # Otherwise there is no units in the level name.
-            level_units = None
+        level_value = int(level_value[0]) if level_value else None  # Use it if it's present.
+        level_units = re.findall(r'[a-zA-Z]+', options['level'])  # Take an alpha part.
         level_units = level_units[0] if level_units else None  # Use it if it's present.
 
         dims = list(values.shape)
@@ -436,7 +433,21 @@ class DataNetcdf(Data):
             longitudes[:] = options['longitudes']
             latitudes[:] = options['latitudes']
 
-            if not level_value is None:
+            if options['times'] is not None:
+                # Define time variable.
+                dim_list.insert(0, 'time')  # If time grid is present, add dimension time
+                time = root.createDimension('time', len(options['times']))  # pylint: disable=W0612
+                times = root.createVariable('time', 'f8', ('time'))
+                # Set time attributes.
+                times.units = 'days since {}-1-1 00:00:0.0'.format(options['times'][0].year)
+                times_long_name = None if meta is None else meta.get('time_long_name')
+                times.long_name = 'time' if times_long_name is None else times_long_name
+                # Write time variable.
+                start_date = datetime(options['times'][0].year, 1, 1)
+                times[:] = [(cur_date - start_date).days for cur_date in options['times']]
+
+        if level_value:
+            if new_file or not (new_file or 'level' in root.variables):  # If file is new or does not contain level variable.
                 level_idx = 0  # Always 0 for a new file.
                 # Define level variable.
                 dim_list.insert(0, 'level')  # If level is present, add dimension level
@@ -450,34 +461,16 @@ class DataNetcdf(Data):
                 levels_long_name = None if meta is None else meta.get('level_long_name')
                 if levels_long_name:
                     levels.long_name = levels_long_name
+            else:  # The file is present and does contain level variable.
+                levels = root.variables['level']  # Get level variable (let's suppose it exists).
+                levels_list = levels[:].tolist()
+                # Check if the current level is present in the file.
+                if level_value in levels_list:
+                    level_idx = levels_list.index(level_value)
+                    dim_list.insert(0, 'level')  # If level is present, add dimension level
+                else:
+                    level_idx = levels.size
 
-            if not options['times'] is None:
-                # Define time variable.
-                dim_list.insert(0, 'time')  # If time grid is present, add dimension time
-                time = root.createDimension('time', len(options['times']))  # pylint: disable=W0612
-                times = root.createVariable('time', 'f8', ('time'))
-                # Set time attributes.
-                times.units = 'days since {}-1-1 00:00:0.0'.format(options['times'][0].year)
-                times_long_name = None if meta is None else meta.get('time_long_name')
-                times.long_name = 'time' if times_long_name is None else times_long_name
-                # Write time variable.
-                start_date = datetime(options['times'][0].year, 1, 1)
-                times[:] = [(cur_date - start_date).days for cur_date in options['times']]
-
-        else:  # Existing file.
-            if not 'level' in root.variables:
-                self.logger.error('No \'level\' variable in the file %s. Overwriting old one? Aborting.', filename)
-                raise Exception
-            levels = root.variables['level']  # Get level variable (let's suppose it exists).
-            levels_list = levels[:].tolist()
-            # Check if the current level is present in the file.
-            if level_value in levels_list:
-                level_idx = levels_list.index(level_value)
-                dim_list.insert(0, 'level')  # If level is present, add dimension level
-            else:
-                level_idx = levels.size
-
-        if level_value:
             dims.insert(-2, 1)  # Add level dimension before latitudes (we write one level at a time)
             slices.insert(-2, level_idx)  # Add level index before latitudes.
             # Write level vvariable.

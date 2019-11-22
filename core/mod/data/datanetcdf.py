@@ -402,8 +402,11 @@ class DataNetcdf(Data):
         varname = 'data' if varname is None else varname
 
         level_value = re.findall(r'\d+', options['level'])  # Take a numeric part.
-        level_value = int(level_value[0]) if level_value else None  # Use it if it's present.
-        level_units = re.findall(r'[a-zA-Z]+', options['level'])  # Take an alpha part.
+        level_value = int(level_value[0]) if level_value else level_value  # Use numeric part if it's present. Otherwise use the whole name.
+        if isinstance(level_value, int):  # If we extracted numeric part, search for units.
+            level_units = re.findall(r'[a-zA-Z]+', options['level'])  # Take an alpha part.
+        else:  # Otherwise there is no units in the level name.
+            level_units = None
         level_units = level_units[0] if level_units else None  # Use it if it's present.
 
         dims = list(values.shape)

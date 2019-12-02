@@ -31,7 +31,8 @@ class cvcOutput:
             raise ValueError('No output dataset specified. Aborting!')
 
         output_info = self._data_helper.get_data_info(output_uids[0])
-        if output_info['@type'] == 'image':  # For image output we'll pass everything at once. So collect'em all here!
+        # For image and raw output we'll pass everything at once. So collect'em all here!
+        if output_info['@type'] == 'image' or output_info['@type'] == 'raw':
             all_values = []
             all_levels = []
             all_segments = []
@@ -66,7 +67,8 @@ class cvcOutput:
                     if convert_k2c:
                         values = kelvin_to_celsius(values)
 
-                    if output_info['@type'] == 'image':  # Collect all data and meta.
+                    # Collect all data and meta.
+                    if output_info['@type'] == 'image' or output_info['@type'] == 'raw':
                         all_values.append(values)
                         all_levels.append(level_name)
                         all_segments.append(segment)
@@ -81,7 +83,8 @@ class cvcOutput:
                                               times=result['data'][level_name][segment['@name']]['@time_grid'],
                                               description=description, meta=result['meta'])
 
-        if output_info['@type'] == 'image':  # Pass everything at once.
+        # Pass everything at once.
+        if output_info['@type'] == 'image' or output_info['@type'] == 'raw':
             self._data_helper.put(output_uids[0], all_values, level=all_levels, segment=all_segments,
                                   longitudes=all_longitudes, latitudes=all_latitudes,
                                   times=all_times, description=all_descriptions, meta=all_metas)

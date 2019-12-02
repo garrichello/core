@@ -5,6 +5,8 @@ import logging
 import numpy as np
 from matplotlib.path import Path
 
+from core.base.common import unlistify
+
 GRID_TYPE_STATION = 'station'
 GRID_TYPE_REGULAR = 'regular'
 GRID_TYPE_IRREGULAR = 'irregular'
@@ -110,3 +112,50 @@ class Data:
         """
 
         return self._read_result
+
+    def _transpose_dict(self, dict_of_lists):
+        """ Converts dictionary of lists to a list of dictionaries.
+
+        Arguments:
+            dict_of_lists -- dictionary of lists
+
+        Returns:
+            list_of_dicts -- list of dictionaries
+        """
+
+        if not isinstance(dict_of_lists, dict) or dict_of_lists is None:
+            self.logger.debug('It\'s not a dictionary!')
+            return dict_of_lists
+
+        # Get lengths of lists.
+        lengths = {}
+        max_len = 0
+        for key, value in dict_of_lists.items():
+            if isinstance(value, list):
+                val_len = len(value)
+            else:
+                val_len = 1  # If it's not a list set it's length to 1
+            max_len = val_len if max_len < val_len else max_len
+            lengths[key] = val_len
+
+        # Check lengths of lists to be the same. Ignore elements of length 1.
+        for val_len in lengths.values():
+            if val_len != max_len and val_len > 1:
+                self.logger.error('Lists in dictionary must be of the same length!')
+                raise ValueError
+
+        # Convert dictionary of lists to a list of dictionaries.
+        # Copy elements of length 1 to all lists.
+        list_of_dicts = []
+        i = 0
+        while i < max_len:
+            single_dict = {}
+            for key in dict_of_lists.keys():
+                if lengths[key] > 1:
+                    single_dict[key] = dict_of_lists[key][i]
+                else:
+                    single_dict[key] = unlistify(dict_of_lists[key])
+            list_of_dicts.append(single_dict)
+            i += 1
+
+        return list_of_dicts

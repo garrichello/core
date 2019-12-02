@@ -384,7 +384,7 @@ class DataNetcdf(Data):
         """
 
         # Construct the file name
-        filename = make_raw_filename(self._data_info, options)
+        filename = self._data_info['data']['file']['@name']
 
         self.logger.info('Writing netCDF file: %s', filename)
 
@@ -433,9 +433,9 @@ class DataNetcdf(Data):
             longitudes[:] = options['longitudes']
             latitudes[:] = options['latitudes']
 
-            if options['times'] is not None:
+            if options['times'] is not None:  # If time grid is present.
                 # Define time variable.
-                dim_list.insert(0, 'time')  # If time grid is present, add dimension time
+                dim_list.insert(0, 'time')  # Add dimension time.
                 time = root.createDimension('time', len(options['times']))  # pylint: disable=W0612
                 times = root.createVariable('time', 'f8', ('time'))
                 # Set time attributes.

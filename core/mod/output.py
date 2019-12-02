@@ -83,8 +83,22 @@ class cvcOutput:
                                               times=result['data'][level_name][segment['@name']]['@time_grid'],
                                               description=description, meta=result['meta'])
 
-        # Pass everything at once.
-        if output_info['@type'] == 'image' or output_info['@type'] == 'raw':
+            # Pass everything in one uid at once to raw output.
+            if output_info['@type'] == 'raw':
+                self._data_helper.put(output_uids[0], all_values, level=all_levels, segment=all_segments,
+                                      longitudes=all_longitudes, latitudes=all_latitudes,
+                                      times=all_times, description=all_descriptions, meta=all_metas)
+                all_values = []
+                all_levels = []
+                all_segments = []
+                all_longitudes = []
+                all_latitudes = []
+                all_times = []
+                all_descriptions = []
+                all_metas = []
+
+        # Pass everything in all uids at once to image output.
+        if output_info['@type'] == 'image':
             self._data_helper.put(output_uids[0], all_values, level=all_levels, segment=all_segments,
                                   longitudes=all_longitudes, latitudes=all_latitudes,
                                   times=all_times, description=all_descriptions, meta=all_metas)

@@ -104,7 +104,7 @@ def unlistify(list_):
             elif len(list_) == 1:
                 result = list_[0]
             else:
-                raise ValueError
+                result = list_[0]
     else:
         result = None
     return result

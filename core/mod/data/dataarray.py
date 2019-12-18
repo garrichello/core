@@ -21,6 +21,7 @@ class DataArray(Data):
         # Create a new time segment element in data info discarding anything specified in the task file.
         self._data_info['data']['time'] = {}
         self._data_info['data']['time']['segment'] = []
+        self._data_info['data']['time']['@grid'] = []
 
     def read(self, options):
         """Reads an array.
@@ -118,7 +119,7 @@ class DataArray(Data):
 
         if times is not None:
             # Append a time grid
-            self._data_info['data']['time']['@grid'] = times
+            self._data_info['data']['time']['@grid'].append(times)
 
         self._data_info['data']['@longitudes'] = longitudes
         self._data_info['data']['@latitudes'] = latitudes

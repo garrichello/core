@@ -34,8 +34,6 @@ class cvcOutput:
         # For image and raw output we'll pass everything at once. So collect'em all here!
         if output_info['@type'] == 'image' or output_info['@type'] == 'raw':
             all_values = []
-            all_levels = []
-            all_segments = []
             all_times = []
 
         for in_uid in input_uids:
@@ -66,8 +64,6 @@ class cvcOutput:
                     # Collect all data and meta.
                     if output_info['@type'] == 'image' or output_info['@type'] == 'raw':
                         all_values.append(values)
-                        all_levels.append(level_name)
-                        all_segments.append(segment)
                         all_times.append(result['data'][level_name][segment['@name']]['@time_grid'])
                     else:  # Pass one by one to a writer.
                         self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
@@ -77,17 +73,15 @@ class cvcOutput:
 
             # Pass everything in one uid at once to raw output.
             if output_info['@type'] == 'raw':
-                self._data_helper.put(output_uids[0], all_values, level=all_levels, segment=all_segments,
+                self._data_helper.put(output_uids[0], all_values, level=vertical_levels, segment=time_segments,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
                                       times=all_times, description=description, meta=result['meta'])
                 all_values = []
-                all_levels = []
-                all_segments = []
                 all_times = []
 
         # Pass everything in all uids at once to image output.
         if output_info['@type'] == 'image':
-            self._data_helper.put(output_uids[0], all_values, level=all_levels, segment=all_segments,
+            self._data_helper.put(output_uids[0], all_values, level=vertical_levels, segment=time_segments,
                                   longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
                                   times=all_times, description=description, meta=result['meta'])
 

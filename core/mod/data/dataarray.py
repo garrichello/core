@@ -1,8 +1,6 @@
 """Provides classes
     DataArray
 """
-from collections import defaultdict
-
 from core.base.common import listify
 
 from .data import Data

@@ -397,7 +397,7 @@ class DataNetcdf(Data):
         slices = [slice(None) for i in range(values.ndim)]
 
         # Get meta.
-        meta = all_options.get(['meta'])
+        meta = all_options.get('meta')
 
         # Get the variable name.
         varname = None if meta is None else all_options['meta'].get('varname')

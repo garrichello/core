@@ -36,11 +36,7 @@ class cvcOutput:
             all_values = []
             all_levels = []
             all_segments = []
-            all_longitudes = []
-            all_latitudes = []
             all_times = []
-            all_descriptions = []
-            all_metas = []
 
         for in_uid in input_uids:
             time_segments = self._data_helper.get_segments(in_uid)
@@ -72,11 +68,7 @@ class cvcOutput:
                         all_values.append(values)
                         all_levels.append(level_name)
                         all_segments.append(segment)
-                        all_longitudes.append(result['@longitude_grid'])
-                        all_latitudes.append(result['@latitude_grid'])
                         all_times.append(result['data'][level_name][segment['@name']]['@time_grid'])
-                        all_descriptions.append(description)
-                        all_metas.append(result['meta'])
                     else:  # Pass one by one to a writer.
                         self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
                                               longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
@@ -86,21 +78,17 @@ class cvcOutput:
             # Pass everything in one uid at once to raw output.
             if output_info['@type'] == 'raw':
                 self._data_helper.put(output_uids[0], all_values, level=all_levels, segment=all_segments,
-                                      longitudes=all_longitudes, latitudes=all_latitudes,
-                                      times=all_times, description=all_descriptions, meta=all_metas)
+                                      longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                      times=all_times, description=description, meta=result['meta'])
                 all_values = []
                 all_levels = []
                 all_segments = []
-                all_longitudes = []
-                all_latitudes = []
                 all_times = []
-                all_descriptions = []
-                all_metas = []
 
         # Pass everything in all uids at once to image output.
         if output_info['@type'] == 'image':
             self._data_helper.put(output_uids[0], all_values, level=all_levels, segment=all_segments,
-                                  longitudes=all_longitudes, latitudes=all_latitudes,
-                                  times=all_times, description=all_descriptions, meta=all_metas)
+                                  longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                  times=all_times, description=description, meta=result['meta'])
 
         self.logger.info('Finished!')

@@ -483,7 +483,7 @@ class DataNetcdf(Data):
         data_var.long_name = all_options['description']['@name']
         # Write data variable.
         for level_idx in range(n_levels):
-            data_var[:, level_idx, :, :] = ma.filled(values, fill_value=values.fill_value)  # Write values.
+            data_var[:, level_idx, :, :] = ma.filled(values[level_idx, :, :, :], fill_value=values.fill_value)  # Write values.
 
         root = None
 

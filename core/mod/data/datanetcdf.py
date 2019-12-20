@@ -388,15 +388,19 @@ class DataNetcdf(Data):
         filename = self._data_info['data']['file']['@name']
         self.logger.info('Writing netCDF file: %s', filename)
 
-        # We always have longitudes and latitudes.
-        dim_list = ['lat', 'lon']  # Basic list of dimensions.
-
         # Get meta.
         meta = all_options.get('meta')
 
         # Get the variable name.
         varname = None if meta is None else all_options['meta'].get('varname')
         varname = 'data' if varname is None else varname
+
+        # Get time values.
+        time_grid = [item for sublist in all_options['times'] for item in sublist]
+        if not time_grid:  # Time grids are not given.
+            # Use segments to get the time grid.
+            time_grid = [datetime.strptime(item['@beginning'], '%Y%m%d%H') for item in all_options['segment']]
+        n_times = len(time_grid)
 
         # Get level values and names.
         levels = {}
@@ -415,17 +419,12 @@ class DataNetcdf(Data):
             raise ValueError
         else:
             levels['units'] = levels['units'][0]
-
-        # Get time values.
-        time_grid = [item for sublist in all_options['times'] for item in sublist]
-        if not time_grid:  # Time grids are not given.
-            # Use segments to get the time grid.
-            time_grid = [datetime.strptime(item['@beginning'], '%Y%m%d%H') for item in all_options['segment']]
+            n_levels = len(levels['values'])
 
         # Stack values.
+        n_lat, n_lon = list(all_values[0].shape)
         values = ma.stack(all_values)
-        dims = list(values.shape)
-        slices = [slice(None) for i in range(values.ndim)]
+        values = values.reshape((n_levels, n_times, n_lat, n_lon))
 
         # Create netCDF file.
         root = Dataset(filename, 'w', format='NETCDF4_CLASSIC')  # , format='NETCDF3_64BIT_OFFSET')
@@ -451,50 +450,40 @@ class DataNetcdf(Data):
         longitudes[:] = all_options['longitudes']
         latitudes[:] = all_options['latitudes']
 
-        if time_grid:  # If time grid is present.
-            # Define time variable.
-            dim_list.insert(0, 'time')  # Add dimension time.
-            time_dim = root.createDimension('time', len(time_grid))  # pylint: disable=W0612
-            time_var = root.createVariable('time', 'f8', ('time'))
-            # Set time attributes.
-            time_var.units = 'days since {}-1-1 00:00:0.0'.format(time_grid[0].year)
-            time_var_long_name = None if meta is None else meta.get('time_long_name')
-            time_var.long_name = 'time' if time_var_long_name is None else time_var_long_name
-            # Write time variable.
-            start_date = datetime(time_grid[0].year, 1, 1)
-            time_var[:] = [(cur_date - start_date).days for cur_date in time_grid]
+        # Define time variable.
+        time_dim = root.createDimension('time', n_times)  # pylint: disable=W0612
+        time_var = root.createVariable('time', 'f8', ('time'))
+        # Set time attributes.
+        time_var.units = 'days since {}-1-1 00:00:0.0'.format(time_grid[0].year)
+        time_var_long_name = None if meta is None else meta.get('time_long_name')
+        time_var.long_name = 'time' if time_var_long_name is None else time_var_long_name
+        # Write time variable.
+        start_date = datetime(time_grid[0].year, 1, 1)
+        time_var[:] = [(cur_date - start_date).days for cur_date in time_grid]
 
-        if levels['values']:  # If levels are given.
-            # Define level variable.
-            dim_list.insert(0, 'level')  # If level is present, add dimension level
-            level_dim = root.createDimension('level', len(levels['values']))  # pylint: disable=W0612
-            level_var = root.createVariable('level', 'i4', ('level'))
-            # Set level attributes.
-            level_var.standard_name = 'level'
-            level_var_units = levels['units'] if levels['units'] else None if meta is None else meta.get('level_units')
-            if level_var_units:
-                level_var.units = level_var_units
-            level_var_long_name = None if meta is None else meta.get('level_long_name')
-            if level_var_long_name:
-                level_var.long_name = level_var_long_name
-            # Write level variable.
-            level_var[:] = levels['values']
+        # Define level variable.
+        level_dim = root.createDimension('level', n_levels)  # pylint: disable=W0612
+        level_var = root.createVariable('level', 'i4', ('level'))
+        # Set level attributes.
+        level_var.standard_name = 'level'
+        level_var_units = levels['units'] if levels['units'] else None if meta is None else meta.get('level_units')
+        if level_var_units:
+            level_var.units = level_var_units
+        level_var_long_name = None if meta is None else meta.get('level_long_name')
+        if level_var_long_name:
+            level_var.long_name = level_var_long_name
+        # Write level variable.
+        level_var[:] = levels['values']
 
-            dims.insert(-2, 1)  # Add level dimension before latitudes (we write one level at a time)
-            slices.insert(-2, 0)  # Add level index before latitudes.
-
-            # Check if variable is present in the file.
-            data = root.variables.get(varname)
-            if data is None:
-                # Define data variable if it is not present.
-                data = root.createVariable(varname, 'f4', dim_list, fill_value=values.fill_value)
-                # Set data attributes.
-                data.units = all_options['description']['@units']
-                data.long_name = all_options['description']['@name']
-
-            # Prepare and write values.
-            values = values.reshape(dims)
-            data[tuple(slices)] = ma.filled(values, fill_value=values.fill_value)  # Write values.
+        # Define data variable.
+        data_dims = ['time', 'level', 'lat', 'lon']
+        data_var = root.createVariable(varname, 'f4', data_dims, fill_value=values.fill_value)
+        # Set data attributes.
+        data_var.units = all_options['description']['@units']
+        data_var.long_name = all_options['description']['@name']
+        # Write data variable.
+        for level_idx in range(n_levels):
+            data_var[:, level_idx, :, :] = ma.filled(values, fill_value=values.fill_value)  # Write values.
 
         root = None
 

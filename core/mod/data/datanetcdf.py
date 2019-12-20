@@ -418,7 +418,7 @@ class DataNetcdf(Data):
             self.logger.error('Writing levels with different units are not supported yet! Aborting...')
             raise ValueError
         else:
-            levels['units'] = levels['units'][0]
+            levels['units'] = levels['units'].pop()
             n_levels = len(levels['values'])
 
         # Stack values.

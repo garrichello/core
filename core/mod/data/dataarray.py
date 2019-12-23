@@ -97,9 +97,9 @@ class DataArray(Data):
 
         self.logger.info('Creating memory data array...')
 
-        level = options['level'] if options['level'] else 'none'
-        segment = options['segment'] if options['segment'] else {'@name': 'none'}
-        times = options['times'] if options['times'] else []
+        level = options['level'] if options['level'] is not None else 'none'
+        segment = options['segment'] if options['segment'] is not None else {'@name': 'none'}
+        times = options['times'] if options['times'] is not None else []
         longitudes = options['longitudes']
         latitudes = options['latitudes']
         description = options['description']

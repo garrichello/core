@@ -410,6 +410,8 @@ class DataNetcdf(Data):
             level_value = re.findall(r'\d+', level)  # Take a numeric part.
             if level_value:
                 levels['values'].append(int(level_value[0]))
+            else:
+                levels['values'].append(0)
             level_units = re.findall(r'[a-zA-Z]+', level)  # Take an alpha part.
             if level_units:
                 levels['units'].add(level_units[0])

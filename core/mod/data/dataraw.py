@@ -26,6 +26,7 @@ class DataRaw(Data):
         Returns:
             result['array'] -- data array
         """
+        raise NotImplementedError
 
 
     def write(self, values, options):

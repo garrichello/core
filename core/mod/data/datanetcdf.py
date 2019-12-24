@@ -364,7 +364,7 @@ class DataNetcdf(Data):
         self.logger.info('Writing data to a netCDF file...')
 
         if all_values[0].ndim == 1:  # We have stations data.
-            self.write_stations(all_values, all_options)
+            self.write_stations(all_values[0], all_options)  # There should be only one variable to write.
         else:
             self.write_array(all_values, all_options)
 
@@ -504,7 +504,7 @@ class DataNetcdf(Data):
         """Writes stations data into a netCDF file.
 
         Arguments:
-            values -- processing result's values as a masked array/array/list.
+            all_values -- processing result's values as a list of masked array/array/list.
             options -- dictionary of write options:
                 ['level'] -- vertical level name
                 ['segment'] -- time segment description (as in input time segments taken from a task file)

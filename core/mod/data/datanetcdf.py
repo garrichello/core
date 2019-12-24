@@ -526,19 +526,29 @@ class DataNetcdf(Data):
         lon = root.createDimension('lon', options['longitudes'].size)  # pylint: disable=W0612
         lat = root.createDimension('lat', options['latitudes'].size)  # pylint: disable=W0612
         station = root.createDimension('station', options['meta']['stations']['@names'].size)  # pylint: disable=W0612
-        times_long_name = 'time of measurement'
 
-        if not options['times'] is None:
-            time = root.createDimension('time', options['times'].size)  # pylint: disable=W0612
-            times = root.createVariable('time', 'f8', ('time'))
-            times.units = 'days since 1970-1-1 00:00:0.0'
-            times.long_name = times_long_name
+        # Get time values.
+        time_grid = [item for sublist in options['times'] for item in sublist]
+        if not time_grid:  # Time grids are not given.
+            # Use segments to get the time grid.
+            time_grid = [datetime.strptime(item['@beginning'], '%Y%m%d%H') for item in options['segment']]
+        n_times = len(time_grid)
+
+        if n_times > 1:
+            # Define time variable.
+            time_dim = root.createDimension('time', n_times)  # pylint: disable=W0612
+            time_var = root.createVariable('time', 'f8', ('time'))
+            # Set time attributes.
+            time_var.units = 'days since {}-1-1 00:00:0.0'.format(time_grid[0].year)
+            time_var_long_name = None if options['meta'] is None else options['meta'].get('time_long_name')
+            time_var.long_name = 'time of measurement' if time_var_long_name is None else time_var_long_name
+            start_date = datetime(time_grid[0].year, 1, 1)
 
         # Define variables.
         latitudes = root.createVariable('lat', 'f4', ('lat'))
         longitudes = root.createVariable('lon', 'f4', ('lon'))
 
-        if not options['times'] is None:
+        if n_times > 1:
             data = root.createVariable('data', 'f4', ('time', 'station'), fill_value=values.fill_value)
             coordinates = 'time lat lon alt'
         else:
@@ -569,12 +579,12 @@ class DataNetcdf(Data):
         data.coordinates = coordinates
         data.units = options['description']['@units']
         data.long_name = options['description']['@name']
+        if n_times == 1:
+            data.measurement_time = '{}-{}'.format(options['segment']['@beginning'], options['segment']['@ending'])
 
         # Write variables.
-        # TODO: May be in the future we will write time grid into a file. If needed.
-        if options['times'] is not None:
-            pass
-
+        if n_times > 1:
+            time_var[:] = [(cur_date - start_date).days for cur_date in time_grid]
         longitudes[:] = options['longitudes']
         latitudes[:] = options['latitudes']
         data[:] = ma.filled(values, fill_value=values.fill_value)

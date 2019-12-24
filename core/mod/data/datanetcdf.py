@@ -109,10 +109,14 @@ class DataNetcdf(Data):
         """
 
         self.logger.info('Reading NetCDF data...')
-        self.logger.info('[Dataset: %s, resolution: %s, scenario: %s, time_step: %s]',
-                         self._data_info['data']['dataset']['@name'], self._data_info['data']['dataset']['@resolution'],
-                         self._data_info['data']['dataset']['@scenario'], self._data_info['data']['dataset']['@time_step']
-                        )
+        if self._data_info['@data_type'] == 'dataset':
+            self.logger.info('[Dataset: %s, resolution: %s, scenario: %s, time_step: %s]',
+                             self._data_info['data']['dataset']['@name'], self._data_info['data']['dataset']['@resolution'],
+                             self._data_info['data']['dataset']['@scenario'], self._data_info['data']['dataset']['@time_step']
+                            )
+        if self._data_info['@data_type'] == 'raw':
+            self.logger.info('[File: %s, type: %s]',
+                             self._data_info['data']['file']['@name'], self._data_info['data']['file']['@type'])
         self.logger.info('[Variable: %s]', self._data_info['data']['variable']['@name'])
 
         # Levels must be a list or None.

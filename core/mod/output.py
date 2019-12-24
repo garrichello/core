@@ -35,6 +35,8 @@ class cvcOutput:
         if output_info['@type'] == 'image' or output_info['@type'] == 'raw':
             all_values = []
             all_times = []
+            all_description = []
+            all_meta = []
 
         for in_uid in input_uids:
             time_segments = self._data_helper.get_segments(in_uid)
@@ -43,6 +45,7 @@ class cvcOutput:
             # Get data for all time segments and levels at once
             result = self._data_helper.get(in_uid, segments=time_segments, levels=vertical_levels)
             description = result['data']['description']
+            all_description.append(description)
 
             # Check if data are in K and we need to convert them to C.
             convert_k2c = False
@@ -65,6 +68,7 @@ class cvcOutput:
                     if output_info['@type'] == 'image' or output_info['@type'] == 'raw':
                         all_values.append(values)
                         all_times.append(result['data'][level_name][segment['@name']]['@time_grid'])
+                        all_meta.append(result['meta'])
                     else:  # Pass one by one to a writer.
                         self._data_helper.put(output_uids[0], values, level=level_name, segment=segment,
                                               longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
@@ -83,6 +87,6 @@ class cvcOutput:
         if output_info['@type'] == 'image':
             self._data_helper.put(output_uids[0], all_values, level=vertical_levels, segment=time_segments,
                                   longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                  times=all_times, description=description, meta=result['meta'])
+                                  times=all_times, description=all_description, meta=all_meta)
 
         self.logger.info('Finished!')

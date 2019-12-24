@@ -214,7 +214,9 @@ class DataNetcdf(Data):
 
                 segment_start = datetime.strptime(segment['@beginning'], '%Y%m%d%H')
                 segment_end = datetime.strptime(segment['@ending'], '%Y%m%d%H')
-                time_idx_range = date2index([segment_start, segment_end], time_variable, select='before')
+                time_idx_start = date2index(segment_start, time_variable, select='after')
+                time_idx_end = date2index(segment_end, time_variable, select='before')
+                time_idx_range = [time_idx_start, time_idx_end]
                 if time_idx_range[1] == 0:
                     self.logger.error('''Error! The end of the time segment is before the first time in the dataset.
                                          Aborting!''')

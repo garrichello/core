@@ -516,7 +516,8 @@ class DataNetcdf(Data):
         self.logger.info(' Writing data to a netCDF file...')
 
         # Construct the file name
-        filename = make_raw_filename(self._data_info, options)
+        # filename = make_raw_filename(self._data_info, options)
+        filename = self._data_info['data']['file']['@name']
 
         # Create netCDF file.
         root = Dataset(filename, 'w', format='NETCDF4')  # , format='NETCDF3_64BIT_OFFSET')

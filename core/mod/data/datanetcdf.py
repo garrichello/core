@@ -580,7 +580,7 @@ class DataNetcdf(Data):
         data.units = options['description']['@units']
         data.long_name = options['description']['@name']
         if n_times == 1:
-            data.measurement_time = '{}-{}'.format(options['segment']['@beginning'], options['segment']['@ending'])
+            data.measurement_time = '{}-{}'.format(options['segment'][0]['@beginning'], options['segment'][0]['@ending'])
 
         # Write variables.
         if n_times > 1:

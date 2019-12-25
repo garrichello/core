@@ -149,6 +149,16 @@ class DataAccess():
         if argument['data']['@type'] != 'dataset':
             info['@data_type'] = argument['data']['@type']
             info['data'] = argument['data']
+
+            # Raw file additional info
+            levels_names = [level_name.strip() for level_name in argument['data']['levels']['@values'].split(';')]
+            for level_name in levels_names:
+                info['data']['levels'][level_name] = {}
+                info['data']['levels'][level_name]['@scale'] = 1.0
+                info['data']['levels'][level_name]['@offset'] = 0.0
+                info['data']['levels'][level_name]['@file_name_template'] = argument['data']['file']['@name']
+                info['data']['levels'][level_name]['@level_variable_name'] = 'level'
+
             return info
 
         # If it is a dataset there is much to do

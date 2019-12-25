@@ -151,7 +151,7 @@ class DataAccess():
             info['data'] = argument['data']
 
             # Raw file additional info
-            if argument['data']['@type'] == 'raw':
+            if argument['data']['@type'] == 'raw' and 'levels' in argument['data'].keys():
                 levels_names = [level_name.strip() for level_name in argument['data']['levels']['@values'].split(';')]
                 for level_name in levels_names:
                     info['data']['levels'][level_name] = {}

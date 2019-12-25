@@ -348,8 +348,19 @@ class DataNetcdf(Data):
         except ValueError:
             pass
 
+        # Get data description from metadata database for a dataset.
+        if self._data_info['data']['@type'] == 'dataset':
+            data_description = self._data_info['data']['description']
+        # Get data description from a netcdf file metadata if not present.
+        if self._data_info['data']['@type'] == 'raw' and 'description' not in self._data_info['data'].keys():
+            data_description = {}
+            data_description['@title'] = netcdf_root.Title
+            data_description['@name'] = data_variable.long_name
+            data_description['@units'] = data_variable.units
+            data_description['@acc_mode'] = 0
+
         self._add_metadata(longitude_grid=longitude_grid, latitude_grid=latitude_grid, grid_type=grid_type, dimensions=data_dim_names,
-                           description=self._data_info['data']['description'], fill_value=fill_value)
+                           description=data_description, fill_value=fill_value)
 
         self.logger.info('Done!')
 

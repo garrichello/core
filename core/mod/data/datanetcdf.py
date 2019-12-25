@@ -82,15 +82,19 @@ class DataNetcdf(Data):
                 self.logger.error('Level variable \'%s\' is not found in files. Aborting!',
                                   level_variable_name)
                 raise
-            try:
+            if len(level_variable) == 1 and level_name == level_variable.units:
+                # For reading data files where only one level is present, such as 'none', 'sfc', 'msl'...
+                level_index = 0
+            else:
+                try:
                 # Little hack: convert level name from metadata database to float and back to string type
                 # to be able to search it correctly in float type level variable converted to string.
                 # Level variable is also primarily converted to float to 'synchronize' types.
-                level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(re.findall(r'\d+', level_name)[0])))
-            except KeyError:
-                self.logger.error('Level \'%s\' is not found in level variable \'%s\'. Aborting!',
+                    level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(re.findall(r'\d+', level_name)[0])))
+                except KeyError:
+                    self.logger.error('Level \'%s\' is not found in level variable \'%s\'. Aborting!',
                                   level_name, level_variable_name)
-                raise
+                    raise
         else:
             level_index = None
 

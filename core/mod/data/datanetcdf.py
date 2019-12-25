@@ -93,7 +93,7 @@ class DataNetcdf(Data):
                     level_index = level_variable[:].astype('float').astype('str').tolist().index(str(float(re.findall(r'\d+', level_name)[0])))
                 except KeyError:
                     self.logger.error('Level \'%s\' is not found in level variable \'%s\'. Aborting!',
-                                  level_name, level_variable_name)
+                                      level_name, level_variable_name)
                     raise
         else:
             level_index = None
@@ -446,7 +446,7 @@ class DataNetcdf(Data):
             n_levels = len(levels['values'])
 
         # Stack values.
-        n_lat, n_lon = list(all_values[0].shape)
+        n_lat, n_lon = all_values[0].shape[-2:]
         values = ma.stack(all_values)
         values = values.reshape((n_levels, n_times, n_lat, n_lon))
 

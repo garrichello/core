@@ -296,7 +296,7 @@ class DataNetcdf(Data):
                                 data_slice[i+1] -= data_slice[i]
                         else:
                             self.logger.error('Error! Unsupported time step \'%s\'. Aborting...',
-                                            self._data_info['data']['dataset']['@time_step'])
+                                              self._data_info['data']['dataset']['@time_step'])
                             raise ValueError
                         # And, since negative values in total precipitation look weird (IMHO), let's fix them also.
                         data_slice[np.where(data_slice < 0)] = 0.0

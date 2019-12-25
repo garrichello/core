@@ -11,7 +11,7 @@ import numpy as np
 import numpy.ma as ma
 
 from core.base.common import listify, unlistify
-from .data import Data, GRID_TYPE_REGULAR
+from .data import Data, GRID_TYPE_REGULAR, GRID_TYPE_IRREGULAR
 
 LONGITUDE_UNITS = {'degrees_east', 'degree_east', 'degrees_E', 'degree_E',
                    'degreesE', 'degreeE', 'lon'}
@@ -52,25 +52,23 @@ class DataNetcdf(Data):
 
     def _get_longitudes(self, nc_root):
         longitude_variable = unlistify(nc_root.get_variables_by_attributes(units=lambda v: v in LONGITUDE_UNITS))
+        lons = longitude_variable[:]
         if longitude_variable.ndim == 1:
             grid_type = GRID_TYPE_REGULAR
-            lons = longitude_variable[:]
             if lons.max() > 180:
                 lons = ((lons + 180.0) % 360.0) - 180.0  # Switch from 0-360 to -180-180 grid
         else:
-            self.logger.error('2-D longitude grid is not implemented yet. Aborting...')
-            raise ValueError
+            grid_type = GRID_TYPE_IRREGULAR
 
         return (lons, longitude_variable.name, grid_type)
 
     def _get_latitudes(self, nc_root):
         latitude_variable = unlistify(nc_root.get_variables_by_attributes(units=lambda v: v in LATITUDE_UNITS))
+        lats = latitude_variable[:]
         if latitude_variable.ndim == 1:
             grid_type = GRID_TYPE_REGULAR
-            lats = latitude_variable[:]
         else:
-            self.logger.error('2-D latitude grid is not implemented yet. Aborting...')
-            raise ValueError
+            grid_type = GRID_TYPE_IRREGULAR
 
         return (lats, latitude_variable.name, grid_type)
 

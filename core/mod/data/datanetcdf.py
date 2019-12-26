@@ -175,7 +175,7 @@ class DataNetcdf(Data):
                                                     lons <= self._ROI_bounds['max_lon'])])[0]
                 longitude_grid = lons[longitude_indices]
             else:
-                longitude_indices = np.arange(lons.shape[0])  # For irregular grids we will read the WHOLE area.
+                longitude_indices = np.arange(lons.shape[-1])  # For irregular grids we will read the WHOLE area.
                 longitude_grid = lons[:]
             variable_indices[longitude_variable_name] = longitude_indices
 
@@ -187,7 +187,7 @@ class DataNetcdf(Data):
                                                    lats <= self._ROI_bounds['max_lat'])])[0]
                 latitude_grid = lats[latitude_indices]
             else:
-                latitude_indices = np.arange(lats.shape[1])  # For irregular grids we will read the WHOLE area.
+                latitude_indices = np.arange(lats.shape[-2])  # For irregular grids we will read the WHOLE area.
                 latitude_grid = lats[:]
             variable_indices[latitude_variable_name] = latitude_indices
 

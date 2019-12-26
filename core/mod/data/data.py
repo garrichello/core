@@ -43,7 +43,7 @@ class Data:
         self._ROI_bounds = {'min_lon' : min(ROI_lons), 'max_lon' : max(ROI_lons),
                             'min_lat' : min(ROI_lats), 'max_lat' : max(ROI_lats)}
 
-    def _make_ROI_mask(self, lons, lats):
+    def _make_ROI_mask(self, lons: np.ndarray, lats: np.ndarray): 
         """ Creates a 2D-mask for a given region of interest.
         Arguments:
             lons -- longitudes of the masked area
@@ -51,7 +51,10 @@ class Data:
         Returns:
             mask -- 2D-mask for the area where True are masked values
         """
-        lon2d, lat2d = np.meshgrid(lons, lats)
+        if lons.ndim == 1:
+            lon2d, lat2d = np.meshgrid(lons, lats)
+        else:
+            lon2d, lat2d = lons[:], lats[:]
         lon_coords, lat_coords = lon2d.flatten(), lat2d.flatten()
         points = np.vstack((lon_coords, lat_coords)).T
 
@@ -61,7 +64,7 @@ class Data:
 
         return mask
 
-    def _init_segment_data(self, level_name):
+    def _init_segment_data(self, level_name: str):
         """ Creates a dictionary to store data arrays for each time segment at a vertical level 'level_name'
 
         Argeuments:
@@ -70,7 +73,7 @@ class Data:
 
         self._data_by_segment[level_name] = {}  # Data for each time segment at a specified vertical level.
 
-    def _add_segment_data(self, level_name, values, time_grid, time_segment):
+    def _add_segment_data(self, level_name: str, values: np.ma.MaskedArray, time_grid: list, time_segment: dict):
         """ Stores data read for each time segment in a unified dictionary.
 
         Arguments:
@@ -84,7 +87,8 @@ class Data:
         self._data_by_segment[level_name][time_segment['@name']]['@time_grid'] = time_grid
         self._data_by_segment[level_name][time_segment['@name']]['segment'] = time_segment
 
-    def _add_metadata(self, longitude_grid, latitude_grid, fill_value, description, grid_type=None, dimensions=None, meta=None):
+    def _add_metadata(self, longitude_grid: np.ndarray, latitude_grid: np.ndarray, fill_value: float, 
+                      description: dict, grid_type=None, dimensions=None, meta=None):
         """ Stores main metadata for a read data array in a unified dictionary.
 
         Arguments:
@@ -113,7 +117,7 @@ class Data:
 
         return self._read_result
 
-    def _transpose_dict(self, dict_of_lists):
+    def _transpose_dict(self, dict_of_lists: dict):
         """ Converts dictionary of lists to a list of dictionaries.
 
         Arguments:

@@ -169,18 +169,29 @@ class DataNetcdf(Data):
             self.logger.info('Get grids...')
             # Determine indices of longitudes.
             lons, longitude_variable_name, lon_grid_type = self._get_longitudes(netcdf_root)
-            longitude_indices = np.nonzero([ge and le for ge, le in
-                                            zip(lons >= self._ROI_bounds['min_lon'], lons <= self._ROI_bounds['max_lon'])])[0]
-            variable_indices[longitude_variable_name] = longitude_indices  # np.arange(lons.size)  # longitude_indices
-            longitude_grid = lons[longitude_indices]
+            if lon_grid_type == GRID_TYPE_REGULAR:  # For regular grid we will read only rectangular area bounding ROI.
+                longitude_indices = np.nonzero([ge and le for ge, le in
+                                                zip(lons >= self._ROI_bounds['min_lon'], 
+                                                    lons <= self._ROI_bounds['max_lon'])])[0]
+                longitude_grid = lons[longitude_indices]
+            else:
+                longitude_indices = np.arange(lons.shape[0])  # For irregular grids we will read the WHOLE area.
+                longitude_grid = lons[:]
+            variable_indices[longitude_variable_name] = longitude_indices
 
             # Determine indices of latitudes.
             lats, latitude_variable_name, lat_grid_type = self._get_latitudes(netcdf_root)
-            latitude_indices = np.nonzero([ge and le for ge, le in
-                                           zip(lats >= self._ROI_bounds['min_lat'], lats <= self._ROI_bounds['max_lat'])])[0]
-            variable_indices[latitude_variable_name] = latitude_indices  # np.arange(lats.size)  # latitude_indices
-            latitude_grid = lats[latitude_indices]
+            if lon_grid_type == GRID_TYPE_REGULAR:  # For regular grid we will read only rectangular area bounding ROI.
+                latitude_indices = np.nonzero([ge and le for ge, le in
+                                               zip(lats >= self._ROI_bounds['min_lat'], 
+                                                   lats <= self._ROI_bounds['max_lat'])])[0]
+                latitude_grid = lats[latitude_indices]
+            else:
+                latitude_indices = np.arange(lats.shape[1])  # For irregular grids we will read the WHOLE area.
+                latitude_grid = lats[:]
+            variable_indices[latitude_variable_name] = latitude_indices
 
+            # Check if grids types are the same.
             if lon_grid_type == lat_grid_type:
                 grid_type = lon_grid_type
             else:
@@ -239,10 +250,11 @@ class DataNetcdf(Data):
                 # Then we stack them reversely (left to the right) and fix the longitude grid.
                 # Thus we will have a single data patch with the uniform logitude grid.
                 lon_gap_mode = False  # Normal mode.
-                for i in range(len(variable_indices[longitude_variable_name])-1):
-                    if variable_indices[longitude_variable_name][i+1]-variable_indices[longitude_variable_name][i] > 1:
-                        lon_gap_mode = True  # Gap mode! Set the flag! :)
-                        lon_gap_position = i  # Index of the gap.
+                if grid_type == GRID_TYPE_REGULAR:
+                    for i in range(len(variable_indices[longitude_variable_name])-1):
+                        if variable_indices[longitude_variable_name][i+1]-variable_indices[longitude_variable_name][i] > 1:
+                            lon_gap_mode = True  # Gap mode! Set the flag! :)
+                            lon_gap_position = i  # Index of the gap.
 
                 # Get start (first) and stop (last) indices for each dimension.
                 start_index = [variable_indices[dd[i]][0] for i in range(len(dd))]

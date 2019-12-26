@@ -43,7 +43,7 @@ class Data:
         self._ROI_bounds = {'min_lon' : min(ROI_lons), 'max_lon' : max(ROI_lons),
                             'min_lat' : min(ROI_lats), 'max_lat' : max(ROI_lats)}
 
-    def _make_ROI_mask(self, lons: np.ndarray, lats: np.ndarray): 
+    def _make_ROI_mask(self, lons: np.ndarray, lats: np.ndarray):
         """ Creates a 2D-mask for a given region of interest.
         Arguments:
             lons -- longitudes of the masked area
@@ -53,14 +53,17 @@ class Data:
         """
         if lons.ndim == 1:
             lon2d, lat2d = np.meshgrid(lons, lats)
+            n_lats = lats.size
+            n_lons = lons.size
         else:
             lon2d, lat2d = lons[:], lats[:]
+            n_lats, n_lons = lons.shape
         lon_coords, lat_coords = lon2d.flatten(), lat2d.flatten()
         points = np.vstack((lon_coords, lat_coords)).T
 
         path = Path(self._ROI)
         mask = path.contains_points(points, radius=1e-5) # True is for the points inside the ROI
-        mask = ~mask.reshape((lats.size, lons.size)) # True is masked so we need to inverse the mask
+        mask = ~mask.reshape((n_lats, n_lons)) # True is masked so we need to inverse the mask
 
         return mask
 

@@ -89,7 +89,7 @@ class DataImage(Data):
             interp = griddata((llon.ravel(), llat.ravel()), values.ravel(),
                               (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
             # Mask values outside original area.
-            tree = KDTree(np.c_[llon.ravel(), llat.ravel()])
+            tree = KDTree(np.c_[llon.ravel(), llat.ravel()])  # pylint: disable=E1102
             dist, _ = tree.query(np.c_[llon_regular.ravel(), llat_regular.ravel()], k=1)
             lat_lims = np.asarray([44, 60, 68, 73, 76, 78, 79, 80, 81, 82, 83])  # Magic latitudes.
             i = np.searchsorted(lat_lims, np.max(llat), side='left')
@@ -191,7 +191,7 @@ class ImageGeotiff():
         longitudes = options['longitudes']
         latitudes = options['latitudes']
 
-        # Check if we have a (0..180,-180..0) grid and swap parts if its true. 
+        # Check if we have a (0..180,-180..0) grid and swap parts if its true.
         # Negative should be on the left and increasing.
         if longitudes[0] > longitudes[-1]:
             first_negative_latitude_idx = np.where(longitudes < 0)[0][0]  # It's a border between pos and neg longitudes.

@@ -136,8 +136,16 @@ class DataNetcdf(Data):
 
         # Process each vertical level separately.
         for level_name in levels_to_read:
+            dd = [] # Data variable's dimensions list.
+
             self.logger.info('Vertical level: \'%s\'', level_name)
             level_variable_name = self._data_info['data']['levels'][level_name]['@level_variable_name']
+
+            # Determine the index of the current vertical level in the level variable.
+            level_index = self._get_levels(netcdf_root, level_name, level_variable_name)
+            if level_index is not None:
+                variable_indices[level_variable_name] = [level_index]
+                dd.append(level_variable_name)
 
             data_scale = self._data_info['data']['levels'][level_name]['@scale']
             data_offset = self._data_info['data']['levels'][level_name]['@offset']
@@ -164,7 +172,6 @@ class DataNetcdf(Data):
 
             data_variable = netcdf_root.variables[self._data_info['data']['variable']['@name']]  # Data variable. pylint: disable=E1136
             data_variable.set_auto_mask(False)
-            dd = data_variable.dimensions  # Names of dimensions of the data variable.
 
             self.logger.info('Get grids...')
             # Determine indices of longitudes.
@@ -178,6 +185,7 @@ class DataNetcdf(Data):
                 longitude_indices = np.arange(lons.shape[-1])  # For irregular grids we will read the WHOLE area.
                 longitude_grid = lons[:]
             variable_indices[longitude_variable_name] = longitude_indices
+            dd.append(longitude_variable_name)
 
             # Determine indices of latitudes.
             lats, latitude_variable_name, lat_grid_type = self._get_latitudes(netcdf_root)
@@ -190,6 +198,7 @@ class DataNetcdf(Data):
                 latitude_indices = np.arange(lats.shape[-2])  # For irregular grids we will read the WHOLE area.
                 latitude_grid = lats[:]
             variable_indices[latitude_variable_name] = latitude_indices
+            dd.insert(-1, latitude_variable_name)
 
             # Check if grids types are the same.
             if lon_grid_type == lat_grid_type:
@@ -197,11 +206,6 @@ class DataNetcdf(Data):
             else:
                 self.logger.error('Error! Longitude and latitude grids are not match! Aborting.')
                 raise ValueError
-
-            # Determine index of the current vertical level to read data variable.
-            level_index = self._get_levels(netcdf_root, level_name, level_variable_name)
-            if level_index is not None:
-                variable_indices[level_variable_name] = [level_index]
 
             # A small temporary hack.
             # TODO: Dataset DS131, T62 grid variables has a dimension 'forecast_time1'. Now I set it
@@ -215,8 +219,10 @@ class DataNetcdf(Data):
                 calendar = time_variable.calendar
             except AttributeError:
                 calendar = 'standard'
-            if len(netcdf_root._files) > 1:  # Skip if there only one file
+            if len(netcdf_root._files) > 1:  # Skip if there only one file  # pylint: disable=W0212, E1101
                 time_variable = MFTime(time_variable, calendar=calendar)  # Apply multi-file support to the time variable
+            if time_variable is not None:
+                dd.insert(-2, time_variable._name) # pylint: disable=W0212, E1101
 
             self.logger.info('Done!')
 

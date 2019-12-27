@@ -38,17 +38,6 @@ class DataImage(Data):
             values_regular, options_regular -- data and options on regular grids.
         """
 
-        def find_gaps(x):
-            max_gap = 0
-            min_gap = 1e6
-            for i in range(len(x)-1):
-                cur_gap = abs(x[i+1]-x[i])
-                if cur_gap > max_gap:
-                    max_gap = cur_gap
-                if cur_gap < min_gap:
-                    min_gap = cur_gap
-            return min_gap, max_gap
-
         self.logger.info('Checking grid uniformity...')
         if values.ndim == 2:  # If it is a grid, check it for uniformity.
             if ((options['longitudes'].ndim == 2) and (options['latitudes'].ndim == 2)):
@@ -106,6 +95,8 @@ class DataImage(Data):
             i = np.searchsorted(lat_lims, np.max(llat), side='left')
             k = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5]  # Magic coefficients.
             interp[dist > k[i]] = values.fill_value
+            fill_value_mask = interp == values.fill_value
+            # combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time, shrink=False)
             # Reshape.
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
             values_regular.fill_value = values.fill_value

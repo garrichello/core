@@ -37,13 +37,16 @@ class DataImage(Data):
             values_regular, options_regular -- data and options on regular grids.
         """
 
-        if values.ndim > 1:   # If it is a grid, check it for uniformity.
-            self.logger.info('Checking grid uniformity...')
-            eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
-
-            if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
+        self.logger.info('Checking grid uniformity...')
+        if values.ndim == 2:  # If it is a grid, check it for uniformity.
+            if ((options['longitudes'].ndim == 2) and (options['latitudes'].ndim == 2)):
+                lons = np.sort(options['longitudes'][0, :])
+                dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
+                lats = np.sort(options['latitudes'][:, 0])
+                dlats = [lats[i+1] - lats[i] for i in range(len(lats)-1)]
                 should_regrid = True
-            else:
+            elif ((options['longitudes'].ndim == 1) and (options['latitudes'].ndim == 1)):
+                eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
                 lons = np.sort(options['longitudes'])
                 dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
                 lats = np.sort(options['latitudes'])
@@ -52,9 +55,15 @@ class DataImage(Data):
                     should_regrid = True
                 else:
                     should_regrid = False
-            self.logger.info('Done!')
-        else:
+            else:
+                self.logger.error('Bad longitude/latitide grid dimensions! Aborting...')
+                raise ValueError
+        elif values.ndim == 1:
             should_regrid = False
+        else:
+            self.logger.error('Bad values shape! Aborting...')
+            raise ValueError
+        self.logger.info('Done!')
 
         # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
         if should_regrid:
@@ -66,12 +75,16 @@ class DataImage(Data):
             dlat_regular = np.min(dlats) / 2.0
             nlons_regular = int(np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1))
             nlats_regular = int(np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1))
-            options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + min(lons)
-            options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + min(lats)
+            options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + lons[0]
+            options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + lats[0]
 
             # Prepare data
-            llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
+            if options['longitudes'].ndim == 1:
+                llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
+            else:
+                llon, llat = options['longitudes'], options['latitudes']
             llon_regular, llat_regular = np.meshgrid(options_regular['longitudes'], options_regular['latitudes'])
+            
             interp = griddata((llon.ravel(), llat.ravel()), values.ravel(),
                               (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
@@ -171,8 +184,8 @@ class ImageGeotiff():
         # Negative should be on the left and increasing.
         if longitudes[0] > longitudes[-1]:
             first_negative_latitude_idx = np.where(longitudes < 0)[0][0]  # It's a border between pos and neg longitudes.
-            longitudes = np.concatenate((longitudes[first_negative_latitude_idx:], 
-                                            longitudes[:first_negative_latitude_idx]))
+            longitudes = np.concatenate((longitudes[first_negative_latitude_idx:],
+                                         longitudes[:first_negative_latitude_idx]))
             left_part = data[:, first_negative_latitude_idx:]
             right_part = data[:, :first_negative_latitude_idx]
             data = np.hstack((left_part, right_part))

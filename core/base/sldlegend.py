@@ -65,6 +65,11 @@ class SLDLegend:
             data_min = values.min()
             data_max = values.max()
 
+        # Check for NaN
+        if np.isnan(data_min) or np.isnan(data_max):
+            self.logger.error('Values array contains NaNs. But should not. Something wrong. Can\'t continue...')
+            raise ValueError
+
         # Check for optional color values and names
         legend_override = None
         if options.get('meta') is not None:

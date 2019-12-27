@@ -105,7 +105,7 @@ class DataImage(Data):
             lat_lims = np.asarray([44, 60, 68, 73, 76, 78, 79, 80, 81, 82, 83])  # Magic latitudes.
             i = np.searchsorted(lat_lims, np.max(llat), side='left')
             k = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5]  # Magic coefficients.
-            interp[dist > k[i]] = np.nan
+            interp[dist > k[i]] = values.fill_value
             # Reshape.
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
             values_regular.fill_value = values.fill_value

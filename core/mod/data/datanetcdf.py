@@ -360,6 +360,10 @@ class DataNetcdf(Data):
                 masked_data_slice = masked_data_slice * data_scale + data_offset
                 self.logger.info('Done!')
 
+                # If time grid contains only 1 element, datya slice is missing this dimension due to np.squeeze.
+                # We need time dimension in data even if there is only one step. Let's add it then.
+                masked_data_slice = ma.expand_dims(masked_data_slice, axis=0)
+
                 self._add_segment_data(level_name=level_name, values=masked_data_slice, time_grid=time_grid, time_segment=segment)
 
         # Remove level variable name from the list of data dimensions if it is present

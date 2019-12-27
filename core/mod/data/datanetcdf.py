@@ -111,12 +111,12 @@ class DataNetcdf(Data):
         """
 
         self.logger.info('Reading NetCDF data...')
-        if self._data_info['@data_type'] == 'dataset':
+        if self._data_info['data']['@type'] == 'dataset':
             self.logger.info('[Dataset: %s, resolution: %s, scenario: %s, time_step: %s]',
                              self._data_info['data']['dataset']['@name'], self._data_info['data']['dataset']['@resolution'],
                              self._data_info['data']['dataset']['@scenario'], self._data_info['data']['dataset']['@time_step']
                             )
-        if self._data_info['@data_type'] == 'raw':
+        if self._data_info['data']['@type'] == 'raw':
             self.logger.info('[File: %s, type: %s]',
                              self._data_info['data']['file']['@name'], self._data_info['data']['file']['@type'])
         self.logger.info('[Variable: %s]', self._data_info['data']['variable']['@name'])
@@ -305,7 +305,7 @@ class DataNetcdf(Data):
                 #  We make them to be: tp@3h, tp@9h, tp@15h, tp@21h...
                 # Originally 3h-step data are stored as: tp@3h, tp@3h+tp@6h, tp@3h+tp@6h+tp@9h, tp@15h, tp@15h+tp@18h, tp@15h+tp@18h+tp@21h...
                 #  We make them to be: tp@3h, tp@6h, tp@9h, tp@15h, tp@18h, tp@21h... (note: there is no tp@12h in the time grid!)
-                if self._data_info['@data_type'] == 'dataset':
+                if self._data_info['data']['@type'] == 'dataset':
                     if self._data_info['data']['dataset']['@name'].lower() == 'eraint' and \
                         self._data_info['data']['variable']['@name'].lower() == 'tp':
                         if self._data_info['data']['dataset']['@time_step'] == '6h':

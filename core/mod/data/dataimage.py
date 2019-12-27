@@ -3,14 +3,14 @@
 """
 import logging
 from copy import deepcopy
-from osgeo import gdal
-from osgeo import osr
 import numpy as np
 from scipy.interpolate import griddata
 from scipy.spatial import cKDTree as KDTree
+from osgeo import gdal
+from osgeo import osr
 from core.ext import shapefile
 
-from core.base.common import load_module, make_filename, make_raw_filename, listify, unlistify
+from core.base.common import load_module, make_filename, make_raw_filename, listify
 from core.base import SLDLegend
 from .data import Data
 
@@ -94,9 +94,9 @@ class DataImage(Data):
             lat_lims = np.asarray([44, 60, 68, 73, 76, 78, 79, 80, 81, 82, 83])  # Magic latitudes.
             i = np.searchsorted(lat_lims, np.max(llat), side='left')
             k = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5]  # Magic coefficients.
-            interp[dist > k[i]] = values.fill_value
-            fill_value_mask = interp == values.fill_value
-            # combined_mask = ma.mask_or(fill_value_mask, ROI_mask_time, shrink=False)
+            outliers_mask = interp[dist > k[i]]
+            combined_mask = np.ma.mask_or(outliers_mask, interp.mask, shrink=False)
+            interp.mask = combined_mask
             # Reshape.
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
             values_regular.fill_value = values.fill_value

@@ -7,6 +7,7 @@ from osgeo import gdal
 from osgeo import osr
 import numpy as np
 from scipy.interpolate import griddata
+from scipy.spatial import cKDTree as KDTree
 from core.ext import shapefile
 
 from core.base.common import load_module, make_filename, make_raw_filename, listify, unlistify
@@ -36,6 +37,17 @@ class DataImage(Data):
         Returns:
             values_regular, options_regular -- data and options on regular grids.
         """
+
+        def find_gaps(x):
+            max_gap = 0
+            min_gap = 1e6
+            for i in range(len(x)-1):
+                cur_gap = abs(x[i+1]-x[i])
+                if cur_gap > max_gap:
+                    max_gap = cur_gap
+                if cur_gap < min_gap:
+                    min_gap = cur_gap
+            return min_gap, max_gap
 
         self.logger.info('Checking grid uniformity...')
         if values.ndim == 2:  # If it is a grid, check it for uniformity.
@@ -70,7 +82,7 @@ class DataImage(Data):
             self.logger.info('Non-uniform grid. Regridding...')
             options_regular = deepcopy(options)
 
-            # Create a uniform grid
+            # Create a uniform grid.
             dlon_regular = np.min(dlons) / 2.0  # Half the step to avoid a strange latitudinal shift.
             dlat_regular = np.min(dlats) / 2.0
             nlons_regular = int(np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1))
@@ -78,15 +90,24 @@ class DataImage(Data):
             options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + lons[0]
             options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + lats[0]
 
-            # Prepare data
+            # Prepare data.
             if options['longitudes'].ndim == 1:
                 llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
             else:
                 llon, llat = options['longitudes'], options['latitudes']
             llon_regular, llat_regular = np.meshgrid(options_regular['longitudes'], options_regular['latitudes'])
-            
+            # Interpolate.
             interp = griddata((llon.ravel(), llat.ravel()), values.ravel(),
                               (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
+            # Mask values outside original area.
+            tree = KDTree(np.c_[llon.ravel(), llat.ravel()])
+            dist, _ = tree.query(np.c_[llon_regular.ravel(), llat_regular.ravel()], k=1)
+            dist = dist.reshape(llon_regular.shape)
+            lat_lims = np.asarray([44, 60, 68, 73, 76, 78, 79, 80, 81, 82, 83])  # Magic latitudes.
+            i = np.searchsorted(lat_lims, np.max(llat), side='left')
+            k = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5]  # Magic coefficients.
+            interp[dist > k[i]] = np.nan
+            # Reshape.
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
             values_regular.fill_value = values.fill_value
             self.logger.info('Done!')

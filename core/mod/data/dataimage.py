@@ -102,7 +102,6 @@ class DataImage(Data):
             # Mask values outside original area.
             tree = KDTree(np.c_[llon.ravel(), llat.ravel()])
             dist, _ = tree.query(np.c_[llon_regular.ravel(), llat_regular.ravel()], k=1)
-            dist = dist.reshape(llon_regular.shape)
             lat_lims = np.asarray([44, 60, 68, 73, 76, 78, 79, 80, 81, 82, 83])  # Magic latitudes.
             i = np.searchsorted(lat_lims, np.max(llat), side='left')
             k = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5]  # Magic coefficients.

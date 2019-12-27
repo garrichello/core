@@ -94,7 +94,7 @@ class DataImage(Data):
             lat_lims = np.asarray([44, 60, 68, 73, 76, 78, 79, 80, 81, 82, 83])  # Magic latitudes.
             i = np.searchsorted(lat_lims, np.max(llat), side='left')
             k = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5]  # Magic coefficients.
-            outliers_mask = interp[dist > k[i]]
+            outliers_mask = dist > k[i]
             combined_mask = np.ma.mask_or(outliers_mask, interp.mask, shrink=False)
             interp.mask = combined_mask
             # Reshape.

@@ -167,10 +167,12 @@ class ImageGeotiff():
         longitudes = options['longitudes']
         latitudes = options['latitudes']
 
-        # Check if we have a (0..180,-180..0) grid and swap parts if its true. Negative should be on the left and increasing.
+        # Check if we have a (0..180,-180..0) grid and swap parts if its true. 
+        # Negative should be on the left and increasing.
         if longitudes[0] > longitudes[-1]:
             first_negative_latitude_idx = np.where(longitudes < 0)[0][0]  # It's a border between pos and neg longitudes.
-            longitudes = np.concatenate((longitudes[first_negative_latitude_idx:], longitudes[:first_negative_latitude_idx]))
+            longitudes = np.concatenate((longitudes[first_negative_latitude_idx:], 
+                                            longitudes[:first_negative_latitude_idx]))
             left_part = data[:, first_negative_latitude_idx:]
             right_part = data[:, :first_negative_latitude_idx]
             data = np.hstack((left_part, right_part))

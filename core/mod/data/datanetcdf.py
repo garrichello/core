@@ -177,7 +177,7 @@ class DataNetcdf(Data):
 
             # Determine indices of latitudes.
             lats, latitude_variable_name, lat_grid_type = self._get_latitudes(netcdf_root)
-            if lon_grid_type == GRID_TYPE_REGULAR:  # For regular grid we will read only rectangular area bounding ROI.
+            if lat_grid_type == GRID_TYPE_REGULAR:  # For regular grid we will read only rectangular area bounding ROI.
                 latitude_indices = np.nonzero([ge and le for ge, le in
                                                zip(lats >= self._ROI_bounds['min_lat'], 
                                                    lats <= self._ROI_bounds['max_lat'])])[0]

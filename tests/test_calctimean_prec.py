@@ -41,7 +41,7 @@ class TimeMeanTest(unittest.TestCase):
 
     def _get(self, uid, segments=None, levels=None):
         if uid == 'P1Parameter1':
-            result = {'timeMean':'data'}
+            result = {'timeMeanPrec':'data'}
         elif uid == 'P1Input1':
             result = SAMPLE_INPUT
         else:

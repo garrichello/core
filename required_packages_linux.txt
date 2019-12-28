@@ -29,6 +29,8 @@ cd gdal/gdal
 # if needed: export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 ./configure --without-libtool --with-proj=/usr/local/lib
 make -j16
+# Install RabbitMQ
+yum isntall rabbitmq
 
 Python packages. Installed next with pip.
 1) ptvsd
@@ -42,4 +44,5 @@ Python packages. Installed next with pip.
 8) gdal
 9) netCDF4
 10) python-hdf4
+11) celery
 

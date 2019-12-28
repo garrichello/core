@@ -50,6 +50,24 @@ class MainApp:
     def run_task(self, task_string, task_id=None):
         """Reads the task from a string and creates all necessary structures."""
 
+        # Zips to a memory buffer processing results in the current work directory.
+        def zip_results():
+            self.logger.info('Compress results...')
+            mem_zip = io.BytesIO()  # Zip-in-memeory buffer.
+            with ZipFile(mem_zip, 'w', ZIP_DEFLATED) as zip_file:
+                # Read result files and add them to the zip-file.
+                for file_name in os.listdir():
+                    with open(file_name, 'rb') as result_file:
+                        file_data = result_file.read()
+                    zip_file.writestr(file_name, file_data)
+
+            self.logger.info('Done!')
+
+            buffer = mem_zip.getvalue()  # Get zip-file as plain bytes.
+            self.logger.info('Zip-file length is %s bytes', len(buffer))
+
+            return buffer
+
         self.logger.info('Let\'s do it!')
         self.logger.info('Read the task...')
 
@@ -71,35 +89,23 @@ class MainApp:
         tmp_dir = self.config['RPC']['tmp_dir']
         task_dir = os.path.join(tmp_dir, str(task_id))
         os.makedirs(task_dir, exist_ok=True)
+        os.chdir(task_dir)  # Move to the task directory!
 
         # Change location of output files.
         for destination in self._task['task']['destination']:
             file_name = os.path.basename(destination['file']['@name'])
-            destination['file']['@name'] = os.path.join(task_dir, file_name)
+            destination['file']['@name'] = file_name
             if destination['@type'] == 'image':
                 sld_name = os.path.basename(destination['graphics']['legend']['file']['@name'])
-                destination['graphics']['legend']['file']['@name'] = \
-                    os.path.join(task_dir, sld_name)
+                destination['graphics']['legend']['file']['@name'] = sld_name
 
         try:
             # Run task processing.
             self._process()
 
             # Compress results in memory.
-            self.logger.info('Compress results...')
-            os.chdir(task_dir)  # Move to the results directory.
-            mem_zip = io.BytesIO()  # Zip-in-memeory buffer.
-            with ZipFile(mem_zip, 'w', ZIP_DEFLATED) as zip_file:
-                # Read result files and add them to the zip-file.
-                for file_name in os.listdir():
-                    with open(file_name, 'rb') as result_file:
-                        file_data = result_file.read()
-                    zip_file.writestr(file_name, file_data)
+            zip_buffer = zip_results()
 
-            self.logger.info('Done!')
-
-            zip_buffer = mem_zip.getvalue()  # Get zip-file as plain bytes.
-            self.logger.info('Zip-file length is %s bytes', len(zip_buffer))
         except:
             log_dir = self.config['RPC']['log_dir']
             err_task_file = os.path.join(log_dir, 'error_task_'+str(task_id)+'.xml')

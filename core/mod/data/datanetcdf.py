@@ -175,6 +175,19 @@ class DataNetcdf(Data):
                 variable_indices[level_variable_name] = [level_index]
                 dd.append(level_variable_name)
 
+            # Determine indices of latitudes.
+            lats, latitude_variable_name, lat_grid_type = self._get_latitudes(netcdf_root)
+            if lon_grid_type == GRID_TYPE_REGULAR:  # For regular grid we will read only rectangular area bounding ROI.
+                latitude_indices = np.nonzero([ge and le for ge, le in
+                                               zip(lats >= self._ROI_bounds['min_lat'], 
+                                                   lats <= self._ROI_bounds['max_lat'])])[0]
+                latitude_grid = lats[latitude_indices]
+            else:
+                latitude_indices = np.arange(lats.shape[-2])  # For irregular grids we will read the WHOLE area.
+                latitude_grid = lats[:]
+            variable_indices[latitude_variable_name] = latitude_indices
+            dd.append(latitude_variable_name)
+
             # Determine indices of longitudes.
             lons, longitude_variable_name, lon_grid_type = self._get_longitudes(netcdf_root)
             if lon_grid_type == GRID_TYPE_REGULAR:  # For regular grid we will read only rectangular area bounding ROI.
@@ -187,19 +200,6 @@ class DataNetcdf(Data):
                 longitude_grid = lons[:]
             variable_indices[longitude_variable_name] = longitude_indices
             dd.append(longitude_variable_name)
-
-            # Determine indices of latitudes.
-            lats, latitude_variable_name, lat_grid_type = self._get_latitudes(netcdf_root)
-            if lon_grid_type == GRID_TYPE_REGULAR:  # For regular grid we will read only rectangular area bounding ROI.
-                latitude_indices = np.nonzero([ge and le for ge, le in
-                                               zip(lats >= self._ROI_bounds['min_lat'], 
-                                                   lats <= self._ROI_bounds['max_lat'])])[0]
-                latitude_grid = lats[latitude_indices]
-            else:
-                latitude_indices = np.arange(lats.shape[-2])  # For irregular grids we will read the WHOLE area.
-                latitude_grid = lats[:]
-            variable_indices[latitude_variable_name] = latitude_indices
-            dd.insert(-1, latitude_variable_name)
 
             # Check if grids types are the same.
             if lon_grid_type == lat_grid_type:
@@ -223,7 +223,7 @@ class DataNetcdf(Data):
             if len(netcdf_root._files) > 1:  # Skip if there only one file  # pylint: disable=W0212, E1101
                 time_variable = MFTime(time_variable, calendar=calendar)  # Apply multi-file support to the time variable
             if time_variable is not None:
-                dd.insert(-2, time_variable._name) # pylint: disable=W0212, E1101
+                dd.insert(0, time_variable._name) # pylint: disable=W0212, E1101
 
             self.logger.info('Done!')
 

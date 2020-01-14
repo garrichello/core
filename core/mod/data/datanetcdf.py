@@ -243,9 +243,8 @@ class DataNetcdf(Data):
                 time_idx_start = date2index(segment_start, time_variable, select='after')
                 time_idx_end = date2index(segment_end, time_variable, select='before')
                 time_idx_range = [time_idx_start, time_idx_end]
-                if time_idx_range[1] == 0:
-                    self.logger.error('''Error! The end of the time segment is before the first time in the dataset.
-                                         Aborting!''')
+                if time_idx_range[1] > time_idx_range[0]:
+                    self.logger.error('Error! The end of the time segment is before the first time in the dataset. Aborting!')
                     raise ValueError
                 variable_indices[time_variable._name] = np.arange(time_idx_range[0], time_idx_range[1]+1)  # pylint: disable=W0212, E1101
                 time_values = time_variable[variable_indices[time_variable._name]]  # Raw time values.  # pylint: disable=W0212, E1101

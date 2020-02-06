@@ -311,7 +311,7 @@ class DataAccess():
 
             # Get some info
             try:
-                data_info = qry.filter(level_tbl.columns['name'] == level_name).one()
+                data_info = qry.filter(level_tbl.columns['label'] == level_name).one()
 
             except NoResultFound:
                 self.logger.error('No records found in MDDB for collection: %s, scenario: %s, resolution: %s, time step: %s, variable: %s, level: %s',

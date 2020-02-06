@@ -188,7 +188,6 @@ class DataAccess():
         levels_group_has_level_tbl = meta.tables['levels_group_has_level']
         levels_variable_tbl = meta.tables['levels_variable']
         root_dir_tbl = meta.tables['root_dir']
-        time_span_tbl = meta.tables['time_span']
         units_tbl = meta.tables['units']
         units_i18n_tbl = meta.tables['units_i18n']
         parameter_tbl = meta.tables['parameter']
@@ -205,7 +204,6 @@ class DataAccess():
 
         # Single SQL to get everything:
         # SELECT file_type.name AS file_type_name,
-        #        time_span.name AS file_time_span,
         #        collection_i18n.name AS collection_name,
         #        parameter_i18n.name AS parameter_name,
         #        units_i18n.name AS units_name,
@@ -217,8 +215,6 @@ class DataAccess():
         #        resolution.subpath1,
         #        time_step.subpath2,
         #        file.name_pattern AS file_name_template,
-        #        dataset.time_start AS time_start,
-        #        dataset.time_end AS time_end,
         #        level.label as level_name,
         #        levels_variable.name AS level_variable_name
         #   FROM data
@@ -259,7 +255,6 @@ class DataAccess():
         # Get info from MDDB.
         # Prepare a common query.
         qry = session.query(file_type_tbl.columns['name'].label('file_type_name'),
-                            time_span_tbl.columns['name'].label('file_time_span'),
                             collection_i18n_tbl.columns['name'].label('collection_name'),
                             parameter_i18n_tbl.columns['name'].label('parameter_name'),
                             units_i18n_tbl.columns['name'].label('units_name'),
@@ -271,8 +266,6 @@ class DataAccess():
                             resolution_tbl.columns['subpath1'],
                             time_step_tbl.columns['subpath2'],
                             file_tbl.columns['name_pattern'].label('file_name_template'),
-                            dataset_tbl.columns['time_start'],
-                            dataset_tbl.columns['time_end'],
                             levels_variable_tbl.columns['name'].label('level_variable_name')
                             )
         qry = qry.select_from(data_tbl)
@@ -292,7 +285,6 @@ class DataAccess():
         qry = qry.join(level_tbl)
         qry = qry.join(time_step_tbl)
         qry = qry.join(file_type_tbl)
-        qry = qry.join(time_span_tbl)
         qry = qry.join(collection_i18n_tbl)
         qry = qry.join(parameter_i18n_tbl)
         qry = qry.join(units_i18n_tbl)
@@ -324,12 +316,9 @@ class DataAccess():
                                                           data_info.subpath1, data_info.subpath2,
                                                           data_info.file_name_template)
             info['data']['levels'][level_name]['@file_name_template'] = file_name_template
-#            info['data']['levels'][level_name]['@time_start'] = data_info.time_start
-#            info['data']['levels'][level_name]['@time_end'] = data_info.time_end
             info['data']['levels'][level_name]['@level_variable_name'] = data_info.level_variable_name
 
         info['@data_type'] = data_info.file_type_name
-#        info['@file_time_span'] = data_info.file_time_span
         info['data']['description']['@title'] = data_info.collection_name
         info['data']['description']['@name'] = data_info.parameter_name
         info['data']['description']['@units'] = data_info.units_name

@@ -26,7 +26,9 @@ class DataRaw(Data):
         Returns:
             result['array'] -- data array
         """
+        result = self._data.read(options)
 
+        return result
 
     def write(self, values, options):
         """Writes data (and metadata) to an output data file.

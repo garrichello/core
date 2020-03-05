@@ -4,6 +4,7 @@
 from copy import deepcopy
 import logging
 import os
+import shutil
 from configparser import ConfigParser
 from zipfile import ZipFile, ZIP_DEFLATED
 import io
@@ -49,6 +50,24 @@ class MainApp:
     def run_task(self, task_string, task_id=None):
         """Reads the task from a string and creates all necessary structures."""
 
+        # Zips to a memory buffer processing results in the current work directory.
+        def zip_results():
+            self.logger.info('Compress results...')
+            mem_zip = io.BytesIO()  # Zip-in-memeory buffer.
+            with ZipFile(mem_zip, 'w', ZIP_DEFLATED) as zip_file:
+                # Read result files and add them to the zip-file.
+                for file_name in os.listdir():
+                    with open(file_name, 'rb') as result_file:
+                        file_data = result_file.read()
+                    zip_file.writestr(file_name, file_data)
+
+            self.logger.info('Done!')
+
+            buffer = mem_zip.getvalue()  # Get zip-file as plain bytes.
+            self.logger.info('Zip-file length is %s bytes', len(buffer))
+
+            return buffer
+
         self.logger.info('Let\'s do it!')
         self.logger.info('Read the task...')
 
@@ -66,34 +85,39 @@ class MainApp:
         self._task['task']['@uid'] = str(task_id)
 
         # Make task dir
-        pool_dir = self.config['RPC']['pool_dir']
-        task_dir = os.path.join(pool_dir, str(task_id))
+        original_cwd_dir = os.getcwd()  # Store current directory.
+        tmp_dir = self.config['RPC']['tmp_dir']
+        task_dir = os.path.join(tmp_dir, str(task_id))
         os.makedirs(task_dir, exist_ok=True)
+        os.chdir(task_dir)  # Move to the task directory!
 
         # Change location of output files.
         for destination in self._task['task']['destination']:
             file_name = os.path.basename(destination['file']['@name'])
-            destination['file']['@name'] = os.path.join(task_dir, file_name)
+            destination['file']['@name'] = file_name
             if destination['@type'] == 'image':
                 sld_name = os.path.basename(destination['graphics']['legend']['file']['@name'])
-                destination['graphics']['legend']['file']['@name'] = \
-                    os.path.join(task_dir, sld_name)
+                destination['graphics']['legend']['file']['@name'] = sld_name
 
-        # Run task processing.
-        self._process()
+        try:
+            # Run task processing.
+            self._process()
 
-        # Compress results in memory.
-        os.chdir(task_dir)  # Move to the results directory.
-        mem_zip = io.BytesIO()  # Zip-in-memeory buffer.
-        with ZipFile(mem_zip, 'w', ZIP_DEFLATED) as zip_file:
-            # Read result files and add them to the zip-file.
-            for file_name in os.listdir():
-                with open(file_name, 'rb') as result_file:
-                    file_data = result_file.read()
-                zip_file.writestr(file_name, file_data)
+            # Compress results in memory.
+            zip_buffer = zip_results()
 
-        zip_buffer = mem_zip.getvalue()  # Get zip-file as plain bytes.
-        self.logger.info('Zip-file length is %s bytes', len(zip_buffer))
+        except:
+            log_dir = self.config['RPC']['log_dir']
+            err_task_file = os.path.join(log_dir, 'error_task_'+str(task_id)+'.xml')
+            with open(err_task_file, 'w') as out_file:
+                out_file.write(task_string)
+            raise
+        finally:
+            # Delete result files
+            self.logger.info('Clean temporary files...')
+            os.chdir(original_cwd_dir)  # Return to the original CWD.
+            shutil.rmtree(task_dir)  # Delete task directory with all its contents
+            self.logger.info('Done!')
 
         self.logger.info('Job is done. Exiting.')
 

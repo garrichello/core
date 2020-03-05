@@ -101,10 +101,10 @@ def unlistify(list_):
         if isinstance(list_, list):
             if not list_:
                 result = None
-            elif len(list_) == 1:
-                result = list_[0]
             else:
-                raise ValueError
+                result = list_[0]
+        else:
+            result = list_
     else:
         result = None
     return result

@@ -67,7 +67,7 @@ class DataArray(Data):
                                  self._data_info['data'][level_name][segment['@name']]['@values'].max())
                 self._add_segment_data(level_name=level_name,
                                        values=self._data_info['data'][level_name][segment['@name']]['@values'],
-                                       time_grid=self._data_info['data']['time'].get('@grid'),
+                                       time_grid=self._data_info['data'][level_name][segment['@name']]['@time_grid'],
                                        time_segment=segment)
                 self.logger.info('Done!')
 
@@ -101,43 +101,26 @@ class DataArray(Data):
 
         self.logger.info('Creating memory data array...')
 
-        level = options['level']
-        segment = options['segment']
-        times = options['times']
+        level = options['level'] if options['level'] is not None else 'none'
+        segment = options['segment'] if options['segment'] is not None else {'@name': 'none'}
+        times = options['times'] if options['times'] is not None else []
         longitudes = options['longitudes']
         latitudes = options['latitudes']
         description = options['description']
         meta = options['meta']
 
-        if level is not None:
-            # Append a new level name.
-            self._data_info['data']['levels']['@values'].add(level)
-
-        if segment is not None:
-            # Append a new time segment.
-            try:
-                self._data_info['data']['time']['segment'].index(segment)
-            except ValueError:
-                self._data_info['data']['time']['segment'].append(segment)
-
-        if times is not None:
-            # Append a time grid
-            self._data_info['data']['time']['@grid'] = times
-
+        self._data_info['data']['levels']['@values'].add(level)
+        if segment not in self._data_info['data']['time']['segment']:
+            self._data_info['data']['time']['segment'].append(segment)
         self._data_info['data']['@longitudes'] = longitudes
         self._data_info['data']['@latitudes'] = latitudes
 
-        if level is not None:
-            if self._data_info['data'].get(level) is None:
-                self._data_info['data'][level] = {}
-            if segment is not None:
-                if self._data_info['data'][level].get(segment['@name']) is None:
-                    self._data_info['data'][level][segment['@name']] = {}
-                self._data_info['data'][level][segment['@name']]['@values'] = values
-            else:
-                self._data_info['data'][level]['@values'] = values
-        else:
-            self._data_info['data']['@values'] = values
+        if level not in self._data_info['data']:
+            self._data_info['data'][level] = {}
+        if segment['@name'] not in self._data_info['data'][level]:
+            self._data_info['data'][level][segment['@name']] = {}
+        self._data_info['data'][level][segment['@name']]['@time_grid'] = times
+        self._data_info['data'][level][segment['@name']]['@values'] = values
 
         if description is not None:
             self._data_info['data']['description'] = description

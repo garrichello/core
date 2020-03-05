@@ -168,7 +168,7 @@ class CalcUnifyGrids(Calc):
             result = ma.zeros((dims[0], len(target_lats), len(target_lons)))
             target_lats2d, target_lons2d = np.meshgrid(target_lats, target_lons, indexing='ij')
             for i, cur_values in enumerate(values):
-                cur_values_nan = cur_values.filled(np.nan)
+                cur_values_nan = cur_values.astype(float).filled(np.nan)
                 interp_func = RegularGridInterpolator((original_lats, original_lons), cur_values_nan, bounds_error=False)
                 result[i] = interp_func((target_lats2d, target_lons2d))
                 result.mask = ma.mask_or(result.mask, np.isnan(result[i]))

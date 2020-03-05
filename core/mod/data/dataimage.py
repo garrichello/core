@@ -3,13 +3,14 @@
 """
 import logging
 from copy import deepcopy
-from osgeo import gdal
-from osgeo import osr
 import numpy as np
 from scipy.interpolate import griddata
+from scipy.spatial import cKDTree as KDTree
+from osgeo import gdal
+from osgeo import osr
 from core.ext import shapefile
 
-from core.base.common import load_module, make_filename, make_raw_filename, listify, unlistify
+from core.base.common import load_module, make_filename, make_raw_filename, listify
 from core.base import SLDLegend
 from .data import Data
 
@@ -26,53 +27,6 @@ class DataImage(Data):
         self._image = image_class(data_info)
         self._data_info = data_info
 
-    def _transpose_dict(self, dict_of_lists):
-        """ Converts dictionary of lists to a list of dictionaries.
-
-        Arguments:
-            dict_of_lists -- dictionary of lists
-
-        Returns:
-            list_of_dicts -- list of dictionaries
-        """
-
-        if not isinstance(dict_of_lists, dict) or dict_of_lists is None:
-            self.logger.debug('It\'s not a dictionary!')
-            return dict_of_lists
-
-        # Get lengths of lists.
-        lengths = {}
-        max_len = 0
-        for key, value in dict_of_lists.items():
-            if isinstance(value, list):
-                val_len = len(value)
-            else:
-                val_len = 1  # If it's not a list set it's length to 1
-            max_len = val_len if max_len < val_len else max_len
-            lengths[key] = val_len
-
-        # Check lengths of lists to be the same. Ignore elements of length 1.
-        for val_len in lengths.values():
-            if val_len != max_len and val_len > 1:
-                self.logger.error('Lists in dictionary must be of the same length!')
-                raise ValueError
-
-        # Convert dictionary of lists to a list of dictionaries.
-        # Copy elements of length 1 to all lists.
-        list_of_dicts = []
-        i = 0
-        while i < max_len:
-            single_dict = {}
-            for key in dict_of_lists.keys():
-                if lengths[key] > 1:
-                    single_dict[key] = dict_of_lists[key][i]
-                else:
-                    single_dict[key] = unlistify(dict_of_lists[key])
-            list_of_dicts.append(single_dict)
-            i += 1
-
-        return list_of_dicts
-
     def _uniform_grids(self, values, options):
         """Checks and makes geographical grids to be regular.
 
@@ -84,13 +38,16 @@ class DataImage(Data):
             values_regular, options_regular -- data and options on regular grids.
         """
 
-        if values.ndim > 1:   # If it is a grid, check it for uniformity.
-            self.logger.info('Checking grid uniformity...')
-            eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
-
-            if ((options['longitudes'].ndim > 1) or (options['latitudes'].ndim > 1)):
+        self.logger.info('Checking grid uniformity...')
+        if values.ndim == 2:  # If it is a grid, check it for uniformity.
+            if ((options['longitudes'].ndim == 2) and (options['latitudes'].ndim == 2)):
+                lons = np.sort(options['longitudes'][0, :])
+                dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
+                lats = np.sort(options['latitudes'][:, 0])
+                dlats = [lats[i+1] - lats[i] for i in range(len(lats)-1)]
                 should_regrid = True
-            else:
+            elif ((options['longitudes'].ndim == 1) and (options['latitudes'].ndim == 1)):
+                eps = 1e-10  # Some small value. If longitude of latitudes vary more than eps, the grid is irregular.
                 lons = np.sort(options['longitudes'])
                 dlons = [lons[i+1] - lons[i] for i in range(len(lons)-1)]
                 lats = np.sort(options['latitudes'])
@@ -99,28 +56,48 @@ class DataImage(Data):
                     should_regrid = True
                 else:
                     should_regrid = False
-            self.logger.info('Done!')
-        else:
+            else:
+                self.logger.error('Bad longitude/latitide grid dimensions! Aborting...')
+                raise ValueError
+        elif values.ndim == 1:
             should_regrid = False
+        else:
+            self.logger.error('Bad values shape! Aborting...')
+            raise ValueError
+        self.logger.info('Done!')
 
         # If the grid is irregular (except the stations case, of course), regrid it to a regular one.
         if should_regrid:
             self.logger.info('Non-uniform grid. Regridding...')
             options_regular = deepcopy(options)
 
-            # Create a uniform grid
+            # Create a uniform grid.
             dlon_regular = np.min(dlons) / 2.0  # Half the step to avoid a strange latitudinal shift.
             dlat_regular = np.min(dlats) / 2.0
             nlons_regular = int(np.ceil((np.max(lons) - np.min(lons)) / dlon_regular + 1))
             nlats_regular = int(np.ceil((np.max(lats) - np.min(lats)) / dlat_regular + 1))
-            options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + min(lons)
-            options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + min(lats)
+            options_regular['longitudes'] = np.arange(nlons_regular) * dlon_regular + lons[0]
+            options_regular['latitudes'] = np.arange(nlats_regular) * dlat_regular + lats[0]
 
-            # Prepare data
-            llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
+            # Prepare data.
+            if options['longitudes'].ndim == 1:
+                llon, llat = np.meshgrid(options['longitudes'], options['latitudes'])
+            else:
+                llon, llat = options['longitudes'], options['latitudes']
             llon_regular, llat_regular = np.meshgrid(options_regular['longitudes'], options_regular['latitudes'])
+            # Interpolate.
             interp = griddata((llon.ravel(), llat.ravel()), values.ravel(),
                               (llon_regular.ravel(), llat_regular.ravel()), method='nearest')
+            # Mask values outside original area.
+            tree = KDTree(np.c_[llon.ravel(), llat.ravel()])  # pylint: disable=E1102
+            dist, _ = tree.query(np.c_[llon_regular.ravel(), llat_regular.ravel()], k=1)
+            lat_lims = np.asarray([44, 60, 68, 73, 76, 78, 79, 80, 81, 82, 83])  # Magic latitudes.
+            i = np.searchsorted(lat_lims, np.max(llat), side='left')
+            k = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5]  # Magic coefficients.
+            outliers_mask = dist > k[i]
+            combined_mask = np.ma.mask_or(outliers_mask, interp.mask, shrink=False)
+            interp.mask = combined_mask
+            # Reshape.
             values_regular = np.reshape(interp, (nlats_regular, nlons_regular))
             values_regular.fill_value = values.fill_value
             self.logger.info('Done!')
@@ -214,10 +191,12 @@ class ImageGeotiff():
         longitudes = options['longitudes']
         latitudes = options['latitudes']
 
-        # Check if we have a (0..180,-180..0) grid and swap parts if its true. Negative should be on the left and increasing.
+        # Check if we have a (0..180,-180..0) grid and swap parts if its true.
+        # Negative should be on the left and increasing.
         if longitudes[0] > longitudes[-1]:
             first_negative_latitude_idx = np.where(longitudes < 0)[0][0]  # It's a border between pos and neg longitudes.
-            longitudes = np.concatenate((longitudes[first_negative_latitude_idx:], longitudes[:first_negative_latitude_idx]))
+            longitudes = np.concatenate((longitudes[first_negative_latitude_idx:],
+                                         longitudes[:first_negative_latitude_idx]))
             left_part = data[:, first_negative_latitude_idx:]
             right_part = data[:, :first_negative_latitude_idx]
             data = np.hstack((left_part, right_part))

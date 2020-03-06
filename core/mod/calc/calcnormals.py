@@ -52,7 +52,7 @@ class CalcNormals(Calc):
                 day_i = datetime.datetime(year, day.month, day.day, day.hour, day.minute)
                 one_day = {}  # 1-day segment to read.
                 one_day['@beginning'] = day_i.strftime('%Y%m%d%H')
-                one_day['@ending'] = day_i.strftime('%Y%m%d%H')
+                one_day['@ending'] = day_i.strftime('%Y%m%d23')
                 one_day['@name'] = 'Year {}'.format(year)
                 segments.append(one_day)
             result = self._data_helper.get(uid, segments=segments, levels=level)

@@ -1,11 +1,7 @@
 """Provides classes
     DataArray
 """
-<<<<<<< HEAD
-from core.base.common import listify, print  # pylint: disable=W0622
-=======
 from core.base.common import listify
->>>>>>> devel
 
 from .data import Data
 

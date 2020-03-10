@@ -180,7 +180,7 @@ class CalcHTC(Calc):
         parameters = None
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-        clac_htc = self._get_parameter('HTC', parameters, DEFAULT_VALUES)
+        calc_htc = self._get_parameter('HTC', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
         threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
 
@@ -196,11 +196,37 @@ class CalcHTC(Calc):
         time_segments = self._data_helper.get_segments(input_uids[PRCP_DATA_UID])
         prcp_levels = self._data_helper.get_levels(input_uids[PRCP_DATA_UID])
         temp_levels = self._data_helper.get_levels(input_uids[TEMP_DATA_UID])
+
         assert len(prcp_levels) == len(temp_levels), \
             'Error! Number of vertical levels are not the same!'
 
         data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
+        
+        # For calc_htc == 'Ped' we calculate Ped index.
+        # First, we should calculate norms of temperature and precipitation
+        if calc_htc == 'Ped':
+            # Get time segments and levels for norms
+            time_normals_segments = self._data_helper.get_segments(input_uids[PRCP_DATA_NORMALS_UID])
+            prcp_normals_levels = self._data_helper.get_levels(input_uids[PRCP_DATA_NORMALS_UID])
+            temp_normals_levels = self._data_helper.get_levels(input_uids[TEMP_DATA_NORMALS_UID])
 
+            assert len(prcp_normals_levels) == len(temp_normals_levels), \
+                'Error! Number of vertical levels are not the same!'
+
+            for prcp_normals_level, temp_normals_level in zip(prcp_normals_levels, temp_normals_levels):
+                all_segments_values = []
+                for segment in time_normals_segments:
+                    # Read data
+                    prcp_normals_data = self._data_helper.get(input_uids[PRCP_DATA_NORMALS_UID], segments=segment, levels=prcp_normals_level)
+                    prcp_normals_values = prcp_normals_data['data'][prcp_normals_level][segment['@name']]['@values']
+                    temp_normals_data = self._data_helper.get(input_uids[TEMP_DATA_NORMALS_UID], segments=segment, levels=temp_normals_level)
+                    temp_normals_values = temp_normals_data['data'][temp_normals_level][segment['@name']]['@values']
+
+                    # Convert degK to degC if needed
+                    if temp_normals_data['data']['description']['@units'] == 'K':
+                        temp_normals_values = kelvin_to_celsius(temp_normals_values)
+
+        
         for prcp_level, temp_level in zip(prcp_levels, temp_levels):
             all_segments_values = []
             for segment in time_segments:

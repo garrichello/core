@@ -23,9 +23,11 @@ from core.base.common import kelvin_to_celsius
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 3
-INPUT_PARAMETERS_INDEX = 2
+INPUT_PARAMETERS_INDEX = 3
 PRCP_DATA_UID = 0
 TEMP_DATA_UID = 1
+PRCP_DATA_NORMALS_UID = 2
+TEMP_DATA_NORMALS_UID = 3
 DEFAULT_VALUES = {'Mode': 'data', 'Threshold': 10}
 
 class CalcHTC(Calc):
@@ -178,9 +180,11 @@ class CalcHTC(Calc):
         parameters = None
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
+        clac_htc = self._get_parameter('HTC', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
         threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
 
+        self.logger.info('Hydrothermal coefficient: %s', calc_mode)
         self.logger.info('Calculation mode: %s', calc_mode)
         self.logger.info('Threshold: %s', threshold)
 

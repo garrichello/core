@@ -14,18 +14,16 @@
     <data uid='Data_1' type='dataset'> <!-- type: dataset, array -->
     	<description title='ERA5 reanalysis' name='Precipitation' units='mm'/>
 	    <dataset name='ERA5' resolution='0.25x0.25' time_step='1d' scenario='-'/>  <!-- ERAINT -->
-    	<variable name='sumtp' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
+    	    <variable name='sumtp' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
 	    <region units='degrees'>
 	        <point lon='60' lat='50'/> 
-    	    <point lon='120' lat='50'/>
+    		<point lon='120' lat='50'/>
 	        <point lon='120' lat='70'/>
 	        <point lon='60' lat='70'/>
     	</region>
     	<levels values='sfc'/>
 	    <time uid='Input_1' template='YYYYMMDDHH'>
-	        <segment name='Seg1' beginning='1979010100' ending='1979123123'/>
-    	    <segment name='Seg2' beginning='1980010100' ending='1980123123'/>
-	        <segment name='Seg3' beginning='1981010100' ending='1981123123'/>
+    		<segment name='Seg2' beginning='1980010100' ending='1980123123'/>
     	</time>
     </data>
     
@@ -34,8 +32,29 @@
 	    <levels values='2m'/>
     </data>
 
+    <data uid='Data_3' type='dataset'> <!-- type: dataset, array -->
+    	<description title='ERA5 reanalysis' name='Precipitation' units='mm'/>
+	    <dataset name='ERA5' resolution='0.25x0.25' time_step='1d' scenario='Climate normals 1981-2010'/>  <!-- ERAINT -->
+    	    <variable name='sumtp_normals' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
+	    <region units='degrees'>
+	        <point lon='60' lat='50'/> 
+    		<point lon='120' lat='50'/>
+	        <point lon='120' lat='70'/>
+	        <point lon='60' lat='70'/>
+    	</region>
+    	<levels values='sfc'/>
+	    <time uid='Input_1' template='YYYYMMDDHH'>
+	        <segment name='Seg1' beginning='1979010100' ending='2010123123'/>
+    	</time>
+    </data>
+    
+    <data uid='Data_4' type='dataset' parent='Data_1'> <!-- type: dataset, array -->
+    	<variable name='meant2m_normals' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
+	    <levels values='2m'/>
+    </data>
+
     <destination uid='Image_1' type='image'> <!-- type: 'image', 'raw' -->
-	    <file name='output/output_CalcHTC.tiff' type='geotiff'/> <!-- type for graphics kind='shape': 'eps', 'geotiff'; kind='contour'/'station': 'eps', 'shape'; for kind=='multiline': 'eps'; for kind=='tile' : 'geotiff24' -->
+	    <file name='output/output_CalcHTC_Ped.tiff' type='geotiff'/> <!-- type for graphics kind='shape': 'eps', 'geotiff'; kind='contour'/'station': 'eps', 'shape'; for kind=='multiline': 'eps'; for kind=='tile' : 'geotiff24' -->
 	    <projection name='cylindrical'> <!-- 'azimuthal equidistant, 'cylindrical',... -->
     	    <limits units='degrees'>
               	<limit role="left">-180</limit>
@@ -43,8 +62,8 @@
           	    <limit role="top">90</limit>
               	<limit role="bottom">-90</limit>                                        
 	        </limits>
-    	</projection>
-    	<graphics title='' kind='shaded'> <!-- kind: 'shaded', 'contour', 'station', 'tile'; 'multiline', 'vector', 'regress2d' -->
+    	    </projection>
+    	    <graphics title='' kind='shaded'> <!-- kind: 'shaded', 'contour', 'station', 'tile'; 'multiline', 'vector', 'regress2d' -->
 	        <width units='pixels'>3072</width>
 	        <height units='pixels'>2304</height>
     	    <legend title='' kind='file' type='continuous' position='none'> <!-- kind: 'embedded', 'file', 'none'; position: 'right', 'left', 'top', 'bottom' (only for kind=='embedded') -->
@@ -54,7 +73,7 @@
 	    	    <limited>no</limited> <!-- fixed legend limits: yes/no -->
     		    <minimum>-15.0</minimum> <!-- ignored if limited == no -->
         		<maximum>15.0</maximum> <!-- ignored if limited == no -->
-	        	<file name='output/output_CalcHTC.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
+	        	<file name='output/output_CalcHTC_Ped.sld' type='xml'/> <!-- file for legend (if legend kind=='file'), type: 'tiff', 'png', 'jpeg', 'gif', 'bmp', 'ppm, 'srf'  -->
     	    </legend>
 	        <colortable>RAINBOW</colortable>  <!-- only for graphics kind=='shaded' -->
 	        <colorscale>linear</colorscale> <!-- only for graphics kind=='shaded' -->
@@ -63,14 +82,15 @@
     </destination>
 
     <destination uid='File_1' type='raw'>
-		<file name='output/output_CalcHTC.nc' type='netcdf'/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' -->
+		<file name='output/output_CalcHTC_Ped.nc' type='netcdf'/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' -->
     </destination>   
 
     <data uid='Result_1' type='array'>
-    	<description title='Hydrothermal coefficient of Selyaninov' name='Selyaninov HTC' units='mm/C'/>
+    	<description title='Ped index' name='S' units='-'/>
     </data>
 
     <data uid='ModuleParameters_1' type='parameter'>
+	<param uid='HTC' type='string'>Ped</param> <!-- Ped, Selyaninov -->
     	<param uid='Mode' type='string'>data</param> <!-- data, day, segment, mean -->
         <param uid='Threshold' type='integer'>10</param> <!-- for instance, 5, 10, 25, 95 -->
     </data>

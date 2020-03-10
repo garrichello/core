@@ -28,7 +28,7 @@ PRCP_DATA_UID = 0
 TEMP_DATA_UID = 1
 PRCP_DATA_NORMALS_UID = 2
 TEMP_DATA_NORMALS_UID = 3
-DEFAULT_VALUES = {'Mode': 'data', 'Threshold': 10}
+DEFAULT_VALUES = {'HTC': 'Selyaninov', 'Mode': 'data', 'Threshold': 10}
 
 class CalcHTC(Calc):
     """ Provides calculation of a spatial field of the Selyaninov's hydrothermal coefficient values for time series of data.
@@ -184,7 +184,7 @@ class CalcHTC(Calc):
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
         threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
 
-        self.logger.info('Hydrothermal coefficient: %s', calc_mode)
+        self.logger.info('Hydrothermal coefficient: %s', calc_htc)
         self.logger.info('Calculation mode: %s', calc_mode)
         self.logger.info('Threshold: %s', threshold)
 

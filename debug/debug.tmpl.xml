@@ -92,8 +92,8 @@
     <processing uid='Process_1' class='CalcHTC' module_path=''>
     	<input uid='P1Input1' data='Data_1'/>
     	<input uid='P1Input2' data='Data_2'/>
-		<input uid='P1Input3' data='Data_3'/>
-    	<input uid='P1Input4' data='Data_4'/>
+	<!--	<input uid='P1Input3' data='Data_3'/>
+    	<input uid='P1Input4' data='Data_4'/> -->
     	<input uid='P1Parameter' data ='ModuleParameters_1'/>
     	<output uid='P1Output1' data='Result_1'/>
     </processing>

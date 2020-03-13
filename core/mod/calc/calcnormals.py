@@ -35,14 +35,14 @@ class CalcNormals(Calc):
         start_date = datetime.datetime.strptime(time_segment['@beginning'], '%Y%m%d%H')
         end_date = datetime.datetime.strptime(time_segment['@ending'], '%Y%m%d%H')
         years = [start_date.year + i for i in range(end_date.year - start_date.year + 1)]
-        segment_start = datetime.datetime(1, start_date.month, start_date.day, start_date.hour)
-        segment_end = datetime.datetime(1, end_date.month, end_date.day, end_date.hour)
         
         if calc_mode == 'day':
+            segment_start = datetime.datetime(1, start_date.month, start_date.day, start_date.hour)
+            segment_end = datetime.datetime(1, end_date.month, end_date.day, end_date.hour)
             dates_delta = segment_end - segment_start + datetime.timedelta(days=1)  # Days in the segment.
             days = [segment_start + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Days of the segment.
         elif calc_mode == 'month':
-            months = [segment_start + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Months of the segment.
+            months = [start_date.month + i for i in range(end_date.month - start_date.month + 1)] # Months of the segment.
 
         # For each day of the year (segment) this day for all years (30).
         # Concatenate for 30 years to obtain 30 lon-lat grids.
@@ -68,15 +68,15 @@ class CalcNormals(Calc):
                     [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
                 all_days_data.append(np.ma.mean(data, axis=0))
         elif calc_mode == 'month':
-            for day in days:
+            for month in months:
                 segments = []
                 for year in years:
-                    day_i = datetime.datetime(year, day.month, day.day, day.hour, day.minute)
-                    one_day = {}  # 1-day segment to read.
-                    one_day['@beginning'] = day_i.strftime('%Y%m%d%H')
-                    one_day['@ending'] = day_i.strftime('%Y%m%d23')
-                    one_day['@name'] = 'Year {}'.format(year)
-                    segments.append(one_day)
+                    month_i = datetime.datetime(year, month.month, month.day, month.hour, month.minute)
+                    one_month = {}  # 1-day segment to read.
+                    one_month['@beginning'] = month_i.strftime('%Y%m%d%H')
+                    one_month['@ending'] = month_i.strftime('%Y%m%d23')
+                    one_month['@name'] = 'Year {}'.format(year)
+                    segments.append(one_month)
                 result = self._data_helper.get(uid, segments=segments, levels=level)
                 data = np.ma.stack(
                     [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])

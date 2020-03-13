@@ -69,7 +69,7 @@ class CalcNormals(Calc):
         
         elif calc_mode == 'month':
             months = [start_date.month + i for i in range(end_date.month - start_date.month + 1)] # Months of the segment.
-            months_grid = [datetime.datetime(1, mi, 15, 12) if mi == 2 else datetime.datetime(1, mi, 16, 0) for mi in months]
+            months_grid = [datetime.datetime(1, mi, 1, 0) for mi in months]
             segments_grid = months_grid
 
             for month in months_grid:
@@ -78,7 +78,7 @@ class CalcNormals(Calc):
                     month_i = datetime.datetime(year, month.month, month.day, month.hour, month.minute)
                     one_month = {}  # 1-month segment to read.
                     one_month['@beginning'] = month_i.strftime('%Y%m%d%H')
-                    one_month['@ending'] = month_i.strftime('%Y%m%d23')
+                    one_month['@ending'] = month_i.strftime('%Y%m2823')
                     one_month['@name'] = 'Year {}'.format(year)
                     segments.append(one_month)
                 result = self._data_helper.get(uid, segments=segments, levels=level)

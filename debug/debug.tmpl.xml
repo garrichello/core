@@ -13,7 +13,7 @@
 
     <data uid="Data_1" type="dataset"> <!-- type: dataset, array -->
     	<description title="ERA 5 Reanalysis" name="Air temperature" units="K"/>
-	    <dataset name="ERA5" resolution="0.25x0.25" time_step="1m" scenario="-"/>  <!-- ERAINT -->
+	    <dataset name="ERA5" resolution="0.25x0.25" time_step="1d" scenario="-"/>  <!-- ERAINT -->
     	<variable name="meant2m" tempk2c="no"/> <!-- TMP, air, 2T, TAV, precip-->
 	    <region units="degrees">
 	    <!-- <point lon=[/LU_LON/] lat=[/LU_LAT/]/> -->
@@ -40,7 +40,7 @@
     </data>
 
     <data uid='ModuleParameters_1' type='parameter'>
-		  <param uid='Mode' type='string'>month</param> <!-- day, month -->
+		  <param uid='Mode' type='string'>day</param> <!-- day, month -->
     </data>
 
 <!-- End of data segment -->

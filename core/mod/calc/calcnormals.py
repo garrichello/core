@@ -69,7 +69,7 @@ class CalcNormals(Calc):
         
         elif calc_mode == 'month':
             months = [start_date.month + i for i in range(end_date.month - start_date.month + 1)] # Months of the segment.
-            months_grid = [datetime.datetime(1, mi, 15, 0) for mi in months]
+            months_grid = [datetime.datetime(1, mi, 1, 0) for mi in months]
             segments_grid = months_grid
 
             for month in months_grid:

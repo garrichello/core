@@ -39,12 +39,17 @@
         </time>
     </data>
 
+    <data uid='ModuleParameters_1' type='parameter'>
+		  <param uid='Mode' type='string'>month</param> <!-- day, month -->
+    </data>
+
 <!-- End of data segment -->
 
 <!-- Code segment. Order is IMPORTANT! -->
 
     <processing uid="Process_1" class="CalcNormals" module_path="">
     	<input uid="P1Input1" data="Data_1"/>
+      <input uid='P1Parameter' data ='ModuleParameters_1'/>
     	<output uid="P1Output1" data="Result_1"/>
     </processing>
     

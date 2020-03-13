@@ -37,9 +37,9 @@ class CalcNormals(Calc):
         years = [start_date.year + i for i in range(end_date.year - start_date.year + 1)]
         segment_start = datetime.datetime(1, start_date.month, start_date.day, start_date.hour)
         segment_end = datetime.datetime(1, end_date.month, end_date.day, end_date.hour)
-        dates_delta = segment_end - segment_start + datetime.timedelta(days=1)  # Days in the segment.
         
         if calc_mode == 'day':
+            dates_delta = segment_end - segment_start + datetime.timedelta(days=1)  # Days in the segment.
             days = [segment_start + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Days of the segment.
         elif calc_mode == 'month':
             months = [segment_start + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Months of the segment.

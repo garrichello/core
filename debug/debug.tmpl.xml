@@ -40,7 +40,7 @@
     </data>
 
     <data uid='ModuleParameters_1' type='parameter'>
-		  <param uid='Mode' type='string'>month</param> <!-- day, month -->
+		  <param uid='Mode' type='string'>day</param> <!-- day, month -->
     </data>
 
 <!-- End of data segment -->

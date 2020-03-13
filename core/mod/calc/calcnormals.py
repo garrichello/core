@@ -38,7 +38,11 @@ class CalcNormals(Calc):
         segment_start = datetime.datetime(1, start_date.month, start_date.day, start_date.hour)
         segment_end = datetime.datetime(1, end_date.month, end_date.day, end_date.hour)
         dates_delta = segment_end - segment_start + datetime.timedelta(days=1)  # Days in the segment.
-        days = [segment_start + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Days of the segment.
+        
+        if calc_mode == 'day':
+            days = [segment_start + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Days of the segment.
+        elif calc_mode == 'month':
+            months = [segment_start + datetime.timedelta(days=i) for i in range(dates_delta.days)]  # Months of the segment.
 
         # For each day of the year (segment) this day for all years (30).
         # Concatenate for 30 years to obtain 30 lon-lat grids.

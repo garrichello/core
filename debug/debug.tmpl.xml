@@ -13,8 +13,8 @@
 
     <data uid="Data_1" type="dataset"> <!-- type: dataset, array -->
     	<description title="ERA 5 Reanalysis" name="Air temperature" units="K"/>
-	    <dataset name="ERA5" resolution="0.25x0.25" time_step="1d" scenario="-"/>  <!-- ERAINT -->
-    	<variable name="sumtp" tempk2c="no"/> <!-- TMP, air, 2T, TAV, precip-->
+	    <dataset name="ERA5" resolution="0.25x0.25" time_step="1m" scenario="-"/>  <!-- ERAINT -->
+    	<variable name="meant2m" tempk2c="no"/> <!-- TMP, air, 2T, TAV, precip-->
 	    <region units="degrees">
 	    <!-- <point lon=[/LU_LON/] lat=[/LU_LAT/]/> -->
             <point lon="-180" lat="90"/>
@@ -22,7 +22,7 @@
             <point lon="180" lat="-90"/>
             <point lon="-180" lat="-90"/>
     	</region>
-	    <levels values="sfc"/>
+	    <levels values="2m"/>
 	    <time uid="Input_1" template="YYYYMMDDHH">  <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
 	        <segment name="Seg1"  beginning="1981010100" ending="2010123123"/>
         </time>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="windows-1251" standalone="no"?>
+<!DOCTYPE task SYSTEM "ctdl.dtd">
+<task uid="task_20190701_155314" owner="oig" description="" root_path="/opt/gcoret/" data_module_path="">
+    <service processingClass="Average" calculationParameter="" trend="false" isBaseLayer="false"><!-- GUI service params -->
+      <timePeriod type="Given time period">
+        <dateStart year="1979" month="January" day="01"/>
+        <dateEnd year="1980" month="December" day="31"/>
+      </timePeriod>
+    </service>
+    <metadb host="localhost" name="cvcdatadb" user="dbuser" password=""/>
+    <computing system="abak" type="REMOTE" ip="abak.scert.ru" drcNode="IMCES"/>
+<!-- Data segment. Order is not important. -->
+
+    <data uid="Data_1" type="dataset"> <!-- type: dataset, array -->
+    	<description title="ERA 5 Reanalysis" name="Air temperature" units="K"/>
+	    <dataset name="ERA5" resolution="0.25x0.25" time_step="1d" scenario="-"/>  <!-- ERAINT -->
+    	<variable name="sumtp" tempk2c="no"/> <!-- TMP, air, 2T, TAV, precip-->
+	    <region units="degrees">
+	    <!-- <point lon=[/LU_LON/] lat=[/LU_LAT/]/> -->
+            <point lon="-180" lat="90"/>
+            <point lon="180" lat="90"/>
+            <point lon="180" lat="-90"/>
+            <point lon="-180" lat="-90"/>
+    	</region>
+	    <levels values="sfc"/>
+	    <time uid="Input_1" template="YYYYMMDDHH">  <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
+	        <segment name="Seg1"  beginning="1981010100" ending="2010123123"/>
+        </time>
+    </data>
+    
+    <destination uid="File_1" type="raw"><!-- uid to be generated, then used in processing -->
+      <file name="output/era5.normals_1981010100-2010123123.nc" type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
+    </destination>
+    
+    <data uid="Result_1" type="array">
+    	<description title="Climate normals for 1981-2010, ECMWF ERA5" name="Average precipitation climate normals" units="mm"/>
+	    <time uid="Output_1" template="YYYYMMDDHH"> <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
+	    	<segment name="Seg1" beginning="1981010100" ending="2010123123"/>
+        </time>
+    </data>
+
+<!-- End of data segment -->
+
+<!-- Code segment. Order is IMPORTANT! -->
+
+    <processing uid="Process_1" class="CalcNormals" module_path="">
+    	<input uid="P1Input1" data="Data_1"/>
+    	<output uid="P1Output1" data="Result_1"/>
+    </processing>
+    
+    <processing uid="Output_1" class="cvcOutput">
+      <input uid="O1Data1" data="Result_1"/>
+      <output uid="O1Destination1" data="File_1"/>
+    </processing>
+            
+<!-- End of code segment -->
+
+</task>

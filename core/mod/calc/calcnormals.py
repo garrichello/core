@@ -8,6 +8,8 @@ from core.base.dataaccess import DataAccess
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2
+INPUT_PARAMETERS_INDEX = 1
+DEFAULT_VALUES = {'Mode': 'data'}
 
 class CalcNormals(Calc):
     """ Performs calculation of climate normals of values.
@@ -18,7 +20,7 @@ class CalcNormals(Calc):
         super().__init__()
         self._data_helper = data_helper
 
-    def _calc_normals(self, uid, level):
+    def _calc_normals(self, uid, level, calc_mode):
         """ Calculates climate normals at given vertical levels for a given time period.
         Arguments:
             uid -- UID of input dataset.
@@ -46,19 +48,36 @@ class CalcNormals(Calc):
         # Concatenate 2-D grids for all days along time axis to get [time, lat, lon] result array.
         normals = {}
         all_days_data = []
-        for day in days:
-            segments = []
-            for year in years:
-                day_i = datetime.datetime(year, day.month, day.day, day.hour, day.minute)
-                one_day = {}  # 1-day segment to read.
-                one_day['@beginning'] = day_i.strftime('%Y%m%d%H')
-                one_day['@ending'] = day_i.strftime('%Y%m%d23')
-                one_day['@name'] = 'Year {}'.format(year)
-                segments.append(one_day)
-            result = self._data_helper.get(uid, segments=segments, levels=level)
-            data = np.ma.stack(
-                [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
-            all_days_data.append(np.ma.mean(data, axis=0))
+            
+        if calc_mode == 'day':
+            for day in days:
+                segments = []
+                for year in years:
+                    day_i = datetime.datetime(year, day.month, day.day, day.hour, day.minute)
+                    one_day = {}  # 1-day segment to read.
+                    one_day['@beginning'] = day_i.strftime('%Y%m%d%H')
+                    one_day['@ending'] = day_i.strftime('%Y%m%d23')
+                    one_day['@name'] = 'Year {}'.format(year)
+                    segments.append(one_day)
+                result = self._data_helper.get(uid, segments=segments, levels=level)
+                data = np.ma.stack(
+                    [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
+                all_days_data.append(np.ma.mean(data, axis=0))
+        elif calc_mode == 'month':
+            for day in days:
+                segments = []
+                for year in years:
+                    day_i = datetime.datetime(year, day.month, day.day, day.hour, day.minute)
+                    one_day = {}  # 1-day segment to read.
+                    one_day['@beginning'] = day_i.strftime('%Y%m%d%H')
+                    one_day['@ending'] = day_i.strftime('%Y%m%d23')
+                    one_day['@name'] = 'Year {}'.format(year)
+                    segments.append(one_day)
+                result = self._data_helper.get(uid, segments=segments, levels=level)
+                data = np.ma.stack(
+                    [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
+                all_days_data.append(np.ma.mean(data, axis=0))
+
 
         normals_data = np.stack(all_days_data)  # Stack to array.
         mask_0 = result['data'][level]['Year {}'.format(years[0])]['@values'].mask  # lon-lat mask.
@@ -89,12 +108,20 @@ class CalcNormals(Calc):
 
         level = self._data_helper.get_levels(input_uids[0])[0]  # Only the first vertical level is taken.
 
+        # Get parameters
+        parameters = None
+        if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
+            parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
+       
+        calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
+        self.logger.info('Calculation mode: %s', calc_mode)
+        
         # Get outputs
         output_uids = self._data_helper.output_uids()
         assert output_uids, 'Error! No output arguments!'
 
         # Calculate normals
-        normals = self._calc_normals(input_uids[0], level)
+        normals = self._calc_normals(input_uids[0], level, calc_mode)
         self._data_helper.put(output_uids[0], values=normals['data'],
                               segment=normals['@base_period'], level=level,
                               longitudes=normals['@longitude_grid'], latitudes=normals['@latitude_grid'],

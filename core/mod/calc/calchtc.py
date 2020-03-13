@@ -167,6 +167,19 @@ class CalcHTC(Calc):
 
         return result
 
+    def _calc_ped(self, prcp_values, temp_values, prcp_normals, temp_normals):
+        """ Calculates Ped's index.
+        Arguments:
+            prcp_values -- daily total precipitation values
+            temp_values -- daily mean temperature values
+            prcp_normals -- daily total precipitation normals
+            temp_normals -- daily mean temperature normals
+        Returns:
+            result -- array of Ped's index values
+        """  
+
+        return prcp_values    
+
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
 
@@ -200,33 +213,21 @@ class CalcHTC(Calc):
         assert len(prcp_levels) == len(temp_levels), \
             'Error! Number of vertical levels are not the same!'
 
-        data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
-        
         # For calc_htc == 'Ped' we calculate Ped index.
-        # First, we should calculate norms of temperature and precipitation
+        # if calc_htc == 'Ped' read (create) time segments and levels for normals
         if calc_htc == 'Ped':
-            # Get time segments and levels for norms
-            time_normals_segments = self._data_helper.get_segments(input_uids[PRCP_DATA_NORMALS_UID])
-            prcp_normals_levels = self._data_helper.get_levels(input_uids[PRCP_DATA_NORMALS_UID])
-            temp_normals_levels = self._data_helper.get_levels(input_uids[TEMP_DATA_NORMALS_UID])
-
-            assert len(prcp_normals_levels) == len(temp_normals_levels), \
+            prcp_normals_level = self._data_helper.get_levels(input_uids[PRCP_DATA_NORMALS_UID])[0]  # There should be only one level - normals?.
+            temp_normals_level = self._data_helper.get_levels(input_uids[TEMP_DATA_NORMALS_UID])[0]
+            assert len(prcp_normals_level) == len(temp_normals_level), \
                 'Error! Number of vertical levels are not the same!'
+            # Normals time segments should be set for year 1 (as set in a normals file)
+            normals_time_segments = deepcopy(time_segments) 
+            for segment in normals_time_segments:
+                segment['@beginning'] = '0001' + segment['@beginning'][4:]
+                segment['@ending'] = '0001' + segment['@ending'][4:]
 
-            for prcp_normals_level, temp_normals_level in zip(prcp_normals_levels, temp_normals_levels):
-                all_segments_values = []
-                for segment in time_normals_segments:
-                    # Read data
-                    prcp_normals_data = self._data_helper.get(input_uids[PRCP_DATA_NORMALS_UID], segments=segment, levels=prcp_normals_level)
-                    prcp_normals_values = prcp_normals_data['data'][prcp_normals_level][segment['@name']]['@values']
-                    temp_normals_data = self._data_helper.get(input_uids[TEMP_DATA_NORMALS_UID], segments=segment, levels=temp_normals_level)
-                    temp_normals_values = temp_normals_data['data'][temp_normals_level][segment['@name']]['@values']
-
-                    # Convert degK to degC if needed
-                    if temp_normals_data['data']['description']['@units'] == 'K':
-                        temp_normals_values = kelvin_to_celsius(temp_normals_values)
-
-        
+        data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
+     
         for prcp_level, temp_level in zip(prcp_levels, temp_levels):
             all_segments_values = []
             for segment in time_segments:
@@ -240,8 +241,22 @@ class CalcHTC(Calc):
                 if temp_data['data']['description']['@units'] == 'K':
                     temp_values = kelvin_to_celsius(temp_values)
 
-                # Perform calculation for the current time segment.
-                one_segment_values = self._calc_htc(prcp_values, temp_values, threshold)
+                # if calc_htc == 'Ped' read data for normals
+                if calc_htc == 'Ped':
+                    prcp_normals_data = self._data_helper.get(input_uids[PRCP_DATA_NORMALS_UID], segments=segment, levels=prcp_normals_level)
+                    prcp_normals = prcp_normals_data['data'][prcp_normals_level][segment['@name']]['@values']
+                    temp_normals_data = self._data_helper.get(input_uids[TEMP_DATA_NORMALS_UID], segments=segment, levels=temp_normals_level)
+                    temp_normals = temp_normals_data['data'][temp_normals_level][segment['@name']]['@values']
+
+                    # Convert degK to degC if needed
+                    if temp_normals_data['data']['description']['@units'] == 'K':
+                        temp_normals = kelvin_to_celsius(temp_normals)
+                    
+                    # Perform calculation for the current time segment.
+                    one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals)
+                else:
+                    # Perform calculation for the current time segment.
+                    one_segment_values = self._calc_htc(prcp_values, temp_values, threshold)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

@@ -16,6 +16,7 @@ from celery.signals import after_setup_logger
 from celery.app.log import TaskFormatter
 
 import core
+from .task_generator import task_generator
 
 # Read main configuration file.
 core_config = ConfigParser()
@@ -68,6 +69,29 @@ def run_plain_xml(self, task_xml):
     logger.info('Task %s is finished.', self.request.id)
 
     return base64.b64encode(result_zip).decode('utf-8')
+
+@app.task(bind=True)
+def run_json_task(self, json_task):
+    """Basic Celery application task for starting the Core with a JSON byte-stream task.
+
+    It creates an instance of the MainApp class and starts the Core.
+    Everything inside this function is controlled by Celery.
+    """
+
+    logger.info('%s v.%s', core.__prog__, core.__version__)
+
+    # Instantiate the Core!
+    application = core.MainApp()
+
+    task_xml = task_generator(json_task, self.request.id)
+
+    # Run the task processing by the Core!
+    # Result is a zip-file as bytes.
+#    result_zip = application.run_task(task_xml, self.request.id)
+
+    logger.info('Task %s is finished.', self.request.id)
+
+    return 0 #base64.b64encode(result_zip).decode('utf-8')
 
 if __name__ == '__main__':
     app.start()

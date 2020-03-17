@@ -11,6 +11,7 @@ virtualenv
 *.log
 templates_tests.sh
 core_config.ini
-debug
 debug.sh
 remote_debug.py
+tmp
+debug

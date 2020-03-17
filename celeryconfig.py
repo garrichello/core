@@ -1,4 +1,4 @@
-#from kombu import Exchange, Queue
+from kombu import Exchange, Queue
 
 ## Broker settings.
 broker_url = 'amqp://admin:adminpass@abak.scert.ru:5672/core'
@@ -28,12 +28,30 @@ task_annotations = {'*': {'rate_limit': '10/s'}}
 task_track_started = True
 
 # Define queues
-#task_queues = (
-#    Queue('plain_xml_queue', Exchange('plain_xml_queue'), routing_key='plain_xml_queue'),
-#    Queue('rpc_queue', Exchange('rpc_queue'), routing_key='rpc_queue'),
-#)
+task_create_missing_queues = False
+task_queues = (
+    Queue('plain_xml_queue', Exchange('default'), routing_key='plain_xml_queue'),
+    Queue('json_task_queue', Exchange('default'), routing_key='json_task_queue'),
+    Queue('rpc_queue', Exchange('default'), routing_key='rpc_queue'),
+)
+
+# Define routes
+task_routes = {
+    'core.tasks.run_json_task': {
+        'queue': 'json_task_queue',
+        'exchange': 'default',
+        'routing_key': 'json_task_queue'
+    },
+    'core.tasks.run_plain_xml': {
+        'queue': 'plain_xml_queue',
+        'exchange': 'default',
+        'routing_key': 'plain_xml_queue'
+    }
+}
 
 # Default input queue
-task_default_queue = 'plain_xml_queue'
+#task_default_queue = 'json_task_queue'
+#task_default_exchange = 'default'
+#task_default_routing_key = 'json_task_queue'
 
 worker_redirect_stdouts_level = 'INFO'

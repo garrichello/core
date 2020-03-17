@@ -7,7 +7,7 @@
         <dateEnd year="1980" month="December" day="31"/>
       </timePeriod>
     </service>
-    <metadb host="localhost" name="cvcdatadb" user="dbuser" password=""/>
+    <metadb host="localhost" name="metadatadb" user="dbuser" password=""/>
     <computing system="abak" type="REMOTE" ip="abak.scert.ru" drcNode="IMCES"/>
 <!-- Data segment. Order is not important. -->
 

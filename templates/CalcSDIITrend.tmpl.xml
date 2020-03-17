@@ -7,7 +7,7 @@
         <dateEnd year='' month='' day=''/>
       </timePeriod>
     </service>
-    <metadb host='localhost' name='cvcdatadb' user='dbuser' password=''/>
+    <metadb host='localhost' name='metadatadb' user='dbuser' password=''/>
     <computing system="calculator" type="LOCAL" ip="127.0.0.1"/>
 <!-- Data segment. Order is not important. -->
 
@@ -22,7 +22,7 @@
             <point lon='120' lat='50'/>
             <point lon='60' lat='65'/>
     	</region>
-	    <levels values='none'/>
+	    <levels values='sfc'/>
 	    <time uid='Input_1' template='YYYYMMDDHH'>
 	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
 	        <segment name='Seg1' beginning='1980010100' ending='1980013123'/>  

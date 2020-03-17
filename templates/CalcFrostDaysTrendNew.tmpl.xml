@@ -7,7 +7,7 @@
         <dateEnd year='' month='' day=''/>
       </timePeriod>
     </service>
-    <metadb host='localhost' name='cvcdatadb' user='dbuser' password=''/>
+    <metadb host='localhost' name='metadatadb' user='dbuser' password=''/>
     <computing system="calculator" type="LOCAL" ip="127.0.0.1"/>
     
 <!-- Data segment. Order is not important. -->

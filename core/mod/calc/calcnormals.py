@@ -9,7 +9,7 @@ from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2
 INPUT_PARAMETERS_INDEX = 1
-DEFAULT_VALUES = {'Mode': 'data'}
+DEFAULT_VALUES = {'Mode': 'day'}
 
 class CalcNormals(Calc):
     """ Performs calculation of climate normals of values.

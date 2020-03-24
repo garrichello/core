@@ -467,6 +467,7 @@ class DataNetcdf(Data):
         else:
             levels['units'] = levels['units'].pop() if levels['units'] else None
             n_levels = len(levels['values'])
+        level_var_units = levels['units'] if levels['units'] else None if meta is None else meta.get('level_units')
 
         # Stack values.
         n_lat, n_lon = all_values[0].shape[-2:]
@@ -527,7 +528,6 @@ class DataNetcdf(Data):
             level_var = root.createVariable('level', 'i4', ('level'))
             # Set level attributes.
             level_var.standard_name = 'level'
-            level_var_units = levels['units'] if levels['units'] else None if meta is None else meta.get('level_units')
             if level_var_units:
                 level_var.units = level_var_units
             level_var_long_name = None if meta is None else meta.get('level_long_name')
@@ -535,12 +535,35 @@ class DataNetcdf(Data):
                 level_var.long_name = level_var_long_name
             # Write level variable.
             level_var[:] = levels['values']
+        else:
+            level_var_name = 'level'
+            level_var = root.variables.get(level_var_name)
+            if level_var.units != level_var_units:
+                level_num = 1
+                while True:
+                    level_var_name = 'level{}'.format(level_num)
+                    level_var = root.variables.get(level_var_name)
+                    if level_var is None or level_var.units == level_var_units:
+                        break
+                if level_var is None:
+                    # Define level variable.
+                    level_dim = root.createDimension(level_var_name, n_levels)  # pylint: disable=W0612
+                    level_var = root.createVariable(level_var_name, 'i4', (level_var_name))
+                    # Set level attributes.
+                    level_var.standard_name = level_var_name
+                    if level_var_units:
+                        level_var.units = level_var_units
+                    level_var_long_name = None if meta is None else meta.get('level_long_name')
+                    if level_var_long_name:
+                        level_var.long_name = level_var_long_name
+                    # Write level variable.
+                    level_var[:] = levels['values']
 
         # Check if variable is present in the file.
         data_var = root.variables.get(varname)
         if data_var is None:
             # Define data variable.
-            data_dims = ['time', 'level', 'nlat', 'nlon']
+            data_dims = ['time', level_var_name, 'nlat', 'nlon']
             data_var = root.createVariable(varname, 'f4', data_dims, fill_value=values.fill_value)
             # Set data attributes.
             data_var.units = all_options['description']['@units']

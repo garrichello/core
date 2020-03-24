@@ -151,11 +151,13 @@ class CalcNormals(Calc):
 
         # Calculate normals and standard_deviation
         normals, standard_deviation = self._calc_normals(input_uids[0], level, calc_mode)
+        
         self._data_helper.put(output_uids[0], values=normals['data'],
                               segment=normals['@base_period'], level=level,
                               longitudes=normals['@longitude_grid'], latitudes=normals['@latitude_grid'],
                               times=normals['@day_grid'], fill_value=normals['@fill_value'],
                               meta=normals['meta'])
+
         self._data_helper.put(output_uids[1], values=standard_deviation['data'],
                               segment=normals['@base_period'], level=level,
                               longitudes=normals['@longitude_grid'], latitudes=normals['@latitude_grid'],

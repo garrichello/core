@@ -430,6 +430,21 @@ class DataNetcdf(Data):
                 ['description'] -- basic description of the data as a dictionary
         """
 
+        def add_level_variable():
+            # Define level variable.
+            level_dim = root.createDimension(level_var_name, n_levels)  # pylint: disable=W0612
+            level_var = root.createVariable(level_var_name, 'i4', ('level'))
+            # Set level attributes.
+            level_var.standard_name = level_var_name
+            if level_var_units:
+                level_var.units = level_var_units
+            level_var_long_name = None if meta is None else meta.get('level_long_name')
+            if level_var_long_name:
+                level_var.long_name = level_var_long_name
+            # Write level variable.
+            level_var[:] = levels['values']
+
+
         filename = self._data_info['data']['file']['@name']
         self.logger.info('Writing netCDF file: %s', filename)
 
@@ -524,18 +539,8 @@ class DataNetcdf(Data):
             start_date = datetime(time_grid[0].year, 1, 1)
             time_var[:] = [(cur_date - start_date).days for cur_date in time_grid]
 
-            # Define level variable.
-            level_dim = root.createDimension('level', n_levels)  # pylint: disable=W0612
-            level_var = root.createVariable('level', 'i4', ('level'))
-            # Set level attributes.
-            level_var.standard_name = 'level'
-            if level_var_units:
-                level_var.units = level_var_units
-            level_var_long_name = None if meta is None else meta.get('level_long_name')
-            if level_var_long_name:
-                level_var.long_name = level_var_long_name
-            # Write level variable.
-            level_var[:] = levels['values']
+            # Write level variable
+            add_level_variable()
         else:
             level_var = root.variables.get(level_var_name)
             if level_var.units != level_var_units:
@@ -547,18 +552,7 @@ class DataNetcdf(Data):
                         break
                     level_num += 1
                 if level_var is None:
-                    # Define level variable.
-                    level_dim = root.createDimension(level_var_name, n_levels)  # pylint: disable=W0612
-                    level_var = root.createVariable(level_var_name, 'i4', (level_var_name))
-                    # Set level attributes.
-                    level_var.standard_name = level_var_name
-                    if level_var_units:
-                        level_var.units = level_var_units
-                    level_var_long_name = None if meta is None else meta.get('level_long_name')
-                    if level_var_long_name:
-                        level_var.long_name = level_var_long_name
-                    # Write level variable.
-                    level_var[:] = levels['values']
+                    add_level_variable()  # Write level variable
 
         # Check if variable is present in the file.
         data_var = root.variables.get(varname)

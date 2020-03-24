@@ -2,7 +2,7 @@
     DataAccess
 """
 
-from copy import copy
+from copy import copy, deepcopy
 import logging
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
@@ -431,8 +431,8 @@ class DataAccess():
         options['latitudes'] = copy(latitudes)
         if fill_value is not None:
             values.fill_value = fill_value
-        options['description'] = copy(description)
-        options['meta'] = copy(meta)
+        options['description'] = deepcopy(description)
+        options['meta'] = deepcopy(meta)
         self._data_objects[uid].write(values, options)
 
     def output_uids(self):

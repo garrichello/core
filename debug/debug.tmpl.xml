@@ -39,10 +39,6 @@
         </time>
     </data>
 
-    <destination uid="File_2" type="raw"><!-- uid to be generated, then used in processing -->
-      <file name="output/era5.normals_1981010100-2010123123.nc" type="netcdf"/> <!--type: 'netcdf', 'geotiff'; 'bin', xml' --><!-- PHP pathname -->
-    </destination>
-    
     <data uid="Result_2" type="array">
     	<description title="Climate standard deviation for 1981-2010, ECMWF ERA5" name="Monthly average temperature climate standard deviation" units="K"/>
 	    <time uid="Output_1" template="YYYYMMDDHH"> <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
@@ -72,7 +68,7 @@
 
     <processing uid="Output_2" class="cvcOutput">
       <input uid="O1Data1" data="Result_2"/>
-      <output uid="O1Destination1" data="File_2"/>
+      <output uid="O1Destination1" data="File_1"/>
     </processing>
             
 <!-- End of code segment -->

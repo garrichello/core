@@ -63,14 +63,10 @@
     
     <processing uid="Output_1" class="cvcOutput">
       <input uid="O1Data1" data="Result_1"/>
+      <input uid="O1Data2" data="Result_2"/>
       <output uid="O1Destination1" data="File_1"/>
     </processing>
 
-    <processing uid="Output_2" class="cvcOutput">
-      <input uid="O1Data1" data="Result_2"/>
-      <output uid="O1Destination1" data="File_1"/>
-    </processing>
-            
-<!-- End of code segment -->
+ <!-- End of code segment -->
 
 </task>

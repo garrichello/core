@@ -545,6 +545,7 @@ class DataNetcdf(Data):
                     level_var = root.variables.get(level_var_name)
                     if level_var is None or level_var.units == level_var_units:
                         break
+                    level_num += 1
                 if level_var is None:
                     # Define level variable.
                     level_dim = root.createDimension(level_var_name, n_levels)  # pylint: disable=W0612

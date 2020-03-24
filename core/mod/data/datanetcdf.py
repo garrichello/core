@@ -468,6 +468,7 @@ class DataNetcdf(Data):
             levels['units'] = levels['units'].pop() if levels['units'] else None
             n_levels = len(levels['values'])
         level_var_units = levels['units'] if levels['units'] else None if meta is None else meta.get('level_units')
+        level_var_name = 'level'
 
         # Stack values.
         n_lat, n_lon = all_values[0].shape[-2:]
@@ -536,7 +537,6 @@ class DataNetcdf(Data):
             # Write level variable.
             level_var[:] = levels['values']
         else:
-            level_var_name = 'level'
             level_var = root.variables.get(level_var_name)
             if level_var.units != level_var_units:
                 level_num = 1

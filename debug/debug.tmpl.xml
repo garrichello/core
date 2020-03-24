@@ -22,7 +22,7 @@
             <point lon="180" lat="-90"/>
             <point lon="-180" lat="-90"/>
     	</region>
-	    <levels values="sfc"/>
+	    <levels values="2m"/>
 	    <time uid="Input_1" template="YYYYMMDDHH">  <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
 	        <segment name="Seg1"  beginning="1981010100" ending="2010123123"/>
         </time>

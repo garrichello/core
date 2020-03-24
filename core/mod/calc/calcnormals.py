@@ -90,11 +90,11 @@ class CalcNormals(Calc):
                     one_month['@name'] = 'Year {}'.format(year)
                     segments.append(one_month)
                 result = self._data_helper.get(uid, segments=segments, levels=level)
-                # calc daily normals
+                # calc monthly normals
                 data_1 = np.ma.stack(
                     [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
                 all_segments_data_1.append(np.ma.mean(data_1, axis=0))
-                # calc daily standard deviation
+                # calc monthly standard deviation
                 data_2 = np.ma.stack(
                     [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
                 all_segments_data_2.append(np.ma.std(data_2, axis=0))

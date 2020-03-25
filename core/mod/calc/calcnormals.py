@@ -117,11 +117,11 @@ class CalcNormals(Calc):
         
         normals['meta'] = deepcopy(result['meta'])
         normals['meta']['varname'] = data_info['variable']['@name'] + '_normals'
-        normals['meta']['time_long_name'] = 'Calendar'+ calc_mode + 'of the year'
+        normals['meta']['time_long_name'] = 'Calendar '+ calc_mode + ' of the year'
 
         standard_deviation['meta'] = deepcopy(result['meta'])
         standard_deviation['meta']['varname'] = data_info['variable']['@name'] + '_std'
-        standard_deviation['meta']['time_long_name'] = 'Calendar'+ calc_mode + 'of the year'
+        standard_deviation['meta']['time_long_name'] = 'Calendar '+ calc_mode + ' of the year'
 
         return normals, standard_deviation
 

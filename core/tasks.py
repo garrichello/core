@@ -83,7 +83,7 @@ def run_json_task(self, json_task):
     # Instantiate the Core!
     application = core.MainApp()
 
-    task_xml = task_generator(json_task, self.request.id)
+    task_xml = task_generator(json_task, self.request.id, core_config['METADB'])
 
     # Run the task processing by the Core!
     # Result is a zip-file as bytes.

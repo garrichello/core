@@ -295,7 +295,7 @@ class DataAccess():
         qry = qry.filter(scenario_tbl.columns['name'] == scenario_name)
         qry = qry.filter(resolution_tbl.columns['name'] == resolution_name)
         qry = qry.filter(time_step_tbl.columns['label'] == time_step_name)
-        qry = qry.filter(variable_tbl.columns['name'] == variable_name)            
+        qry = qry.filter(variable_tbl.columns['name'] == variable_name)
 
         # Each vertical level is processed separately because corresponding arrays can be stored in different files
         for level_name in levels_names:

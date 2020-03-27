@@ -1,5 +1,6 @@
 """ CalcHTC implements calculation of a spatial field of the Selyaninov's hydrothermal coefficient [Selyaninov, 1928].
-
+    
+    If parameter 'HTC' equal 'Selyaninov':
     Input arguments:
         input_uids[0] -- daily temperature values
         input_uids[1] -- daily total precipitation values
@@ -8,8 +9,28 @@
                 'segment' -- for each segment
                 'data' -- maximum over all segments
             Threshold -- integer, threshold temperature (usually, 10 degC)
+    
     Output arguments:
         output_uids[0] -- Selyaninov's hydrothermal coefficient, data array of size:
+            [segments, lats, lons] -- for Mode == 'segment'
+            [lats, lons] -- for Mode == 'data'
+
+    If parameter 'HTC' equal 'Ped':
+    Input arguments:
+        input_uids[0] -- monthly temperature values
+        input_uids[1] -- monthly total precipitation values
+        input_uids[2] -- monthly temperature climate normals
+        input_uids[3] -- monthly total precipitation climate normals
+        input_uids[4] -- monthly temperature standard deviation
+        input_uids[5] -- monthly total precipitation standard deviation
+        input_uids[6] -- module parameters:
+            Mode -- string, allowed values:
+                'segment' -- for each segment
+                'data' -- maximum over all segments
+            Threshold -- none
+    
+    Output arguments:
+        output_uids[0] -- Ped's index, data array of size:
             [segments, lats, lons] -- for Mode == 'segment'
             [lats, lons] -- for Mode == 'data'
 """

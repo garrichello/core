@@ -1,11 +1,15 @@
 import os
 import json
 import pprint
-from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
 from configparser import ConfigParser
 from copy import copy
+import datetime
+import calendar
+
+from sqlalchemy import create_engine, MetaData
+from sqlalchemy.orm import sessionmaker, aliased
+from sqlalchemy.sql.expression import and_
+from collections import defaultdict
 
 ENGLISH_LANG_CODE = 409
 TIME_PERIOD_TYPES = {'PERIOD_GIVEN', 'PERIOD_DAY', 'PERIOD_MONTH', 'PERIOD_SEASON', 'PERIOD_YEAR'}
@@ -14,20 +18,58 @@ def make_time_segments(time_period, session, meta):
     ''' Creates a list of time segments as XML structure based on JSON structure.
 
     Arguments:
-        time_period -- dictionary describing a time period
+        time_period -- dictionary describing a time period:
+            '@type_id' -- (int) time period type id in MDDB
+            'dateStart' -- (dict) first date of the time period:
+                '@day' -- day
+                '@month' -- month
+                '@year' -- year
+            'dateEnd' -- (dict) last date of the time period
+                '@day' -- day
+                '@month' -- month
+                '@year' -- year
         session -- opened session to MDDB
-        meta -- dictionary with MDDB tables
+        meta -- MDDB metadata
 
     Returns:
         time_segments -- list of time segments as XML structure
     '''
 
+    # Get time period type from MDDB.
     time_period_type_tbl = meta.tables['time_period_type']
     qry = session.query(time_period_type_tbl.columns['const_name'])
     qry = qry.filter(time_period_type_tbl.columns['id'] == time_period['@type_id'])
     time_period_type = qry.one()[0]
 
+    # Extract the first and the last dates of the time period.
+    year = int(time_period['dateStart']['@year']) if time_period['dateStart']['@year'] else 1
+    month = int(time_period['dateStart']['@month']) if time_period['dateStart']['@month'] else 1
+    day = int(time_period['dateStart']['@day']) if time_period['dateStart']['@day'] else 1
+    start_date = datetime.datetime(year, month, day, hour=0)
+
+    year = int(time_period['dateEnd']['@year']) if time_period['dateEnd']['@year'] else 1
+    month = int(time_period['dateEnd']['@month']) if time_period['dateEnd']['@month'] else 12
+    day = int(time_period['dateEnd']['@day']) if time_period['dateEnd']['@day'] else calendar.monthrange(year, month)[1]
+    end_date = datetime.datetime(year, month, day, hour=23)
+
+    # Calculate number of segments.
+    if time_period_type == 'PERIOD_GIVEN':
+        num_segments = 1
+    else:
+        num_segments = end_date.year - start_date.year + 1
+
+    # Generate time segments.
     time_segments = []
+    for seg_i in range(num_segments):
+        time_segments.append({'@name': 'Seg{}'.format(seg_i+1),
+                              '@beginning': datetime.datetime(start_date.year+seg_i,
+                                                              start_date.month,
+                                                              start_date.day,
+                                                              start_date.hour).strftime('%Y%m%d%H'),
+                              '@ending': datetime.datetime(start_date.year+seg_i,
+                                                           end_date.month,
+                                                           end_date.day,
+                                                           end_date.hour).strftime('%Y%m%d%H')})
 
     return time_segments
 
@@ -37,7 +79,7 @@ def make_levels(level_ids, session, meta):
     Arguments:
         level_ids -- list of level ids in MDDB
         session -- opened session to MDDB
-        meta -- dictionary with MDDB tables
+        meta -- MDDB metadata
 
     Returns:
         level_labels -- string of level labels separated by a semicolon
@@ -45,7 +87,7 @@ def make_levels(level_ids, session, meta):
 
     level_tbl = meta.tables['level']
     qry = session.query(level_tbl.columns['label'])
-    level_names = [qry.filter(level_tbl.columns['id'] == level_id).one()[0] 
+    level_names = [qry.filter(level_tbl.columns['id'] == level_id).one()[0]
                    for level_id in level_ids]
 
     levels_string = ';'.join(level_names)
@@ -58,11 +100,12 @@ def get_data_info(proc_argument, session, meta):
     Arguments:
         proc_argument -- JSON-based dictionary describing data
         session -- opened session to MDDB
-        meta -- dictionary with MDDB tables
+        meta -- MDDB metadata
 
     Returns:
         data -- XML-based dictionary describing data
     '''
+
     # Single SQL to get everything:
 
     # SELECT collection_i18n.name AS collection_name,
@@ -102,7 +145,7 @@ def get_data_info(proc_argument, session, meta):
     #    AND scenario.id = 1
     #    AND time_step.id = 1
 
-    # Tables in a metadata database
+    # Map MDDB tables.
     collection_tbl = meta.tables['collection']
     collection_i18n_tbl = meta.tables['collection_i18n']
     scenario_tbl = meta.tables['scenario']
@@ -159,13 +202,13 @@ def get_data_info(proc_argument, session, meta):
 
     return qry.one()
 
-def make_data(proc_argument, session, meta):
+def make_data_arguments(proc_argument, session, meta):
     ''' Creates XML data description based on JSON argument.
 
     Arguments:
         proc_argument -- JSON-based dictionary describing data
         session -- opened session to MDDB
-        tables -- dictionary with MDDB tables
+        meta -- MDDB metadata
 
     Returns:
         data -- XML-based dictionary describing data
@@ -208,11 +251,115 @@ def make_data(proc_argument, session, meta):
     data['time']['@template'] = 'YYYYMMDDHH'  # Default time template.
     data['time']['segment'] = make_time_segments(proc_argument['data']['timePeriod'], session, meta)
 
-
     return data
 
-def make_processing(proc):
-    return 0
+def delete_vertex(vertex, processing_graph):
+
+    uplinks = processing_graph[vertex]['uplink'].keys()
+    downlinks = processing_graph[vertex]['downlink'].keys()
+    if len(uplinks) > 1 and len(downlinks) > 1:
+        raise ValueError("Vertex has several inputs and sevral outputs. And it should be deleted. Don't know how. Aborting...")
+
+    for uplink in uplinks:
+        out_data = processing_graph[uplink]['downlink'][vertex]['out_data']
+        del processing_graph[uplink]['downlink'][vertex]
+        processing_graph[uplink]['downlink'].update(processing_graph[vertex]['downlink'])
+        for downlink in downlinks:
+            processing_graph[uplink]['downlink'][downlink]['out_data'] = out_data
+            del processing_graph[downlink]['uplink'][vertex]
+            processing_graph[downlink]['uplink'][uplink]['in_data'] = out_data
+
+    del processing_graph[vertex]
+
+def make_processing(json_proc, session, meta):
+    ''' Creates XML processing (along with corresponding data and destinations) description based on JSON argument.
+
+    Arguments:
+        json_proc -- JSON-based dictionary describing processing
+        session -- opened session to MDDB
+        meta -- MDDB metadata
+
+    Returns:
+        data -- list of XML-based dictionaries describing data used in processing
+        destinations -- list of XML-based dictionaries describing destinations used in processing
+        processing -- XML-based dictionary describing processing conveyor
+    '''
+    # Map MDDB tables.
+    processor_tbl = meta.tables['processor']
+    edge_tbl = meta.tables['edge']
+    vertex_tbl = meta.tables['vertex']
+    from_vertex_tbl = aliased(vertex_tbl)
+    to_vertex_tbl = aliased(vertex_tbl)
+    data_variable_tbl = meta.tables['data_variable']
+    computing_module_tbl = meta.tables['computing_module']
+    from_module_tbl = aliased(computing_module_tbl)
+    to_module_tbl = aliased(computing_module_tbl)
+
+    # Get conveyor id.
+    qry = session.query(processor_tbl.c.conveyor_id)
+    qry = qry.filter(processor_tbl.c.id == json_proc['@processor_id'])
+    conveyor_id = qry.one()
+
+    # Get processing graph description.
+    qry = session.query(from_vertex_tbl.c.id.label('from_vertex'),
+                        from_module_tbl.c.name.label('from_module'),
+                        edge_tbl.c.from_output.label('from_output'),
+                        to_vertex_tbl.c.id.label('to_vertex'),
+                        to_module_tbl.c.name.label('to_module'),
+                        edge_tbl.c.to_input.label('to_input'),
+                        data_variable_tbl.c.label.label('out_data'),
+                        to_vertex_tbl.c.condition_option_id.label('condition_option_id'),
+                        to_vertex_tbl.c.condition_value_id.label('condition_value_id'))
+    qry = qry.select_from(edge_tbl)
+    qry = qry.join(from_vertex_tbl, and_(edge_tbl.c.from_conveyor_id == from_vertex_tbl.c.conveyor_id,
+                                         edge_tbl.c.from_vertex_id == from_vertex_tbl.c.id))
+    qry = qry.join(to_vertex_tbl, and_(edge_tbl.c.to_conveyor_id == to_vertex_tbl.c.conveyor_id,
+                                       edge_tbl.c.to_vertex_id == to_vertex_tbl.c.id))
+    qry = qry.join(data_variable_tbl)
+    qry = qry.join(from_module_tbl, from_vertex_tbl.c.computing_module_id == from_module_tbl.c.id)
+    qry = qry.join(to_module_tbl, to_vertex_tbl.c.computing_module_id == to_module_tbl.c.id)
+    qry = qry.filter(from_vertex_tbl.c.conveyor_id == conveyor_id)
+    qry = qry.filter(to_vertex_tbl.c.conveyor_id == conveyor_id)
+    result = qry.all()
+
+    # Construct processing graph.
+    processing_graph = defaultdict(dict)
+    for row in result:
+        src_vertex = (row.from_vertex, row.from_output)
+        dst_vertex = (row.to_vertex, row.to_input)
+        processing_graph[src_vertex]['module'] = row.from_module
+        processing_graph[dst_vertex]['module'] = row.to_module
+        if 'downlink' not in processing_graph[src_vertex].keys():
+            processing_graph[src_vertex]['downlink'] = defaultdict(dict)
+        processing_graph[src_vertex]['downlink'][dst_vertex]['out_data'] = row.out_data
+        if 'uplink' not in processing_graph[dst_vertex].keys():
+            processing_graph[dst_vertex]['uplink'] = defaultdict(dict)
+        processing_graph[dst_vertex]['uplink'][src_vertex]['in_data'] = row.out_data
+        if 'condition' not in processing_graph[src_vertex].keys():
+            processing_graph[src_vertex]['condition'] = (None, None)
+        processing_graph[dst_vertex]['condition'] = (row.condition_option_id, row.condition_value_id)
+
+    # Prepare options.
+    options = [(opt['@id'], opt['@value_id']) for opt in json_proc['option']]
+
+    # Find conditional vertices that should be deleted.
+    vertices_to_delete = []
+    for key, vertex in processing_graph.items():
+        if vertex['condition'] != (None, None) and vertex['condition'] not in options:
+            vertices_to_delete.append(key)
+
+    # Delete vertices which condition is not met.
+    for key in vertices_to_delete:
+        delete_vertex(key, processing_graph)
+
+    data = []
+    processing = {}
+    destinations = []
+
+
+
+
+    return data, destinations, processing
 
 def task_generator(json_task, task_id, metadb_info, nested=False):
     ''' Creates a list of dictionaries reflecting an XML task files according to a JSON task description.
@@ -255,10 +402,16 @@ def task_generator(json_task, task_id, metadb_info, nested=False):
 
     for arg in json_task['processing']['argument']:
         if 'data' in arg.keys():
-            task['data'].append(make_data(arg, session, meta))
+            task['data'].append(make_data_arguments(arg, session, meta))
         elif 'processing' in arg.keys():
             nested_tasks = task_generator(arg, task_id, metadb_info, True)
             tasks.extend(nested_tasks)
+
+    data, destinations, processing = make_processing(json_task['processing'], session, meta)
+
+    task['data'].extend(data)
+    task['destination'].extend(destinations)
+    task['processing'].append(processing)
 
     if len(tasks) > 0:
         tasks.append({'wait': True})  # Append wait signal after nested tasks.

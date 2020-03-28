@@ -5,6 +5,7 @@ from configparser import ConfigParser
 from copy import copy
 import datetime
 import calendar
+import xmltodict
 
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, aliased
@@ -253,23 +254,119 @@ def make_data_arguments(proc_argument, session, meta):
 
     return data
 
-def delete_vertex(vertex, processing_graph):
+def delete_vertex(vertex_key, processing_graph):
+    ''' Deletes vertex from a processing graph.
 
-    uplinks = processing_graph[vertex]['uplink'].keys()
-    downlinks = processing_graph[vertex]['downlink'].keys()
-    if len(uplinks) > 1 and len(downlinks) > 1:
+    Arguments:
+        vertex_key -- key of the vertex in the processing graph
+        processing_graph -- dictionary containing adjacency lists for vertices.
+
+    Returns:
+        None
+    '''
+
+    vertex = processing_graph[vertex_key]  # Vertex to delete.
+
+    # We know how to delete a vertex if it has only one input or only one output edge.
+    if len(vertex['uplinks']) > 1 and len(vertex['downlinks']) > 1:
         raise ValueError("Vertex has several inputs and sevral outputs. And it should be deleted. Don't know how. Aborting...")
 
-    for uplink in uplinks:
-        out_data = processing_graph[uplink]['downlink'][vertex]['out_data']
-        del processing_graph[uplink]['downlink'][vertex]
-        processing_graph[uplink]['downlink'].update(processing_graph[vertex]['downlink'])
-        for downlink in downlinks:
-            processing_graph[uplink]['downlink'][downlink]['out_data'] = out_data
-            del processing_graph[downlink]['uplink'][vertex]
-            processing_graph[downlink]['uplink'][uplink]['in_data'] = out_data
+    # Move uplink and downlink connections of adjacent vertices past the vertex to be deleted.
+    for uplink in vertex['uplinks']:
+        data_label = uplink['data_label']
+        link_to = next(link for link in uplink['vertex']['downlinks'] if link['vertex'] == vertex)
+        uplink['vertex']['downlinks'].remove(link_to)
+        uplink['vertex']['downlinks'].extend(vertex['downlinks'])
+        for downlink in vertex['downlinks']:
+            downlink['data_label'] = data_label
+            link_to = next(link for link in downlink['vertex']['uplinks'] if link['vertex'] == vertex)
+            downlink['vertex']['uplinks'].remove(link_to)
+            downlink['vertex']['uplinks'].extend(vertex['uplinks'])
 
-    del processing_graph[vertex]
+    # Delete the vertex from the graph.
+    del processing_graph[vertex_key]
+
+def make_data_array(data_uid):
+    ''' Creates structure describing data array for XML-based task
+
+    Arguments:
+        data_uid -- uid of the array
+
+    Returns:
+        data_array -- dictionary containing XML-based description of a data array
+    '''
+
+    data_array = {'@uid': data_uid,
+                  '@type': 'array'}
+
+    return data_array
+
+def make_image(image_uid, graphics_type):
+    ''' Creates structure describing image destination for XML-based task
+
+    Arguments:
+        image_uid -- uid of the image
+        graphics_type -- type of the graphics file
+
+    Returns:
+        image_info -- dictionary containing XML-based description of an image destination
+    '''
+
+    if graphics_type.lower() == 'geotiff':
+        file_ext = 'tiff'
+    else:
+        file_ext = '.unknown'
+
+    image_info = {'@uid': image_uid,
+                  '@type': 'image',
+                  'file': {'@name': 'output.{}'.format(file_ext),
+                           '@type': graphics_type.lower()}}
+
+    return image_info
+
+def make_file(file_uid, file_type):
+    ''' Creates structure describing file destination for XML-based task
+
+    Arguments:
+        file_uid -- uid of the file
+        file_type -- type of the file
+
+    Returns:
+        file_info -- dictionary containing XML-based description of a file destination
+    '''
+
+    if file_type.lower() == 'netcdf':
+        file_ext = 'nc'
+    else:
+        file_ext = '.unknown'
+
+    file_info = {'@uid': file_uid,
+                 '@type': 'raw',
+                 'file': {'@name': 'output.{}'.format(file_ext),
+                          '@type': file_type.lower()}}
+
+    return file_info
+
+def make_parameters(proc_options, session, meta):
+    ''' Creates modules parameters description for XML task based on JSON argument.
+
+    Arguments:
+        proc_options -- JSON-based dictionary describing processing options
+        session -- opened session to MDDB
+        meta -- MDDB metadata
+
+    Returns:
+        parameters -- XML-based dictionary describing module parameters
+    '''
+
+    parameters = {'@uid': 'ModuleParameters_1',
+                  '@type': 'parameter',
+                  'param': []}
+
+    for option in proc_options:
+        pass
+
+    return parameters
 
 def make_processing(json_proc, session, meta):
     ''' Creates XML processing (along with corresponding data and destinations) description based on JSON argument.
@@ -292,72 +389,123 @@ def make_processing(json_proc, session, meta):
     to_vertex_tbl = aliased(vertex_tbl)
     data_variable_tbl = meta.tables['data_variable']
     computing_module_tbl = meta.tables['computing_module']
-    from_module_tbl = aliased(computing_module_tbl)
-    to_module_tbl = aliased(computing_module_tbl)
 
     # Get conveyor id.
     qry = session.query(processor_tbl.c.conveyor_id)
     qry = qry.filter(processor_tbl.c.id == json_proc['@processor_id'])
     conveyor_id = qry.one()
 
-    # Get processing graph description.
-    qry = session.query(from_vertex_tbl.c.id.label('from_vertex'),
-                        from_module_tbl.c.name.label('from_module'),
+    # Get vertices.
+    qry = session.query(vertex_tbl.c.id.label('vertex_id'),
+                        computing_module_tbl.c.name.label('computing_module'),
+                        vertex_tbl.c.condition_option_id.label('condition_option_id'),
+                        vertex_tbl.c.condition_value_id.label('condition_value_id'))
+    qry = qry.select_from(vertex_tbl)
+    qry = qry.join(computing_module_tbl)
+    qry = qry.filter(vertex_tbl.c.conveyor_id == conveyor_id)
+    result = qry.all()
+
+    # Put vertices in a graph.
+    processing_graph = defaultdict(dict)
+    for row in result:
+        processing_graph[row.vertex_id]['module'] = row.computing_module
+        processing_graph[row.vertex_id]['condition'] = (row.condition_option_id, row.condition_value_id)
+        processing_graph[row.vertex_id]['uplinks'] = []
+        processing_graph[row.vertex_id]['downlinks'] = []
+
+    # Get links of vertices.
+    qry = session.query(from_vertex_tbl.c.id.label('from_vertex_id'),
                         edge_tbl.c.from_output.label('from_output'),
-                        to_vertex_tbl.c.id.label('to_vertex'),
-                        to_module_tbl.c.name.label('to_module'),
+                        to_vertex_tbl.c.id.label('to_vertex_id'),
                         edge_tbl.c.to_input.label('to_input'),
-                        data_variable_tbl.c.label.label('out_data'),
-                        to_vertex_tbl.c.condition_option_id.label('condition_option_id'),
-                        to_vertex_tbl.c.condition_value_id.label('condition_value_id'))
+                        data_variable_tbl.c.label.label('data_label'))
     qry = qry.select_from(edge_tbl)
     qry = qry.join(from_vertex_tbl, and_(edge_tbl.c.from_conveyor_id == from_vertex_tbl.c.conveyor_id,
                                          edge_tbl.c.from_vertex_id == from_vertex_tbl.c.id))
     qry = qry.join(to_vertex_tbl, and_(edge_tbl.c.to_conveyor_id == to_vertex_tbl.c.conveyor_id,
                                        edge_tbl.c.to_vertex_id == to_vertex_tbl.c.id))
     qry = qry.join(data_variable_tbl)
-    qry = qry.join(from_module_tbl, from_vertex_tbl.c.computing_module_id == from_module_tbl.c.id)
-    qry = qry.join(to_module_tbl, to_vertex_tbl.c.computing_module_id == to_module_tbl.c.id)
     qry = qry.filter(from_vertex_tbl.c.conveyor_id == conveyor_id)
     qry = qry.filter(to_vertex_tbl.c.conveyor_id == conveyor_id)
     result = qry.all()
 
-    # Construct processing graph.
-    processing_graph = defaultdict(dict)
+    # Link the vertices and construct the processing graph.
     for row in result:
-        src_vertex = (row.from_vertex, row.from_output)
-        dst_vertex = (row.to_vertex, row.to_input)
-        processing_graph[src_vertex]['module'] = row.from_module
-        processing_graph[dst_vertex]['module'] = row.to_module
-        if 'downlink' not in processing_graph[src_vertex].keys():
-            processing_graph[src_vertex]['downlink'] = defaultdict(dict)
-        processing_graph[src_vertex]['downlink'][dst_vertex]['out_data'] = row.out_data
-        if 'uplink' not in processing_graph[dst_vertex].keys():
-            processing_graph[dst_vertex]['uplink'] = defaultdict(dict)
-        processing_graph[dst_vertex]['uplink'][src_vertex]['in_data'] = row.out_data
-        if 'condition' not in processing_graph[src_vertex].keys():
-            processing_graph[src_vertex]['condition'] = (None, None)
-        processing_graph[dst_vertex]['condition'] = (row.condition_option_id, row.condition_value_id)
+        downlink = {'output': row.from_output,
+                    'vertex': processing_graph[row.to_vertex_id],
+                    'data_label': row.data_label}
+        processing_graph[row.from_vertex_id]['downlinks'].append(downlink)
+        uplink = {'input': row.to_input,
+                  'vertex': processing_graph[row.from_vertex_id],
+                  'data_label': row.data_label}
+        processing_graph[row.to_vertex_id]['uplinks'].append(uplink)
 
     # Prepare options.
     options = [(opt['@id'], opt['@value_id']) for opt in json_proc['option']]
 
     # Find conditional vertices that should be deleted.
     vertices_to_delete = []
-    for key, vertex in processing_graph.items():
+    for v_num, vertex in processing_graph.items():
         if vertex['condition'] != (None, None) and vertex['condition'] not in options:
-            vertices_to_delete.append(key)
+            vertices_to_delete.append(v_num)
 
     # Delete vertices which condition is not met.
-    for key in vertices_to_delete:
-        delete_vertex(key, processing_graph)
+    for v_num in vertices_to_delete:
+        delete_vertex(v_num, processing_graph)
 
     data = []
-    processing = {}
+    processing = []
     destinations = []
 
+    # Search for the starting vertex of the graph.
+    queue = []
+    for vertex in processing_graph.values():
+        if vertex['module'] == 'START':
+            queue.append(vertex)
+            break
 
+    # Traverse a processing graph using BFS.
+    process_id = 0
+    while queue:
+        vertex = queue.pop()
+        if vertex['module'] != 'START' and vertex['module'] != 'FINISH':  # Ignore start and finish vertices.
+            process_id += 1  # Process counter.
+            # Create new process description.
+            process = {'@uid': 'Process_{}'.format(process_id),
+                       '@class': vertex['module'],
+                       'input': [],
+                       'output': []}
+            # Describe inputs.
+            inputs = {}
+            for uplink in vertex['uplinks']:
+                inputs['P{}Input{}'.format(process_id, uplink['input'])] = uplink['data_label']
+            for uid, data_label in inputs.items():
+                # For specific inputs modify corresponding data descriptions.
+                if 'INPUT' in data_label:
+                    _, num = data_label.split('_')
+                    data_label = 'Data_{}'.format(num)
+                process['input'].append({'@uid': uid, '@data': data_label})
+            # Add parameters.
+            process['input'].append({'@uid': 'P{}Parameter1', '@data': 'ModuleParameters_1'})
+            # Describe outputs.
+            outputs = {}
+            for downlink in vertex['downlinks']:
+                outputs['P{}Output{}'.format(process_id, downlink['output'])] = downlink['data_label']
+            for uid, data_label in outputs.items():
+                # For specific outputs add corresponding data or destination descriptions.
+                if 'RESULT' in data_label:
+                    data.append(make_data_array(data_label))
+                if 'OUTPUT_IMAGE' in data_label:
+                    destinations.append(make_image(data_label, json_proc['result']['@graphics_type']))
+                if 'OUTPUT_RAW' in data_label:
+                    destinations.append(make_file(data_label, json_proc['result']['@file_type']))
+                process['output'].append({'@uid': uid, '@data': data_label})
+            processing.append(process)
+        for to_link in vertex['downlinks']:
+            queue.append(to_link['vertex'])
 
+    # Add modules parameters.
+    data.append(make_parameters(json_proc['option'], session, meta))
 
     return data, destinations, processing
 
@@ -410,12 +558,12 @@ def task_generator(json_task, task_id, metadb_info, nested=False):
     data, destinations, processing = make_processing(json_task['processing'], session, meta)
 
     task['data'].extend(data)
-    task['destination'].extend(destinations)
-    task['processing'].append(processing)
+    task['destination'] = destinations
+    task['processing'] = processing
 
     if len(tasks) > 0:
         tasks.append({'wait': True})  # Append wait signal after nested tasks.
-    tasks.append(task)
+    tasks.append({'task': task})
 
     return tasks
 
@@ -427,3 +575,6 @@ if __name__ == "__main__":
         j_task = json.load(json_file)
     task = task_generator(j_task, 1, core_config['METADB'])
     pprint.pprint(task)
+    XML_FILE_NAME = '..\\output_task.xml'
+    with open(XML_FILE_NAME, 'w') as xml_file:
+        xmltodict.unparse(task[0], xml_file, pretty=True)

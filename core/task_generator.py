@@ -599,6 +599,12 @@ def make_data_file(nested_task):
     data_file['variable']['@name'] = 'data'
     data_file['region'] = nested_task['task']['data'][0]['region']
     data_file['levels'] = nested_task['task']['data'][0]['levels']
+    data_file['time'] = {}
+    data_file['time']['@template'] = nested_task['task']['data'][0]['time']['@template']
+    data_file['time']['segment'] = {}
+    data_file['time']['segment']['@beginning'] = nested_task['task']['data'][0]['time']['segment'][0]['@beginning']
+    data_file['time']['segment']['@ending'] = nested_task['task']['data'][0]['time']['segment'][-1]['@ending']
+    data_file['time']['segment']['@name'] = 'GlobalSeg'
 
     return data_file
 

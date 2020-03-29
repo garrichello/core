@@ -100,8 +100,8 @@ class Data:
             latitude_grid -- latitude grid (1- or 2-D ndarray)
             grid_type -- grid type: regular/irregular/station (string) - obsoleted, will be removed in future releases
             dimensions -- names of dimensions (list of strings)
-            fill_value -- fill value in a masked array (float)
-            description -- data description (string)
+            fill_value -- fill value in a masked array
+            description -- data description
             meta -- additional metadata, currently used for passing names of weather stations (dictionary)
         """
 

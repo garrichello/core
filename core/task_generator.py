@@ -286,19 +286,18 @@ def delete_vertex(vertex_key, processing_graph):
     # Delete the vertex from the graph.
     del processing_graph[vertex_key]
 
-def make_data_array(data_uid):
+def make_data_array(data_uid, title= 'Stub title', name='Stub name', units='Stub units'):
     ''' Creates structure describing data array for XML-based task
 
     Arguments:
         data_uid -- uid of the array
+        title -- title of the data
+        name -- name of the data array
+        units -- units of the data
 
     Returns:
         data_array -- dictionary containing XML-based description of a data array
     '''
-
-    title = 'Stub title'
-    name = 'Stub name'
-    units = 'Stub units'
 
     data_array = {'@uid': data_uid,
                   '@type': 'array',
@@ -352,28 +351,30 @@ def make_image(image_uid, graphics_type):
 
     return image_info
 
-def make_file(file_uid, file_type):
+def make_file(file_uid, result_info):
     ''' Creates structure describing file destination for XML-based task
 
     Arguments:
-        file_uid -- uid of the file
-        file_type -- type of the file
+        result_info -- dictionary containing type and name of the output file:
+            '@file_type' -- type of the file
+            '@file_name' -- nama of the file
 
     Returns:
-        file_info -- dictionary containing XML-based description of a file destination
+        file_desc -- dictionary containing XML-based description of a file destination
     '''
 
-    if file_type.lower() == 'netcdf':
-        file_ext = 'nc'
-    else:
-        file_ext = '.unknown'
+    if '@file_name' not in result_info:
+        if result_info['@file_type'].lower() == 'netcdf':
+            result_info['@file_name'] = 'output.nc'
+        else:
+            result_info['@file_name'] = 'output.unknown'
 
-    file_info = {'@uid': file_uid,
+    file_desc = {'@uid': file_uid,
                  '@type': 'raw',
-                 'file': {'@name': 'output.{}'.format(file_ext),
-                          '@type': file_type.lower()}}
+                 'file': {'@name': result_info['@file_name'],
+                          '@type': result_info['@file_type'].lower()}}
 
-    return file_info
+    return file_desc
 
 def make_parameters(proc_options, session, meta):
     ''' Creates modules parameters description for XML task based on JSON argument.
@@ -404,19 +405,25 @@ def make_parameters(proc_options, session, meta):
 
     return parameters
 
-def make_processing(json_proc, session, meta):
+def make_processing(json_task, session, meta):
     ''' Creates XML processing (along with corresponding data and destinations) description based on JSON argument.
 
     Arguments:
-        json_proc -- JSON-based dictionary describing processing
+        json_task -- JSON-based dictionary describing task
         session -- opened session to MDDB
         meta -- MDDB metadata
 
     Returns:
         data -- list of XML-based dictionaries describing data used in processing
         destinations -- list of XML-based dictionaries describing destinations used in processing
-        processing -- XML-based dictionary describing processing conveyor
+        processing -- list of XML-based dictionaries describing processing conveyor
     '''
+    json_proc = json_task['processing']
+    if '@position' in json_task:  # Check nested case
+        nested_proc_id = json_task['@position']
+    else:
+        nested_proc_id = 0
+
     # Map MDDB tables.
     processor_tbl = meta.tables['processor']
     edge_tbl = meta.tables['edge']
@@ -444,6 +451,7 @@ def make_processing(json_proc, session, meta):
     # Put vertices in a graph.
     processing_graph = defaultdict(dict)
     for row in result:
+        processing_graph[row.vertex_id]['id'] = row.vertex_id
         processing_graph[row.vertex_id]['module'] = row.computing_module
         processing_graph[row.vertex_id]['condition'] = (row.condition_option_id, row.condition_value_id)
         processing_graph[row.vertex_id]['uplinks'] = []
@@ -477,7 +485,10 @@ def make_processing(json_proc, session, meta):
         processing_graph[row.to_vertex_id]['uplinks'].append(uplink)
 
     # Prepare options.
-    options = [(opt['@id'], opt['@value_id']) for opt in json_proc['option']]
+    if 'option' in json_proc:
+        options = [(int(opt['@id']), int(opt['@value_id'])) for opt in json_proc['option']]
+    else:
+        options = []
 
     # Find conditional vertices that should be deleted.
     vertices_to_delete = []
@@ -489,9 +500,9 @@ def make_processing(json_proc, session, meta):
     for v_num in vertices_to_delete:
         delete_vertex(v_num, processing_graph)
 
-    data = []
-    processing = []
-    destinations = []
+    data = {}
+    processing = {}
+    destinations = {}
 
     # Search for the starting vertex of the graph.
     queue = []
@@ -500,52 +511,98 @@ def make_processing(json_proc, session, meta):
             queue.append(vertex)
             break
 
+    # Add output file info for nested processing case
+    if nested_proc_id:
+        json_proc['result'] = {}
+        json_proc['result']['@file_type'] = 'netcdf'
+        json_proc['result']['@file_name'] = 'output_{}.nc'.format(nested_proc_id)
+
     # Traverse a processing graph using BFS.
-    process_id = 0
     while queue:
         vertex = queue.pop()
         if vertex['module'] != 'START' and vertex['module'] != 'FINISH':  # Ignore start and finish vertices.
-            process_id += 1  # Process counter.
             # Create new process description.
+            process_id = vertex['id'] - 1
+            if process_id in processing.keys() or ('OUTPUT_IMAGE' in [link['data_label'] for link in vertex['downlinks']] and
+                                                   nested_proc_id):
+                continue
             process = {'@uid': 'Process_{}'.format(process_id),
                        '@class': vertex['module'],
-                       'input': [],
-                       'output': []}
+                       'input': [None] * len(set([i['input'] for i in vertex['uplinks']])),
+                       'output': [None] * len(set([i['output'] for i in vertex['downlinks']]))}
             # Describe inputs.
-            inputs = {}
             for uplink in vertex['uplinks']:
-                inputs['P{}Input{}'.format(process_id, uplink['input'])] = uplink['data_label']
-            for uid, data_label in inputs.items():
-                # For specific inputs modify corresponding data descriptions.
+                input_pos = uplink['input']-1
+                uid = 'P{}Input{}'.format(process_id, input_pos+1)
+                data_label = uplink['data_label']
                 if 'INPUT' in data_label:
-                    _, num = data_label.split('_')
-                    data_label = 'Data_{}'.format(num)
-                process['input'].append({'@uid': uid, '@data': data_label})
-            # Add parameters.
-            process['input'].append({'@uid': 'P{}Parameters1'.format(process_id), '@data': 'ModuleParameters_1'})
+                    _, postfix = data_label.split('_')
+                    if postfix == 'PARAMETERS':
+                        uid = 'P{}Parameters1'.format(process_id)
+                        data_label = 'ModuleParameters_{}'.format(process_id)
+                        if data_label not in data.keys():  # Add modules parameters.
+                            data[data_label] = make_parameters(json_proc['option'], session, meta)
+                    else:
+                        data_label = 'Data_{}'.format(postfix)
+                process['input'][input_pos] = {'@uid': uid, '@data': data_label}
             # Describe outputs.
-            outputs = {}
             for downlink in vertex['downlinks']:
-                outputs['P{}Output{}'.format(process_id, downlink['output'])] = downlink['data_label']
-            for uid, data_label in outputs.items():
-                # For specific outputs add corresponding data or destination descriptions.
-                if 'RESULT' in data_label:
-                    data.append(make_data_array(data_label))
-                if 'OUTPUT_IMAGE' in data_label:
-                    destinations.append(make_image(data_label, json_proc['result']['@graphics_type']))
-                if 'OUTPUT_RAW' in data_label:
-                    destinations.append(make_file(data_label, json_proc['result']['@file_type']))
-                process['output'].append({'@uid': uid, '@data': data_label})
-            processing.append(process)
+                output_pos = downlink['output']-1
+                uid = 'P{}Output{}'.format(process_id, output_pos+1)
+                data_label = downlink['data_label']
+                if 'OUTPUT' in data_label and data_label not in destinations.keys():
+                    _, postfix = data_label.split('_')
+                    if postfix == 'IMAGE':
+                        destinations[data_label] = make_image(data_label, json_proc['result']['@graphics_type'])
+                    if postfix == 'RAW':
+                        destinations[data_label] = make_file(data_label, json_proc['result'])
+                if 'RESULT' in data_label and data_label not in data.keys():
+                    _, postfix = data_label.split('_')
+                    if postfix == 'TREND':
+                        title = 'Trend stub title'
+                        name = 'Trend of stub name'
+                        units = 'Stub units / 10yrs'
+                    else:
+                        title = 'Stub title'
+                        name = 'Stub name'
+                        units = 'Stub units'
+                    data[data_label] = make_data_array(data_label, title, name, units)
+                process['output'][output_pos] = {'@uid': uid, '@data': data_label}
+            processing[process_id] = process
         for to_link in vertex['downlinks']:
             queue.append(to_link['vertex'])
 
-    # Add modules parameters.
-    data.append(make_parameters(json_proc['option'], session, meta))
+    data = [val for val in data.values()]
+    destinations = [val for val in destinations.values()]
+    processing = [processing[i] for i in range(1, max(processing.keys())+1) if i in processing.keys()]
 
     return data, destinations, processing
 
-def task_generator(json_task, task_id, metadb_info, nested=False):
+def make_data_file(nested_task):
+    ''' Creates XML data file description for corresponding nested processings.
+    Nested processings stores results in intermediate netCDF files.
+    This function generates descriptions of these files so they can be read by the main processing.
+
+    Arguments:
+        nested_task -- nested task
+
+    Returns:
+        data_file -- XML-based dictionary describing data file.
+    '''
+
+    data_file = {}
+    _, pos = nested_task['task']['@uid'].split('_')
+    data_file['@uid'] = 'Data_{}'.format(pos)
+    data_file['@type'] = nested_task['task']['destination'][0]['@type']
+    data_file['file'] = nested_task['task']['destination'][0]['file']
+    data_file['variable'] = {}
+    data_file['variable']['@name'] = 'data'
+    data_file['region'] = nested_task['task']['data'][0]['region']
+    data_file['levels'] = nested_task['task']['data'][0]['levels']
+
+    return data_file
+
+def task_generator(json_task, task_id, metadb_info):
     ''' Creates a list of dictionaries reflecting an XML task files according to a JSON task description.
     Nested processing is supported. Nested tasks will be placed in the list before the outer task.
     Dictionary with a key 'wait' separates nested tasks and the outer one to support parallel execution.
@@ -577,21 +634,26 @@ def task_generator(json_task, task_id, metadb_info, nested=False):
 
     # Create a basic task
     task = {}
-    task['@uid'] = task_id
+    task['@uid'] = str(task_id)
+    if '@position' in json_task:  # Check nested case
+        task['@uid'] += '_' + json_task['@position']
     task['metadb'] = {'@host': metadb_info['host'],
                       '@name': metadb_info['name'],
                       '@user': metadb_info['user'],
                       '@password': metadb_info['password']}
     task['data'] = []
 
+    if not isinstance(json_task['processing']['argument'], list):
+        json_task['processing']['argument'] = [json_task['processing']['argument']]
     for arg in json_task['processing']['argument']:
         if 'data' in arg.keys():
             task['data'].append(make_data_arguments(arg, session, meta))
         elif 'processing' in arg.keys():
-            nested_tasks = task_generator(arg, task_id, metadb_info, True)
+            nested_tasks = task_generator(arg, task_id, metadb_info)
+            task['data'].append(make_data_file(nested_tasks[0]))
             tasks.extend(nested_tasks)
 
-    data, destinations, processing = make_processing(json_task['processing'], session, meta)
+    data, destinations, processing = make_processing(json_task, session, meta)
 
     task['data'].extend(data)
     task['destination'] = destinations
@@ -606,11 +668,18 @@ def task_generator(json_task, task_id, metadb_info, nested=False):
 if __name__ == "__main__":
     core_config = ConfigParser()
     core_config.read(os.path.join(str(os.path.dirname(__file__)),'core_config.ini'))
-    JSON_FILE_NAME = '..\\very_simple_task.json'
+#    JSON_FILE_NAME = '..\\very_simple_task.json'
+#    JSON_FILE_NAME = '..\\simple_task.json'
+    JSON_FILE_NAME = '..\\complex_task.json'
     with open(JSON_FILE_NAME, 'r') as json_file:
         j_task = json.load(json_file)
-    task = task_generator(j_task, 1, core_config['METADB'])
-    pprint.pprint(task)
-    XML_FILE_NAME = '..\\output_task.xml'
-    with open(XML_FILE_NAME, 'w') as xml_file:
-        xmltodict.unparse(task[0], xml_file, pretty=True)
+    tasks = task_generator(j_task, 1, core_config['METADB'])
+#    pprint.pprint(tasks)
+    i = 0
+    for task in tasks:
+        if 'wait' in task:
+            continue
+        i += 1
+        XML_FILE_NAME = '..\\output_task_{}.xml'.format(i)
+        with open(XML_FILE_NAME, 'w') as xml_file:
+            xmltodict.unparse(task, xml_file, pretty=True)

@@ -357,7 +357,10 @@ class DataAccess():
             except ValueError:
                 self.logger.error('No such input UID: %s', uid)
                 raise
-            segments = self._inputs[input_idx]['data']['time']['segment']
+            if 'time' in self._inputs[input_idx]['data'].keys():  # Parameters do not have time, so need to check.
+                segments = self._inputs[input_idx]['data']['time']['segment']
+            else:
+                segments = None
         else:
             segments = None
         return listify(segments)
@@ -374,10 +377,13 @@ class DataAccess():
             except ValueError:
                 self.logger.error('No such input UID: %s', uid)
                 raise
-            if isinstance(self._inputs[input_idx]['data']['levels']['@values'], set):
-                levels = list(self._inputs[input_idx]['data']['levels']['@values'])
+            if 'levels' in self._inputs[input_idx]['data'].keys():  # Parameters do not have levels, so need to check.
+                if isinstance(self._inputs[input_idx]['data']['levels']['@values'], set):
+                    levels = list(self._inputs[input_idx]['data']['levels']['@values'])
+                else:
+                    levels = [level_name.strip() for level_name in self._inputs[input_idx]['data']['levels']['@values'].split(';')]
             else:
-                levels = [level_name.strip() for level_name in self._inputs[input_idx]['data']['levels']['@values'].split(';')]
+                levels = None
         else:
             levels = None
         return levels

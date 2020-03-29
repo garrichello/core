@@ -296,8 +296,16 @@ def make_data_array(data_uid):
         data_array -- dictionary containing XML-based description of a data array
     '''
 
+    title = 'Stub title'
+    name = 'Stub name'
+    units = 'Stub units'
+
     data_array = {'@uid': data_uid,
-                  '@type': 'array'}
+                  '@type': 'array',
+                  'description': {'@title': title,
+                                  '@name': name,
+                                  '@units': units}}
+
 
     return data_array
 

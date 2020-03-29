@@ -317,10 +317,30 @@ def make_image(image_uid, graphics_type):
     else:
         file_ext = '.unknown'
 
+    legend_file_name = 'output.sld'
+    legend_file_type = 'xml'
+    n_legend_colors = 10
+    n_legend_labels = n_legend_colors + 1
+
     image_info = {'@uid': image_uid,
                   '@type': 'image',
                   'file': {'@name': 'output.{}'.format(file_ext),
-                           '@type': graphics_type.lower()}}
+                           '@type': graphics_type.lower()},
+                  'graphics': {'legend': {'@kind': 'file',
+                                          'file': {'@name': legend_file_name,
+                                                   '@type': legend_file_type},
+                                          'limited': 'no',
+                                          'minimum': '0',
+                                          'maximum': '0',
+                                          '@type': 'continuous',
+                                          'ncolors': str(n_legend_colors),
+                                          'nlabels': str(n_legend_labels)},
+                               'colortable': 'RAINBOW'},
+                  'projection': {'limits': {'@units': 'degrees',
+                                            'limit': [{'@role': 'left', '#text': '-180'},
+                                                      {'@role': 'right', '#text': '180'},
+                                                      {'@role': 'top', '#text': '90'},
+                                                      {'@role': 'bottom', '#text': '-90'}]}}}
 
     return image_info
 
@@ -359,12 +379,20 @@ def make_parameters(proc_options, session, meta):
         parameters -- XML-based dictionary describing module parameters
     '''
 
+    option_tbl = meta.tables['option']
+    option_value_tbl = meta.tables['option_value']
+
     parameters = {'@uid': 'ModuleParameters_1',
                   '@type': 'parameter',
                   'param': []}
 
     for option in proc_options:
-        pass
+        name = session.query(option_tbl.c.label).filter(option_tbl.c.id == option['@id']).scalar()
+        value = session.query(option_value_tbl.c.label).filter(option_value_tbl.c.id == option['@value_id']).scalar()
+        param = {'@uid': name,
+                 '@type': 'string',
+                 '#text': value}
+        parameters['param'].append(param)
 
     return parameters
 
@@ -486,7 +514,7 @@ def make_processing(json_proc, session, meta):
                     data_label = 'Data_{}'.format(num)
                 process['input'].append({'@uid': uid, '@data': data_label})
             # Add parameters.
-            process['input'].append({'@uid': 'P{}Parameter1', '@data': 'ModuleParameters_1'})
+            process['input'].append({'@uid': 'P{}Parameters1'.format(process_id), '@data': 'ModuleParameters_1'})
             # Describe outputs.
             outputs = {}
             for downlink in vertex['downlinks']:

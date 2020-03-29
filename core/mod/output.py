@@ -46,6 +46,8 @@ class cvcOutput:
             result = self._data_helper.get(in_uid, segments=time_segments, levels=vertical_levels)
             if result['@type'] == 'parameter':
                 continue
+            common_longitudes = common_longitudes or result['@longitude_grid']
+            common_latitudes = common_latitudes or result['@latitude_grid']
             description = result['data']['description']
             all_description.append(description)
 
@@ -88,7 +90,7 @@ class cvcOutput:
         # Pass everything in all uids at once to image output.
         if output_info['@type'] == 'image':
             self._data_helper.put(output_uids[0], all_values, level=vertical_levels, segment=time_segments,
-                                  longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
+                                  longitudes=common_longitudes, latitudes=common_latitudes,
                                   times=all_times, description=all_description, meta=all_meta)
 
         self.logger.info('Finished!')

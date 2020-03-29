@@ -45,9 +45,6 @@ class DataArray(Data):
         if segments_to_read is None:
             segments_to_read = listify(self._data_info['data']['time']['segment'])  # Read all levels if nothing specified.
 
-        result = {}  # Contains data arrays, grids and some additional information.
-        result['data'] = {}  # Contains data arrays being read from netCDF files at each vertical level.
-
         # Process each vertical level separately.
         level_name = None
         for level_name in levels_to_read:

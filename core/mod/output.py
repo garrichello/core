@@ -46,8 +46,8 @@ class cvcOutput:
             result = self._data_helper.get(in_uid, segments=time_segments, levels=vertical_levels)
             if result['@type'] == 'parameter':
                 continue
-            common_longitudes = common_longitudes or result['@longitude_grid']
-            common_latitudes = common_latitudes or result['@latitude_grid']
+            common_longitudes = result['@longitude_grid']
+            common_latitudes = result['@latitude_grid']
             description = result['data']['description']
             all_description.append(description)
 

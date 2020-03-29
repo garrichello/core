@@ -44,7 +44,7 @@ class cvcOutput:
 
             # Get data for all time segments and levels at once
             result = self._data_helper.get(in_uid, segments=time_segments, levels=vertical_levels)
-            if result['data']['@type'] == 'parameter':
+            if result['@type'] == 'parameter':
                 continue
             description = result['data']['description']
             all_description.append(description)

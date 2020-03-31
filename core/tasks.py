@@ -95,6 +95,7 @@ def run_json_task(self, json_task):
     # Result is a zip-file as bytes.
     global_tmp_dir = core_config['RPC']['tmp_dir']
     if len(xml_tasks) == 1:  # Simple task
+        # Write prepared XML-task to temporary directory.
         XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task.xml'.format(self.request.id))
         with open(XML_FILE_NAME, 'w') as xml_file:
             xmltodict.unparse(xml_tasks[0], xml_file, pretty=True)
@@ -110,6 +111,7 @@ def run_json_task(self, json_task):
         for xml_task in xml_tasks:
             if 'wait' in xml_task:  # Nested tasks are separated by the 'wait flag'.
                 break
+            # Write prepared XML-task to temporary directory.
             XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task_{}.xml'.format(self.request.id, i))
             with open(XML_FILE_NAME, 'w') as xml_file:
                 xmltodict.unparse(xml_task, xml_file, pretty=True)
@@ -123,6 +125,7 @@ def run_json_task(self, json_task):
         main_task_dir = os.path.join(global_tmp_dir, str(self.request.id))
         logger.info('Main task directory: ' + main_task_dir)
         os.rename(nested_task_dir, main_task_dir)  # Rename intermediate directory so main task could find intermediate results.
+        # Write prepared XML-task to temporary directory.
         XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task.xml'.format(self.request.id))
         with open(XML_FILE_NAME, 'w') as xml_file:
             xmltodict.unparse(xml_tasks[-1], xml_file, pretty=True)
@@ -131,7 +134,7 @@ def run_json_task(self, json_task):
 
     logger.info('Task %s is finished.', self.request.id)
 
-    return base64.b64encode(result_zip).decode('utf-8')
+    return base64.b64encode(result_zip).decode('utf-8')  # Return resulted zip-archive.
 
 if __name__ == '__main__':
     app.start()

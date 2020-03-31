@@ -97,27 +97,34 @@ def run_json_task(self, json_task):
         result_zip = application.run_task(xml_tasks[0], self.request.id)
     else:  # Complex task (with nested tasks)
         # We store intermediate results in a temporary directory.
-        self.logger.info('Complex task was submitted')
-        original_cwd_dir = os.getcwd()  # Store current directory.
+        logger.info('Complex task was submitted')
         global_tmp_dir = core_config['RPC']['tmp_dir']
         nested_task_dir = os.path.join(global_tmp_dir, str(self.request.id)+'_intermediate')
-        main_task_dir = os.path.join(global_tmp_dir, str(self.request.id))
+        logger.info('Intermediate task directory: ' + nested_task_dir)
         os.makedirs(nested_task_dir, exist_ok=True)
-        os.chdir(nested_task_dir)  # Change to the intermediate task directory!
-        self.logger.info('Run nested tasks first...')
+        logger.info('Run nested tasks first...')
+        i = 1
         for xml_task in xml_tasks:
             if 'wait' in xml_task:  # Nested tasks are separated by the 'wait flag'.
                 break
+            XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task_{}.xml'.format(self.request.id, i))
+            with open(XML_FILE_NAME, 'w') as xml_file:
+                xmltodict.unparse(xml_task, xml_file, pretty=True)
             result_zip = application.run_task(xml_task, self.request.id)
             mem_zip = io.BytesIO(result_zip)  # Zip-in-memeory buffer.
             with ZipFile(mem_zip, 'r') as zip_file:
-                zip_file.extractall()
-        self.logger.info('Done!')
-        self.logger.info('Run the main task...')
-        os.chdir(original_cwd_dir)  # Return to the original directory.
+                zip_file.extractall(path=nested_task_dir)
+            i += 1
+        logger.info('Done!')
+        logger.info('Run the main task...')
+        main_task_dir = os.path.join(global_tmp_dir, str(self.request.id))
+        logger.info('Main task directory: ' + main_task_dir)
         os.rename(nested_task_dir, main_task_dir)  # Rename intermediate directory so main task could find intermediate results.
+        XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task.xml'.format(self.request.id, i))
+        with open(XML_FILE_NAME, 'w') as xml_file:
+            xmltodict.unparse(xml_tasks[-1], xml_file, pretty=True)
         result_zip = application.run_task(xml_tasks[-1], self.request.id)  # Run the main task.
-        self.logger.info('Done!')
+        logger.info('Done!')
 
     logger.info('Task %s is finished.', self.request.id)
 

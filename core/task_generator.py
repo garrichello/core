@@ -219,12 +219,14 @@ def get_data_info(proc_argument, session, meta):
     qry = qry.distinct()
 
     try:
-        return qry.one()
+        result = qry.one()
     except NoResultFound:
         logger.error('No records found in MDDB for collection_id: %s, scenario_id: %s, resolution_id: %s, time step id: %s, parameter_id: %s',
                      proc_argument['data']['@collection_id'], proc_argument['data']['@scenario_id'], proc_argument['data']['@resolution_id'],
                      proc_argument['data']['@timeStep_id'], proc_argument['data']['@parameter_id'])
         raise
+
+    return result
 
 def make_data_arguments(proc_argument, session, meta):
     ''' Creates XML data description based on JSON argument.

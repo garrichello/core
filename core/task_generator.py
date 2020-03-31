@@ -714,7 +714,7 @@ def task_generator(json_task, task_id, metadb_info):
     current_task['destination'] = destinations
     current_task['processing'] = processing
 
-    if len(tasks) > 0:
+    if len(all_tasks) > 0:
         all_tasks.append({'wait': True})  # Append wait signal after nested tasks.
     all_tasks.append({'task': current_task})
 

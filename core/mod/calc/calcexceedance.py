@@ -72,8 +72,11 @@ class CalcExceedance(Calc):
             feb29 = None
         if feb29:
             time_list = time_grid.tolist()
-            feb29_index = time_list.index(feb29)
-            values = np.delete(values, feb29_index, axis=0)
+            try:
+                feb29_index = time_list.index(feb29)
+                values = np.delete(values, feb29_index, axis=0)
+            except ValueError:
+                pass
 
         return values
 

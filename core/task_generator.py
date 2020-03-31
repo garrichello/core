@@ -7,7 +7,7 @@ Function task_generator generates a list of one or more dictionaries
 import os
 import json
 from configparser import ConfigParser
-from copy import copy
+from copy import copy, deepcopy
 import datetime
 import calendar
 import logging
@@ -641,17 +641,17 @@ def make_data_file(nested_task):
     data_file = {}
     _, pos = nested_task['task']['@uid'].split('_')
     data_file['@uid'] = 'Data_{}'.format(pos)
-    data_file['@type'] = nested_task['task']['destination'][0]['@type']
-    data_file['file'] = nested_task['task']['destination'][0]['file']
+    data_file['@type'] = copy(nested_task['task']['destination'][0]['@type'])
+    data_file['file'] = deepcopy(nested_task['task']['destination'][0]['file'])
     data_file['variable'] = {}
     data_file['variable']['@name'] = 'data'
-    data_file['region'] = nested_task['task']['data'][0]['region']
-    data_file['levels'] = nested_task['task']['data'][0]['levels']
+    data_file['region'] = deepcopy(nested_task['task']['data'][0]['region'])
+    data_file['levels'] = deepcopy(nested_task['task']['data'][0]['levels'])
     data_file['time'] = {}
-    data_file['time']['@template'] = nested_task['task']['data'][0]['time']['@template']
+    data_file['time']['@template'] = copy(nested_task['task']['data'][0]['time']['@template'])
     data_file['time']['segment'] = {}
-    data_file['time']['segment']['@beginning'] = nested_task['task']['data'][0]['time']['segment'][0]['@beginning']
-    data_file['time']['segment']['@ending'] = nested_task['task']['data'][0]['time']['segment'][-1]['@ending']
+    data_file['time']['segment']['@beginning'] = copy(nested_task['task']['data'][0]['time']['segment'][0]['@beginning'])
+    data_file['time']['segment']['@ending'] = copy(nested_task['task']['data'][0]['time']['segment'][-1]['@ending'])
     data_file['time']['segment']['@name'] = 'GlobalSeg'
 
     return data_file

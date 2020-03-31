@@ -93,12 +93,15 @@ def run_json_task(self, json_task):
 
     # Run the task processing by the Core!
     # Result is a zip-file as bytes.
+    global_tmp_dir = core_config['RPC']['tmp_dir']
     if len(xml_tasks) == 1:  # Simple task
+        XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task.xml'.format(self.request.id))
+        with open(XML_FILE_NAME, 'w') as xml_file:
+            xmltodict.unparse(xml_tasks[0], xml_file, pretty=True)
         result_zip = application.run_task(xml_tasks[0], self.request.id)
     else:  # Complex task (with nested tasks)
         # We store intermediate results in a temporary directory.
         logger.info('Complex task was submitted')
-        global_tmp_dir = core_config['RPC']['tmp_dir']
         nested_task_dir = os.path.join(global_tmp_dir, str(self.request.id)+'_intermediate')
         logger.info('Intermediate task directory: ' + nested_task_dir)
         os.makedirs(nested_task_dir, exist_ok=True)
@@ -120,7 +123,7 @@ def run_json_task(self, json_task):
         main_task_dir = os.path.join(global_tmp_dir, str(self.request.id))
         logger.info('Main task directory: ' + main_task_dir)
         os.rename(nested_task_dir, main_task_dir)  # Rename intermediate directory so main task could find intermediate results.
-        XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task.xml'.format(self.request.id, i))
+        XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task.xml'.format(self.request.id))
         with open(XML_FILE_NAME, 'w') as xml_file:
             xmltodict.unparse(xml_tasks[-1], xml_file, pretty=True)
         result_zip = application.run_task(xml_tasks[-1], self.request.id)  # Run the main task.

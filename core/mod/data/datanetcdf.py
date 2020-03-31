@@ -567,8 +567,7 @@ class DataNetcdf(Data):
         for level_idx in range(n_levels):
             data_var[:, level_idx, :, :] = ma.filled(values[level_idx, :, :, :], fill_value=values.fill_value)  # Write values.
 
-        root = None
-
+        root.close()
         self.logger.info('Done!')
 
     def write_stations(self, values, options):

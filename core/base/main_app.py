@@ -108,7 +108,8 @@ class MainApp:
 
         except:
             log_dir = self.config['RPC']['log_dir']
-            err_task_file = os.path.join(log_dir, 'error_task_'+str(task_id)+'.xml')
+            err_task_file = os.path.join(original_cwd_dir, log_dir,
+                                         'error_task_'+str(task_id)+'.xml')
             with open(err_task_file, 'w') as out_file:
                 xmltodict.unparse(task, out_file, pretty=True)
             raise

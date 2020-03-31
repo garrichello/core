@@ -32,7 +32,7 @@ app.config_from_object('celeryconfig')  # Celery config is in celeryconfig.py fi
 logger = logging.getLogger()
 
 @after_setup_logger.connect
-def setup_loggers(my_logger, *args, **kwargs):
+def setup_loggers(logger, *args, **kwargs):
     file_log_format = '[%(asctime)s] - %(task_id)s - %(levelname)-8s (%(module)s::%(funcName)s) %(message)s'
     formatter = TaskFormatter(file_log_format, use_color=False)
 
@@ -42,7 +42,7 @@ def setup_loggers(my_logger, *args, **kwargs):
         error_log_file, maxBytes=1048576, backupCount=5, encoding='utf8', delay=1)
     err_file_handler.setFormatter(formatter)
     err_file_handler.setLevel(logging.ERROR)
-    my_logger.addHandler(err_file_handler)
+    logger.addHandler(err_file_handler)
 
     if core_config['RPC']['enable_core_log'] == 'yes':
         core_log_file = os.path.join(core_config['RPC']['log_dir'], 'core.log')
@@ -51,7 +51,7 @@ def setup_loggers(my_logger, *args, **kwargs):
             core_log_file, maxBytes=10485760, backupCount=5, encoding='utf8', delay=0)
         core_file_handler.setFormatter(formatter)
         core_file_handler.setLevel(logging.INFO)
-        my_logger.addHandler(core_file_handler)
+        logger.addHandler(core_file_handler)
 
 @app.task(bind=True)
 def run_plain_xml(self, task_xml):

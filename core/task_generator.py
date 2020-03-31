@@ -1,20 +1,27 @@
+""" Converts JSON-based task to XML-based dictionary.
+Original task arrives as a dictionary based on a JSON message sent from outside.
+Function task_generator generates a list of one or more dictionaries 
+ describing data and processing conveyors as in an old XML tasks.
+ Nested processing conveyors (complex tasks) are supported.
+"""
 import os
 import json
-import pprint
 from configparser import ConfigParser
 from copy import copy
 import datetime
 import calendar
+import logging
+from collections import defaultdict
 import xmltodict
 
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql.expression import and_
-from collections import defaultdict
 from sqlalchemy.orm.exc import NoResultFound
 
 ENGLISH_LANG_CODE = 409
 TIME_PERIOD_TYPES = {'PERIOD_GIVEN', 'PERIOD_DAY', 'PERIOD_MONTH', 'PERIOD_SEASON', 'PERIOD_YEAR'}
+logger = logging.getLogger()
 
 def make_time_segments(time_period, session, meta):
     ''' Creates a list of time segments as XML structure based on JSON structure.
@@ -41,7 +48,11 @@ def make_time_segments(time_period, session, meta):
     time_period_type_tbl = meta.tables['time_period_type']
     qry = session.query(time_period_type_tbl.columns['const_name'])
     qry = qry.filter(time_period_type_tbl.columns['id'] == time_period['@type_id'])
-    time_period_type = qry.one()[0]
+    try:
+        time_period_type = qry.one()[0]
+    except NoResultFound:
+        logger.error('Can\'t find type_id %s in MDDB table "time_period_type"', time_period['@type_id'])
+        raise
 
     # Extract the first and the last dates of the time period.
     year = int(time_period['dateStart']['@year']) if time_period['dateStart']['@year'] else 1
@@ -89,8 +100,13 @@ def make_levels(level_ids, session, meta):
 
     level_tbl = meta.tables['level']
     qry = session.query(level_tbl.columns['label'])
-    level_names = [qry.filter(level_tbl.columns['id'] == level_id).one()[0]
-                   for level_id in level_ids]
+    level_names = []
+    for level_id in level_ids:
+        try:
+            level_names.append(qry.filter(level_tbl.columns['id'] == level_id).scalar())
+        except NoResultFound:
+            logger.error('Can\'t find level_id %s in MDDB table "level"', level_id)
+            raise
 
     levels_string = ';'.join(level_names)
 
@@ -204,8 +220,11 @@ def get_data_info(proc_argument, session, meta):
 
     try:
         return qry.one()
-    except NoReultsFound:
-
+    except NoResultFound:
+        logger.error('No records found in MDDB for collection_id: %s, scenario_id: %s, resolution_id: %s, time step id: %s, parameter_id: %s',
+                     proc_argument['data']['@collection_id'], proc_argument['data']['@scenario_id'], proc_argument['data']['@resolution_id'],
+                     proc_argument['data']['@timeStep_id'], proc_argument['data']['@parameter_id'])
+        raise
 
 def make_data_arguments(proc_argument, session, meta):
     ''' Creates XML data description based on JSON argument.
@@ -290,7 +309,7 @@ def delete_vertex(vertex_key, processing_graph):
     # Delete the vertex from the graph.
     del processing_graph[vertex_key]
 
-def make_data_array(data_uid, title= 'Stub title', name='Stub name', units='Stub units'):
+def make_data_array(data_uid, title='Stub title', name='Stub name', units='Stub units'):
     ''' Creates structure describing data array for XML-based task
 
     Arguments:
@@ -400,8 +419,16 @@ def make_parameters(proc_options, session, meta):
                   'param': []}
 
     for option in proc_options:
-        name = session.query(option_tbl.c.label).filter(option_tbl.c.id == option['@id']).scalar()
-        value = session.query(option_value_tbl.c.label).filter(option_value_tbl.c.id == option['@value_id']).scalar()
+        try:
+            name = session.query(option_tbl.c.label).filter(option_tbl.c.id == option['@id']).scalar()
+        except NoResultFound:
+            logger.error('Can\'t find option_id %s in MDDB table "option"', option['@id'])
+            raise
+        try:
+            value = session.query(option_value_tbl.c.label).filter(option_value_tbl.c.id == option['@value_id']).scalar()
+        except NoResultFound:
+            logger.error('Can\'t find value_id %s in MDDB table "option_value"', option['@value_id'])
+            raise
         param = {'@uid': name,
                  '@type': 'string',
                  '#text': value}
@@ -440,7 +467,12 @@ def make_processing(json_task, session, meta):
     # Get conveyor id.
     qry = session.query(processor_tbl.c.conveyor_id)
     qry = qry.filter(processor_tbl.c.id == json_proc['@processor_id'])
-    conveyor_id = qry.one()
+
+    try:
+        conveyor_id = qry.one()
+    except NoResultFound:
+        logger.error('No results found in MDDB table "processor" for id %s. No data?', json_proc['@processor_id'])
+        raise
 
     # Get vertices.
     qry = session.query(vertex_tbl.c.id.label('vertex_id'),
@@ -450,7 +482,12 @@ def make_processing(json_task, session, meta):
     qry = qry.select_from(vertex_tbl)
     qry = qry.join(computing_module_tbl)
     qry = qry.filter(vertex_tbl.c.conveyor_id == conveyor_id)
-    result = qry.all()
+
+    try:
+        result = qry.all()
+    except NoResultFound:
+        logger.error('No results found in MDDB table "vertex" for conveyor %s. No data?', conveyor_id)
+        raise
 
     # Put vertices in a graph.
     processing_graph = defaultdict(dict)
@@ -475,7 +512,12 @@ def make_processing(json_task, session, meta):
     qry = qry.join(data_variable_tbl)
     qry = qry.filter(from_vertex_tbl.c.conveyor_id == conveyor_id)
     qry = qry.filter(to_vertex_tbl.c.conveyor_id == conveyor_id)
-    result = qry.all()
+
+    try:
+        result = qry.all()
+    except NoResultFound:
+        logger.error('No results found in MDDB for conveyor %s. Problems in links between tables "edge", "vertex" and "data_variable?', conveyor_id)
+        raise
 
     # Link the vertices and construct the processing graph.
     for row in result:
@@ -631,6 +673,7 @@ def task_generator(json_task, task_id, metadb_info):
         tasks -- list of dictionaries reflecting XML task file structures. These tasks will be executed consecutively/parallelly.
     '''
 
+    logger.info('Generating XML tasks')
     # Connect to metadata DB
     db_url = '{0}://{1}@{2}/{3}'.format(metadb_info['engine'], metadb_info['user'], metadb_info['host'], metadb_info['name'])
     engine = create_engine(db_url)
@@ -640,51 +683,50 @@ def task_generator(json_task, task_id, metadb_info):
     session = session_class()
 
     # All tasks list
-    tasks = []
+    all_tasks = []
 
     # Create a basic task
-    task = {}
-    task['@uid'] = str(task_id)
+    current_task = {}
+    current_task['@uid'] = str(task_id)
     if '@position' in json_task:  # Check nested case
-        task['@uid'] += '_' + json_task['@position']
-    task['metadb'] = {'@host': metadb_info['host'],
-                      '@name': metadb_info['name'],
-                      '@user': metadb_info['user'],
-                      '@password': metadb_info['password']}
-    task['data'] = []
+        current_task['@uid'] += '_' + json_task['@position']
+    current_task['metadb'] = {'@host': metadb_info['host'],
+                              '@name': metadb_info['name'],
+                              '@user': metadb_info['user'],
+                              '@password': metadb_info['password']}
+    current_task['data'] = []
 
     if not isinstance(json_task['processing']['argument'], list):
         json_task['processing']['argument'] = [json_task['processing']['argument']]
     for arg in json_task['processing']['argument']:
         if 'data' in arg.keys():
-            task['data'].append(make_data_arguments(arg, session, meta))
+            current_task['data'].append(make_data_arguments(arg, session, meta))
         elif 'processing' in arg.keys():
             nested_tasks = task_generator(arg, task_id, metadb_info)
-            task['data'].append(make_data_file(nested_tasks[0]))
-            tasks.extend(nested_tasks)
+            current_task['data'].append(make_data_file(nested_tasks[0]))
+            all_tasks.extend(nested_tasks)
 
     data, destinations, processing = make_processing(json_task, session, meta)
 
-    task['data'].extend(data)
-    task['destination'] = destinations
-    task['processing'] = processing
+    current_task['data'].extend(data)
+    current_task['destination'] = destinations
+    current_task['processing'] = processing
 
     if len(tasks) > 0:
-        tasks.append({'wait': True})  # Append wait signal after nested tasks.
-    tasks.append({'task': task})
+        all_tasks.append({'wait': True})  # Append wait signal after nested tasks.
+    all_tasks.append({'task': current_task})
 
-    return tasks
+    return all_tasks
 
 if __name__ == "__main__":
     core_config = ConfigParser()
-    core_config.read(os.path.join(str(os.path.dirname(__file__)),'core_config.ini'))
+    core_config.read(os.path.join(str(os.path.dirname(__file__)), 'core_config.ini'))
 #    JSON_FILE_NAME = '..\\very_simple_task.json'
 #    JSON_FILE_NAME = '..\\simple_task.json'
     JSON_FILE_NAME = '..\\complex_task.json'
     with open(JSON_FILE_NAME, 'r') as json_file:
         j_task = json.load(json_file)
     tasks = task_generator(j_task, 1, core_config['METADB'])
-#    pprint.pprint(tasks)
     i = 0
     for task in tasks:
         if 'wait' in task:

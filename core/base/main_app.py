@@ -99,6 +99,8 @@ class MainApp:
                 sld_name = os.path.basename(destination['graphics']['legend']['file']['@name'])
                 destination['graphics']['legend']['file']['@name'] = sld_name
 
+        # Make a copy of the original task
+        original_task = deepcopy(task)
         try:
             # Run task processing.
             self._process()
@@ -111,7 +113,7 @@ class MainApp:
             err_task_file = os.path.join(original_cwd_dir, log_dir,
                                          'error_task_'+str(task_id)+'.xml')
             with open(err_task_file, 'w') as out_file:
-                xmltodict.unparse(task, out_file, pretty=True)
+                xmltodict.unparse(original_task, out_file, pretty=True)
             raise
         finally:
             # Delete result files

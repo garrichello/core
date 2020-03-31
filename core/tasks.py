@@ -8,6 +8,9 @@ from __future__ import absolute_import, unicode_literals
 import base64
 from configparser import ConfigParser
 import os
+import io
+
+from zipfile import ZipFile
 
 import logging
 import logging.handlers
@@ -83,15 +86,40 @@ def run_json_task(self, json_task):
     # Instantiate the Core!
     application = core.MainApp()
 
-    task_xml = task_generator(json_task, self.request.id, core_config['METADB'])
+    # Generate XML tasks from the JSON task.
+    xml_tasks = task_generator(json_task, self.request.id, core_config['METADB'])
 
     # Run the task processing by the Core!
     # Result is a zip-file as bytes.
-#    result_zip = application.run_task(task_xml, self.request.id)
+    if len(xml_tasks) == 1:  # Simple task
+        result_zip = application.run_task(xml_tasks[0], self.request.id)
+    else:  # Complex task (with nested tasks)
+        # We store intermediate results in a temporary directory.
+        self.logger.info('Complex task was submitted')
+        original_cwd_dir = os.getcwd()  # Store current directory.
+        global_tmp_dir = core_config['RPC']['tmp_dir']
+        nested_task_dir = os.path.join(global_tmp_dir, str(self.request.id)+'_intermediate')
+        main_task_dir = os.path.join(global_tmp_dir, str(self.request.id))
+        os.makedirs(nested_task_dir, exist_ok=True)
+        os.chdir(nested_task_dir)  # Change to the intermediate task directory!
+        self.logger.info('Run nested tasks first...')
+        for xml_task in xml_tasks:
+            if 'wait' in xml_task:  # Nested tasks are separated by the 'wait flag'.
+                break
+            result_zip = application.run_task(xml_task, self.request.id)
+            mem_zip = io.BytesIO(result_zip)  # Zip-in-memeory buffer.
+            with ZipFile(mem_zip, 'r') as zip_file:
+                zip_file.extractall()
+        self.logger.info('Done!')
+        self.logger.info('Run the main task...')
+        os.chdir(original_cwd_dir)  # Return to the original directory.
+        os.rename(nested_task_dir, main_task_dir)  # Rename intermediate directory so main task could find intermediate results.
+        result_zip = application.run_task(xml_tasks[-1], self.request.id)  # Run the main task.
+        self.logger.info('Done!')
 
     logger.info('Task %s is finished.', self.request.id)
 
-    return 0 #base64.b64encode(result_zip).decode('utf-8')
+    return base64.b64encode(result_zip).decode('utf-8')
 
 if __name__ == '__main__':
     app.start()

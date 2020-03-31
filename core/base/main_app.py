@@ -47,8 +47,8 @@ class MainApp:
 
         self.logger.info('Job is done. Exiting.')
 
-    def run_task(self, task_string, task_id=None):
-        """Reads the task from a string and creates all necessary structures."""
+    def run_task(self, task, task_id=None):
+        """Gets the task and creates necessary structures. Runs the task. Returns results as a zip-archive."""
 
         # Zips to a memory buffer processing results in the current work directory.
         def zip_results():
@@ -71,7 +71,7 @@ class MainApp:
         self.logger.info('Let\'s do it!')
         self.logger.info('Read the task...')
 
-        self._task = xmltodict.parse(task_string)
+        self._task = task
         self._task_id = task_id
 
         # Make them lists!
@@ -109,7 +109,7 @@ class MainApp:
         except:
             log_dir = self.config['RPC']['log_dir']
             err_task_file = os.path.join(log_dir, 'error_task_'+str(task_id)+'.xml')
-            with open(err_task_file, 'w') as out_file:
+            with open(err_task_file, 'a') as out_file:
                 out_file.write(task_string)
             raise
         finally:

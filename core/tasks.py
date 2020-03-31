@@ -11,12 +11,14 @@ import os
 import io
 
 from zipfile import ZipFile
+import xmltodict
 
 import logging
 import logging.handlers
 from celery import Celery
 from celery.signals import after_setup_logger
 from celery.app.log import TaskFormatter
+from celery.contrib import rdb
 
 import core
 from .task_generator import task_generator
@@ -67,7 +69,8 @@ def run_plain_xml(self, task_xml):
 
     # Run the task processing by the Core!
     # Result is a zip-file as bytes.
-    result_zip = application.run_task(task_xml, self.request.id)
+    task = xmltodict.parse(task_xml)
+    result_zip = application.run_task(task, self.request.id)
 
     logger.info('Task %s is finished.', self.request.id)
 

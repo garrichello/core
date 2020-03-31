@@ -32,7 +32,7 @@ task_create_missing_queues = False
 task_queues = (
     Queue('plain_xml_queue', Exchange('default'), routing_key='plain_xml_queue'),
     Queue('json_task_queue', Exchange('default'), routing_key='json_task_queue'),
-    Queue('rpc_queue', Exchange('default'), routing_key='rpc_queue'),
+#    Queue('rpc_queue', Exchange('default'), routing_key='rpc_queue'),
 )
 
 # Define routes

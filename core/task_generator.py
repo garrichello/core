@@ -11,6 +11,7 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.sql.expression import and_
 from collections import defaultdict
+from sqlalchemy.orm.exc import NoResultFound
 
 ENGLISH_LANG_CODE = 409
 TIME_PERIOD_TYPES = {'PERIOD_GIVEN', 'PERIOD_DAY', 'PERIOD_MONTH', 'PERIOD_SEASON', 'PERIOD_YEAR'}
@@ -201,7 +202,10 @@ def get_data_info(proc_argument, session, meta):
     qry = qry.filter(time_step_tbl.columns['id'] == proc_argument['data']['@timeStep_id'])
     qry = qry.distinct()
 
-    return qry.one()
+    try:
+        return qry.one()
+    except NoReultsFound:
+
 
 def make_data_arguments(proc_argument, session, meta):
     ''' Creates XML data description based on JSON argument.

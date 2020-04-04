@@ -14,10 +14,12 @@ from zipfile import ZipFile
 import logging
 import logging.handlers
 import xmltodict
-from celery import Celery
+from celery import Celery, group, chord
 from celery.signals import after_setup_logger
 from celery.app.log import TaskFormatter
-#from celery.contrib import rdb
+from celery.contrib import rdb
+from celery.exceptions import TaskError
+from celery.result import allow_join_result
 
 import core
 from .task_generator import task_generator
@@ -31,8 +33,16 @@ app.config_from_object('celeryconfig')  # Celery config is in celeryconfig.py fi
 
 logger = logging.getLogger()
 
+def write_xml_task(task, task_id):
+    global_tmp_dir = core_config['RPC']['tmp_dir']
+
+   # Write prepared XML-task to a temporary directory.
+    XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task.xml'.format(task_id))
+    with open(XML_FILE_NAME, 'w') as xml_file:
+        xmltodict.unparse(task, xml_file, pretty=True)
+
 @after_setup_logger.connect
-def setup_loggers(logger, *args, **kwargs):
+def setup_loggers(*args, **kwargs):
     file_log_format = '[%(asctime)s] - %(task_id)s - %(levelname)-8s (%(module)s::%(funcName)s) %(message)s'
     formatter = TaskFormatter(file_log_format, use_color=False)
 
@@ -52,13 +62,20 @@ def setup_loggers(logger, *args, **kwargs):
         core_file_handler.setFormatter(formatter)
         core_file_handler.setLevel(logging.INFO)
         logger.addHandler(core_file_handler)
+    trace_logger = logging.getLogger('celery.app.trace')
+    trace_logger.propagate = True
 
 @app.task(bind=True)
-def run_plain_xml(self, task_xml):
-    """Basic Celery application task for starting the Core with a plain XML byte-stream task.
+def worker(self, result_files_list, task):
+    """Creates an instance of the MainApp class and starts the Core.
 
-    It creates an instance of the MainApp class and starts the Core.
-    Everything inside this function is controlled by Celery.
+    Arguments:
+        result_files_list -- list of byte-array objects representing zip-archives
+                             with results of nested tasks.
+        task -- dictionary containing description of a task as in an XML file
+
+    Returns:
+        result_zip -- base64-encoded byte-array object representing a zip-archive with processing results
     """
 
     logger.info('%s v.%s', core.__prog__, core.__version__)
@@ -66,9 +83,18 @@ def run_plain_xml(self, task_xml):
     # Instantiate the Core!
     application = core.MainApp()
 
+    if result_files_list is not None:
+        global_tmp_dir = core_config['RPC']['tmp_dir']
+        task_dir = os.path.join(global_tmp_dir, str(self.request.id))
+        os.makedirs(task_dir, exist_ok=True)
+        for result_zip_enc in result_files_list:
+            result_zip = base64.b64decode(result_zip_enc)
+            mem_zip = io.BytesIO(result_zip)  # Zip-in-memory buffer.
+            with ZipFile(mem_zip, 'r') as zip_file:
+                zip_file.extractall(path=task_dir)
+
     # Run the task processing by the Core!
     # Result is a zip-file as bytes.
-    task = xmltodict.parse(task_xml)
     result_zip = application.run_task(task, self.request.id)
 
     logger.info('Task %s is finished.', self.request.id)
@@ -76,65 +102,40 @@ def run_plain_xml(self, task_xml):
     return base64.b64encode(result_zip).decode('utf-8')
 
 @app.task(bind=True)
-def run_json_task(self, json_task):
-    """Basic Celery application task for starting the Core with a JSON byte-stream task.
+def starter(self, json_task):
+    """Starts workers. Controls a processing chain.
 
-    It creates an instance of the MainApp class and starts the Core.
-    Everything inside this function is controlled by Celery.
+    Arguments:
+        json_task -- JSON message containing a processing request.
+
+    Returns:
+        result_zip -- base64-encoded byte-array representing zip-archive with processing results.
     """
 
-    logger.info('%s v.%s', core.__prog__, core.__version__)
-
-    # Instantiate the Core!
-    application = core.MainApp()
+    TASK_TIMEOUT = 600  # No task can run for more than 10 min.
 
     # Generate XML tasks from the JSON task.
     xml_tasks = task_generator(json_task, self.request.id, core_config['METADB'])
 
-    # Run the task processing by the Core!
-    # Result is a zip-file as bytes.
-    global_tmp_dir = core_config['RPC']['tmp_dir']
+    # Run the task processing by the Core! Using another task. A task in a task. :)
+    # Result is a zip-file as bytes base64-encoded.
     if len(xml_tasks) == 1:  # Simple task
-        # Write prepared XML-task to temporary directory.
-        XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task.xml'.format(self.request.id))
-        with open(XML_FILE_NAME, 'w') as xml_file:
-            xmltodict.unparse(xml_tasks[0], xml_file, pretty=True)
-        result_zip = application.run_task(xml_tasks[0], self.request.id)
+        result = worker.s(None, xml_tasks[0]).apply_async(routing_key='worker.abak.scert.ru')
     else:  # Complex task (with nested tasks)
-        # We store intermediate results in a temporary directory.
-        logger.info('Complex task was submitted')
-        nested_task_dir = os.path.join(global_tmp_dir, str(self.request.id)+'_intermediate')
-        logger.info('Intermediate task directory: ' + nested_task_dir)
-        os.makedirs(nested_task_dir, exist_ok=True)
-        logger.info('Run nested tasks first...')
-        i = 1
+        subtasks = []  # Collect nested tasks in a group.
         for xml_task in xml_tasks:
             if 'wait' in xml_task:  # Nested tasks are separated by the 'wait flag'.
                 break
-            # Write prepared XML-task to temporary directory.
-            XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task_{}.xml'.format(self.request.id, i))
-            with open(XML_FILE_NAME, 'w') as xml_file:
-                xmltodict.unparse(xml_task, xml_file, pretty=True)
-            result_zip = application.run_task(xml_task, self.request.id)
-            mem_zip = io.BytesIO(result_zip)  # Zip-in-memeory buffer.
-            with ZipFile(mem_zip, 'r') as zip_file:
-                zip_file.extractall(path=nested_task_dir)
-            i += 1
-        logger.info('Done!')
-        logger.info('Run the main task...')
-        main_task_dir = os.path.join(global_tmp_dir, str(self.request.id))
-        logger.info('Main task directory: ' + main_task_dir)
-        os.rename(nested_task_dir, main_task_dir)  # Rename intermediate directory so main task could find intermediate results.
-        # Write prepared XML-task to temporary directory.
-        XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task.xml'.format(self.request.id))
-        with open(XML_FILE_NAME, 'w') as xml_file:
-            xmltodict.unparse(xml_tasks[-1], xml_file, pretty=True)
-        result_zip = application.run_task(xml_tasks[-1], self.request.id)  # Run the main task.
-        logger.info('Done!')
+            subtasks.append(worker.s(None, xml_task).set(routing_key='worker.abak.scert.ru'))
+        job = (group(subtasks) | worker.s(xml_tasks[-1]).set(routing_key='worker.abak.scert.ru'))
+        result = job()
 
     logger.info('Task %s is finished.', self.request.id)
 
-    return base64.b64encode(result_zip).decode('utf-8')  # Return resulted zip-archive.
+    result_zip =  result.get(disable_sync_subtasks=False, timeout=TASK_TIMEOUT)
+
+    return result_zip
 
 if __name__ == '__main__':
     app.start()
+

@@ -346,6 +346,8 @@ def make_image(image_uid, graphics_type):
 
     if graphics_type.lower() == 'geotiff':
         file_ext = 'tiff'
+    elif graphics_type.lower() == 'shape':
+        file_ext = 'shp'
     else:
         file_ext = '.unknown'
 

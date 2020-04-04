@@ -30,7 +30,7 @@ app.config_from_object('celeryconfig')  # Celery config is in celeryconfig.py fi
 logger = logging.getLogger()
 
 @after_setup_logger.connect
-def setup_loggers():
+def setup_loggers(*args, **kwargs):
     """ Setup custom logging """
     file_log_format = '[%(asctime)s] - %(task_id)s - %(levelname)-8s (%(module)s::%(funcName)s) %(message)s'
     formatter = TaskFormatter(file_log_format, use_color=False)

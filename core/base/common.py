@@ -134,11 +134,12 @@ def make_filename(data_info, all_options):
         options = all_options[0]
     else:
         options = all_options
-    (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
-    filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], options['segment']['@beginning'],
-                                      options['segment']['@ending'], file_ext)
-    return filename
+#    (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
+#    filename = '{}_{}_{}-{}{}'.format(file_root, options['level'], options['segment']['@beginning'],
+#                                      options['segment']['@ending'], file_ext)
+    filename = data_info['data']['file']['@name']
 
+    return filename
 
 def make_raw_filename(data_info, all_options):
     """Constructs a file name for writing raw output.
@@ -158,9 +159,9 @@ def make_raw_filename(data_info, all_options):
         options = all_options[0]
     else:
         options = all_options
-    (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
-    #filename = '{}_{}-{}{}'.format(file_root, options['segment']['@beginning'],
-    #                               options['segment']['@ending'], file_ext)
+#    (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
+#    filename = '{}_{}-{}{}'.format(file_root, options['segment']['@beginning'],
+#                                   options['segment']['@ending'], file_ext)
     filename = data_info['data']['file']['@name']
 
     return filename

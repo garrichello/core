@@ -13,13 +13,9 @@ import io
 from zipfile import ZipFile
 import logging
 import logging.handlers
-import xmltodict
-from celery import Celery, group, chord
+from celery import Celery, group
 from celery.signals import after_setup_logger
 from celery.app.log import TaskFormatter
-from celery.contrib import rdb
-from celery.exceptions import TaskError
-from celery.result import allow_join_result
 
 import core
 from .task_generator import task_generator
@@ -33,16 +29,9 @@ app.config_from_object('celeryconfig')  # Celery config is in celeryconfig.py fi
 
 logger = logging.getLogger()
 
-def write_xml_task(task, task_id):
-    global_tmp_dir = core_config['RPC']['tmp_dir']
-
-   # Write prepared XML-task to a temporary directory.
-    XML_FILE_NAME = os.path.join(global_tmp_dir, '{}_task.xml'.format(task_id))
-    with open(XML_FILE_NAME, 'w') as xml_file:
-        xmltodict.unparse(task, xml_file, pretty=True)
-
 @after_setup_logger.connect
-def setup_loggers(*args, **kwargs):
+def setup_loggers():
+    """ Setup custom logging """
     file_log_format = '[%(asctime)s] - %(task_id)s - %(levelname)-8s (%(module)s::%(funcName)s) %(message)s'
     formatter = TaskFormatter(file_log_format, use_color=False)
 
@@ -112,7 +101,7 @@ def starter(self, json_task):
         result_zip -- base64-encoded byte-array representing zip-archive with processing results.
     """
 
-    TASK_TIMEOUT = 600  # No task can run for more than 10 min.
+    task_timeout = 600  # No task can run for more than 10 min.
 
     # Generate XML tasks from the JSON task.
     xml_tasks = task_generator(json_task, self.request.id, core_config['METADB'])
@@ -132,10 +121,9 @@ def starter(self, json_task):
 
     logger.info('Task %s is finished.', self.request.id)
 
-    result_zip =  result.get(disable_sync_subtasks=False, timeout=TASK_TIMEOUT)
+    result_zip = result.get(disable_sync_subtasks=False, timeout=task_timeout)
 
     return result_zip
 
 if __name__ == '__main__':
     app.start()
-

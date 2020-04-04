@@ -159,7 +159,8 @@ def make_raw_filename(data_info, all_options):
     else:
         options = all_options
     (file_root, file_ext) = os.path.splitext(data_info['data']['file']['@name'])
-    filename = '{}_{}-{}{}'.format(file_root, options['segment']['@beginning'],
-                                   options['segment']['@ending'], file_ext)
+    #filename = '{}_{}-{}{}'.format(file_root, options['segment']['@beginning'],
+    #                               options['segment']['@ending'], file_ext)
+    filename = data_info['data']['file']['@name']
 
     return filename

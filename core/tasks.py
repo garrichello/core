@@ -16,6 +16,7 @@ import logging.handlers
 from celery import Celery, group
 from celery.signals import after_setup_logger
 from celery.app.log import TaskFormatter
+import xmltodict
 
 import core
 from .task_generator import task_generator
@@ -28,6 +29,14 @@ app = Celery('core')  # Instantiate Celery application (it runs tasks).
 app.config_from_object('celeryconfig')  # Celery config is in celeryconfig.py file.
 
 logger = logging.getLogger()
+
+def write_xml_task(task, task_id, pos=0):
+    global_tmp_dir = core_config['RPC']['tmp_dir']
+
+    # Write prepared XML-task to a temporary directory.
+    xml_file_name = os.path.join(global_tmp_dir, '{}_task_{}.xml'.format(task_id, pos))
+    with open(xml_file_name, 'w') as xml_file:
+        xmltodict.unparse(task, xml_file, pretty=True)
 
 @after_setup_logger.connect
 def setup_loggers(*args, **kwargs):
@@ -105,6 +114,8 @@ def starter(self, json_task):
 
     # Generate XML tasks from the JSON task.
     xml_tasks = task_generator(json_task, self.request.id, core_config['METADB'])
+    for i, xml_task in enumerate(xml_tasks):
+        write_xml_task(xml_task, self.request.id, i)
 
     # Run the task processing by the Core! Using another task. A task in a task. :)
     # Result is a zip-file as bytes base64-encoded.
@@ -123,7 +134,7 @@ def starter(self, json_task):
 
     result_zip = result.get(disable_sync_subtasks=False, timeout=task_timeout)
 
-    return result_zip
+    return {'data': result_zip, 'task': json_task}
 
 if __name__ == '__main__':
     app.start()

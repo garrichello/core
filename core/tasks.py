@@ -45,7 +45,7 @@ def setup_loggers(*args, **kwargs):
     formatter = TaskFormatter(file_log_format, use_color=False)
 
     error_log_file = os.path.join(core_config['RPC']['log_dir'], 'errors.log')
-    print('ERROR LOG: ', error_log_file)
+#    print('ERROR LOG: ', error_log_file)
     err_file_handler = logging.handlers.RotatingFileHandler(
         error_log_file, maxBytes=1048576, backupCount=5, encoding='utf8', delay=1)
     err_file_handler.setFormatter(formatter)
@@ -54,7 +54,7 @@ def setup_loggers(*args, **kwargs):
 
     if core_config['RPC']['enable_core_log'] == 'yes':
         core_log_file = os.path.join(core_config['RPC']['log_dir'], 'core.log')
-        print('CORE LOG: ', core_log_file)
+#        print('CORE LOG: ', core_log_file)
         core_file_handler = logging.handlers.RotatingFileHandler(
             core_log_file, maxBytes=10485760, backupCount=5, encoding='utf8', delay=0)
         core_file_handler.setFormatter(formatter)
@@ -114,8 +114,8 @@ def starter(self, json_task):
 
     # Generate XML tasks from the JSON task.
     xml_tasks = task_generator(json_task, self.request.id, core_config['METADB'])
-    for i, xml_task in enumerate(xml_tasks):
-        write_xml_task(xml_task, self.request.id, i)
+    #for i, xml_task in enumerate(xml_tasks):
+    #    write_xml_task(xml_task, self.request.id, i)
 
     # Run the task processing by the Core! Using another task. A task in a task. :)
     # Result is a zip-file as bytes base64-encoded.
@@ -134,7 +134,7 @@ def starter(self, json_task):
 
     result_zip = result.get(disable_sync_subtasks=False, timeout=task_timeout)
 
-    return {'data': result_zip, 'task': json_task}
+    return {'data': result_zip, 'task': json_task, 'xml': [xmltodict.unparse(xml_task, pretty=True) for xml_task in xml_tasks]}
 
 if __name__ == '__main__':
     app.start()

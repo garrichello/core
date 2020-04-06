@@ -43,7 +43,7 @@ class DataParameter(Data):
         self.logger.info('Reading parameters...')
 
         parameters = listify(self._data_info['data']['param'])
-        result = {}
+        result = {'@type': 'parameter'}
         for parameter in parameters:
             result[parameter['@uid']] = self._type_cast(parameter['#text'], parameter['@type'])
 

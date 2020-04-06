@@ -1,1 +1,1 @@
-virtualenv/bin/celery -A core worker --loglevel=INFO
+virtualenv/bin/celery -A core worker --loglevel=INFO -E

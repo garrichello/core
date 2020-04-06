@@ -18,7 +18,7 @@ LONGITUDE_UNITS = {'degrees_east', 'degree_east', 'degrees_E', 'degree_E',
 LATITUDE_UNITS = {'degrees_north', 'degree_north', 'degrees_N', 'degree_N',
                   'degreesN', 'degreeN', 'lat'}
 TIME_UNITS = {'since', 'time'}
-NO_LEVEL_NAME = 'none'
+NO_LEVEL_NAME = '-'
 WILDCARDS = {'year': '????', 'mm': '??', 'year1': '????', 'year2': '????', 'year1s-4': '????', 'year2s-4': '????', 'year1s1': '????', 'year2s1': '????'}
 
 class PercentTemplate(Template):

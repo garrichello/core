@@ -1,4 +1,4 @@
-#from kombu import Exchange, Queue
+from kombu import Exchange, Queue
 
 ## Broker settings.
 broker_url = 'amqp://admin:adminpass@abak.scert.ru:5672/core'
@@ -7,7 +7,8 @@ broker_url = 'amqp://admin:adminpass@abak.scert.ru:5672/core'
 imports = ('core',)
 
 ## Using rpc to return task state and results.
-result_backend = 'rpc://'
+#result_backend = 'rpc://'
+result_backend = 'redis://abak.scert.ru/0'
 
 result_persistent = False
 
@@ -28,12 +29,24 @@ task_annotations = {'*': {'rate_limit': '10/s'}}
 task_track_started = True
 
 # Define queues
-#task_queues = (
-#    Queue('plain_xml_queue', Exchange('plain_xml_queue'), routing_key='plain_xml_queue'),
-#    Queue('rpc_queue', Exchange('rpc_queue'), routing_key='rpc_queue'),
-#)
+task_create_missing_queues = True
+task_queues = (
+    Queue('workers_queue', Exchange('default'), routing_key='worker.abak.scert.ru'),
+    Queue('starter_queue', Exchange('default'), routing_key='starter.abak.scert.ru'),
+)
 
-# Default input queue
-task_default_queue = 'plain_xml_queue'
+# Define routes
+task_routes = {
+    'core.tasks.starter': {
+        'queue': 'starter_queue',
+        'exchange': 'default',
+        'routing_key': 'starter.abak.scert.ru'
+    },
+    'core.tasks.worker': {
+        'queue': 'workers_queue',
+        'exchange': 'default',
+        'routing_key': 'worker.abak.scert.ru'
+    }
+}
 
 worker_redirect_stdouts_level = 'INFO'

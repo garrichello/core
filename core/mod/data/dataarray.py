@@ -1,6 +1,8 @@
 """Provides classes
     DataArray
 """
+from copy import deepcopy
+
 from core.base.common import listify
 
 from .data import Data
@@ -116,7 +118,7 @@ class DataArray(Data):
         self._data_info['data'][level][segment['@name']]['@values'] = values
 
         if description is not None:
-            self._data_info['data']['description'] = description
-        self._data_info['meta'] = meta
+            self._data_info['data']['description'] = deepcopy(description)
+        self._data_info['meta'] = deepcopy(meta)
 
         self.logger.info('Done!')

@@ -96,7 +96,10 @@ class CalcBasicStat(Calc):
                         one_segment_data = seg_stat_func(result['data'][level][segment['@name']]['@values'], axis=0)
                     else:
                         one_segment_data = result['data'][level][segment['@name']]['@values']
-                    one_segment_time_grid.append(result['data'][level][segment['@name']]['@time_grid'][0])
+                    mid_time = result['data'][level][segment['@name']]['@time_grid'][0] + \
+                               (result['data'][level][segment['@name']]['@time_grid'][-1] - \
+                                result['data'][level][segment['@name']]['@time_grid'][0]) / 2
+                    one_segment_time_grid.append(mid_time)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

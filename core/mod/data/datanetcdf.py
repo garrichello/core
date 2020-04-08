@@ -458,8 +458,10 @@ class DataNetcdf(Data):
         # Get time values.
         time_grid = [item for sublist in all_options['times'] for item in sublist]
         if not time_grid:  # Time grids are not given.
-            # Use segments to get the time grid.
-            time_grid = [datetime.strptime(item['@beginning'], '%Y%m%d%H') for item in all_options['segment']]
+            # Use segments to get the time grid. And take mid points for each segment.
+            time_ranges = [(datetime.strptime(item['@beginning'], '%Y%m%d%H'), datetime.strptime(item['@ending'], '%Y%m%d%H'))
+                           for item in all_options['segment']]
+            time_grid = [a + (b - a) / 2 for a, b in time_ranges]
         n_times = len(time_grid)
 
         # Get level values and names.

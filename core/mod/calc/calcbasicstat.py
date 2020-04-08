@@ -90,9 +90,12 @@ class CalcBasicStat(Calc):
 
                     one_segment_data = ma.stack(one_segment_data)
 
-                # Calulate time statistics for a current time segment
+                # Calculate time statistics for a current time segment
                 if (parameters[calc_mode] == 'data') or (parameters[calc_mode] == 'segment'):
-                    one_segment_data = seg_stat_func(result['data'][level][segment['@name']]['@values'], axis=0)
+                    if len(result['data'][level][segment['@name']]['@time_grid']) > 1:
+                        one_segment_data = seg_stat_func(result['data'][level][segment['@name']]['@values'], axis=0)
+                    else:
+                        one_segment_data = result['data'][level][segment['@name']]['@values']
                     one_segment_time_grid.append(result['data'][level][segment['@name']]['@time_grid'][0])
 
                 # For segment-wise averaging send to the output current time segment results

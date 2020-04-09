@@ -1,5 +1,6 @@
 """Class cvcCalcTrendTM provides methods for trend calculation"""
 
+from copy import deepcopy
 import numpy as np
 
 from core.base.dataaccess import DataAccess
@@ -42,9 +43,9 @@ class cvcCalcTrendTM(Calc):
         result = self._data_helper.get(input_uids[0], segments=time_segments, levels=vertical_levels)
 
         data_info = self._data_helper.get_data_info(input_uids[0])
-        description = data_info['description']
-        description['@title'] = 'Trend of ' + description['@title']
-        description['@name'] = 'Trend of ' + description['@name']
+        description = deepcopy(data_info['description'])
+        description['@title'] = 'Trend of ' + description['@title'].lower()
+        description['@name'] += '_trend'
         description['@units'] += '/10yr'
 
         for level in vertical_levels:

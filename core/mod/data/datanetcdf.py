@@ -433,7 +433,7 @@ class DataNetcdf(Data):
         def add_level_variable():
             # Define level variable.
             level_dim = root.createDimension(level_var_name, n_levels)  # pylint: disable=W0612
-            level_var = root.createVariable(level_var_name, 'i4', ('level'))
+            level_var = root.createVariable(level_var_name, 'i4', (level_var_name))
             # Set level attributes.
             level_var.standard_name = level_var_name
             if level_var_units:
@@ -447,7 +447,7 @@ class DataNetcdf(Data):
         def add_time_variable():
             # Define time variable.
             time_dim = root.createDimension(time_var_name, n_times)  # pylint: disable=W0612
-            time_var = root.createVariable(time_var_name, 'f8', ('time'))
+            time_var = root.createVariable(time_var_name, 'f8', (time_var_name))
             # Set time attributes.
             time_var.units = 'days since {}-1-1 00:00:0.0'.format(time_grid[0].year)
             time_var_long_name = None if meta is None else meta.get('time_long_name')

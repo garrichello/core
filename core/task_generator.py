@@ -589,7 +589,7 @@ def make_processing(json_task, session, meta):
                     _, postfix = data_label.split('_')
                     if postfix == 'PARAMETERS':
                         uid = 'P{}Parameters1'.format(process_id)
-                        data_label = 'ModuleParameters_{}'.format(process_id)
+                        data_label = 'ModuleParameters_1'  # Disabled for a while: '{}'.format(process_id)
                         if data_label not in data.keys():  # Add modules parameters.
                             data[data_label] = make_parameters(json_proc['option'], session, meta)
                     else:
@@ -727,7 +727,8 @@ if __name__ == "__main__":
     core_config.read(os.path.join(str(os.path.dirname(__file__)), 'core_config.ini'))
 #    JSON_FILE_NAME = '..\\very_simple_task.json'
 #    JSON_FILE_NAME = '..\\simple_task.json'
-    JSON_FILE_NAME = '..\\complex_task.json'
+#    JSON_FILE_NAME = '..\\complex_task.json'
+    JSON_FILE_NAME = '..\\CalcMonthMaxMax.json'
     with open(JSON_FILE_NAME, 'r') as json_file:
         j_task = json.load(json_file)
     tasks = task_generator(j_task, 1, core_config['METADB'])

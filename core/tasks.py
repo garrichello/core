@@ -132,7 +132,10 @@ def starter(self, json_task):
 
     logger.info('Task %s is finished.', self.request.id)
 
-    result_zip = result.get(disable_sync_subtasks=False, timeout=task_timeout)
+    try:
+        result_zip = result.get(disable_sync_subtasks=False, timeout=task_timeout)
+    except:
+        return {'data': None, 'task': json_task, 'xml': [xmltodict.unparse(xml_task, pretty=True) for xml_task in xml_tasks]}
 
     return {'data': result_zip, 'task': json_task, 'xml': [xmltodict.unparse(xml_task, pretty=True) for xml_task in xml_tasks]}
 

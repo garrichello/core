@@ -119,8 +119,8 @@ class DataArray(Data):
             self._data_info['data']['description'] = {}
         if description is not None:
             self._data_info['data']['description'].update(description)
-        if 'meta' not in self._data_info['data'].keys():
-            self._data_info['data']['meta'] = {}
+        if 'meta' not in self._data_info.keys():
+            self._data_info['meta'] = {}
         if meta is not None:
             self._data_info['meta'].update(meta)
 

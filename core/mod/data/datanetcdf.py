@@ -20,6 +20,9 @@ LATITUDE_UNITS = {'degrees_north', 'degree_north', 'degrees_N', 'degree_N',
 TIME_UNITS = {'since', 'time'}
 NO_LEVEL_NAME = '-'
 WILDCARDS = {'year': '????', 'mm': '??', 'year1': '????', 'year2': '????', 'year1s-4': '????', 'year2s-4': '????', 'year1s1': '????', 'year2s1': '????'}
+DEFAULT_TIME_VAR_NAME = 'time'
+DEFAULT_LEVEL_VAR_NAME = 'level'
+DEFAULT_DATA_VAR_NAME = 'data'
 
 class PercentTemplate(Template):
     """ Custom template for the string substitute method.
@@ -464,7 +467,7 @@ class DataNetcdf(Data):
 
         # Get the variable name.
         varname = None if meta is None else all_options['meta'].get('varname')
-        varname = all_options['description']['@name'] if varname is None else varname
+        varname = DEFAULT_DATA_VAR_NAME if varname is None else varname
 
         # Get time values.
         time_grid = [item for sublist in all_options['times'] for item in sublist]
@@ -475,7 +478,7 @@ class DataNetcdf(Data):
             time_grid = [a + (b - a) / 2 for a, b in time_ranges]
         start_date = datetime(time_grid[0].year, 1, 1)
         n_times = len(time_grid)
-        time_var_name = 'time'
+        time_var_name = DEFAULT_TIME_VAR_NAME
 
         # Get level values and names.
         levels = {}
@@ -498,7 +501,7 @@ class DataNetcdf(Data):
             levels['units'] = levels['units'].pop() if levels['units'] else None
             n_levels = len(levels['values'])
         level_var_units = levels['units'] if levels['units'] else None if meta is None else meta.get('level_units')
-        level_var_name = 'level'
+        level_var_name = DEFAULT_LEVEL_VAR_NAME
 
         # Stack values.
         n_lat, n_lon = all_values[0].shape[-2:]
@@ -575,15 +578,22 @@ class DataNetcdf(Data):
                 if time_var is None:
                     add_time_variable()  # Write time variable
 
-        # Check if variable is present in the file.
+        # Define data variable dimensions.
+        data_dims = [time_var_name, level_var_name, 'nlat', 'nlon']
+        data_num = 0
+        # Check if data variable is present in the file.
         data_var = root.variables.get(varname)
-        if data_var is None:
-            # Define data variable.
-            data_dims = [time_var_name, level_var_name, 'nlat', 'nlon']
-            data_var = root.createVariable(varname, 'f4', data_dims, fill_value=values.fill_value)
-            # Set data attributes.
-            data_var.units = all_options['description']['@units']
-            data_var.long_name = all_options['description']['@title']
+        while True:
+            if data_var is None:
+                # Define a new variable.
+                data_var = root.createVariable(varname, 'f4', data_dims, fill_value=values.fill_value)
+                break
+            data_num += 1  # Or create a new name and check it out also.
+            varname = DEFAULT_DATA_VAR_NAME + str(data_num)
+            data_var = root.variables.get(varname)
+        # Set data attributes.
+        data_var.units = all_options['description']['@units']
+        data_var.long_name = all_options['description']['@title']
         # Write data variable.
         for level_idx in range(n_levels):
             data_var[:, level_idx, :, :] = ma.filled(values[level_idx, :, :, :], fill_value=values.fill_value)  # Write values.

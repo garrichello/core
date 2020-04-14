@@ -53,37 +53,26 @@ class CalcBasicStat(Calc):
 
         data_info = self._data_helper.get_data_info(input_uids[0])
         description = deepcopy(data_info['description'])
-        description['@title'] = 'Trend of ' + description['@title'].lower()
-        description['@name'] += '_trend'
-        description['@units'] += '/10yr'
 
         # Make desired statistical function shortcut for segment and final processing .
         if calc_mode == 'timeMean':
             seg_stat_func = ma.mean
             final_stat_func = ma.mean
-            description['@title'] = 'Average of ' + description['@title'].lower()
-            description['@name'] += '_mean'
-            final_title = None
-            final_name = None
+            final_title = 'Average of ' + description['@title'].lower()
+            final_name = description['@name'] + '_mean'
         elif calc_mode == 'timeMin':
             seg_stat_func = ma.min
             final_stat_func = ma.min
-            description['@title'] = 'Minimum of ' + description['@title'].lower()
-            description['@name'] += '_min'
-            final_title = None
-            final_name = None
+            final_title = 'Minimum of ' + description['@title'].lower()
+            final_name = description['@name'] + '_min'
         elif calc_mode == 'timeMax':
             seg_stat_func = ma.max
             final_stat_func = ma.max
-            description['@title'] = 'Maximum of ' + description['@title'].lower()
-            description['@name'] += '_max'
-            final_title = None
-            final_name = None
+            final_title = 'Maximum of ' + description['@title'].lower()
+            final_name = description['@name'] + '_max'
         elif calc_mode == 'timeMeanPrec':
             seg_stat_func = ma.sum
             final_stat_func = ma.mean
-            description['@title'] = 'Sum of ' + description['@title'].lower()
-            description['@name'] += '_sum'
             final_title = 'Average sum of ' + description['@title'].lower()
             final_name = description['@name'] + '_meansum'
 

@@ -117,8 +117,7 @@ class CalcBasicStat(Calc):
                 if (parameters[calc_mode] == 'day') or (parameters[calc_mode] == 'segment'):
                     self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
                                           longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                          times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'],
-                                          description=description)
+                                          times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'])
                 elif parameters[calc_mode] == 'data':
                     all_segments_data.append(one_segment_data)
 

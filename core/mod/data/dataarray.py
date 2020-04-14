@@ -1,8 +1,6 @@
 """Provides classes
     DataArray
 """
-from copy import deepcopy
-
 from core.base.common import listify
 
 from .data import Data
@@ -117,8 +115,13 @@ class DataArray(Data):
         self._data_info['data'][level][segment['@name']]['@time_grid'] = times
         self._data_info['data'][level][segment['@name']]['@values'] = values
 
+        if 'description' not in self._data_info['data'].keys():
+            self._data_info['data']['description'] = {}
         if description is not None:
-            self._data_info['data']['description'] = deepcopy(description)
-        self._data_info['meta'] = deepcopy(meta)
+            self._data_info['data']['description'].update(description)
+        if 'meta' not in self._data_info['data'].keys():
+            self._data_info['data']['meta'] = {}
+        if meta is not None:
+            self._data_info['meta'].update(meta)
 
         self.logger.info('Done!')

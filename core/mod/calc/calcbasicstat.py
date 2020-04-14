@@ -1,7 +1,7 @@
 """ Base class CalcBasicStat provides basic statistical methods methods for time sets analysis
 """
 
-from copy import copy
+from copy import copy, deepcopy
 import itertools
 import numpy.ma as ma
 
@@ -51,19 +51,35 @@ class CalcBasicStat(Calc):
         time_segments = self._data_helper.get_segments(input_uids[0])
         vertical_levels = self._data_helper.get_levels(input_uids[0])
 
+        data_info = self._data_helper.get_data_info(input_uids[0])
+        description = deepcopy(data_info['description'])
+        description['@title'] = 'Trend of ' + description['@title'].lower()
+        description['@name'] += '_trend'
+        description['@units'] += '/10yr'
+
         # Make desired statistical function shortcut for segment and final processing .
         if calc_mode == 'timeMean':
             seg_stat_func = ma.mean
             final_stat_func = ma.mean
+            description['@title'] = 'Average of ' + description['@title'].lower()
+            description['@name'] += '_mean'
         elif calc_mode == 'timeMin':
             seg_stat_func = ma.min
             final_stat_func = ma.min
+            description['@title'] = 'Minimum of ' + description['@title'].lower()
+            description['@name'] += '_min'
         elif calc_mode == 'timeMax':
             seg_stat_func = ma.max
             final_stat_func = ma.max
+            description['@title'] = 'Maximum of ' + description['@title'].lower()
+            description['@name'] += '_max'
         elif calc_mode == 'timeMeanPrec':
             seg_stat_func = ma.sum
             final_stat_func = ma.mean
+            description['@title'] = 'Sum of ' + description['@title'].lower()
+            description['@name'] += '_sum'
+            final_title = 'Average sum of ' + description['@title'].lower()
+            final_name = description['@name'] + '_meansum'
 
         for level in vertical_levels:
             all_segments_data = []
@@ -106,7 +122,8 @@ class CalcBasicStat(Calc):
                 if (parameters[calc_mode] == 'day') or (parameters[calc_mode] == 'segment'):
                     self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
                                           longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                          times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'])
+                                          times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'],
+                                          description=description)
                 elif parameters[calc_mode] == 'data':
                     all_segments_data.append(one_segment_data)
 
@@ -119,8 +136,15 @@ class CalcBasicStat(Calc):
                 full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
                 full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
+                # Correct title and name
+                if final_title:
+                    description['@title'] = final_title
+                if final_name:
+                    description['@name'] = final_name
+
                 self._data_helper.put(output_uids[0], values=data_out, level=level, segment=full_range_segment,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                      fill_value=result['@fill_value'], meta=result['meta'])
+                                      fill_value=result['@fill_value'], meta=result['meta'],
+                                      description=description)
 
         self.logger.info('Finished!')

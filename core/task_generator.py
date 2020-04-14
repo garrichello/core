@@ -1,6 +1,6 @@
 """ Converts JSON-based task to XML-based dictionary.
 Original task arrives as a dictionary based on a JSON message sent from outside.
-Function task_generator generates a list of one or more dictionaries 
+Function task_generator generates a list of one or more dictionaries
  describing data and processing conveyors as in an old XML tasks.
  Nested processing conveyors (complex tasks) are supported.
 """
@@ -12,6 +12,7 @@ import datetime
 import calendar
 import logging
 from collections import defaultdict
+import argparse
 import xmltodict
 
 from sqlalchemy import create_engine, MetaData
@@ -736,18 +737,18 @@ def task_generator(json_task, task_id, metadb_info):
 if __name__ == "__main__":
     core_config = ConfigParser()
     core_config.read(os.path.join(str(os.path.dirname(__file__)), 'core_config.ini'))
-#    JSON_FILE_NAME = '..\\very_simple_task.json'
-#    JSON_FILE_NAME = '..\\simple_task.json'
-#    JSON_FILE_NAME = '..\\complex_task.json'
-    JSON_FILE_NAME = '..\\CalcMonthMaxMax.json'
-    with open(JSON_FILE_NAME, 'r') as json_file:
+    parser = argparse.ArgumentParser(description='XML task generator')
+    parser.add_argument('json_file_name', help='JSON file name')
+    args = parser.parse_args()
+    with open(args.json_file_name, 'r') as json_file:
         j_task = json.load(json_file)
     tasks = task_generator(j_task, 1, core_config['METADB'])
     i = 0
+    xml_file_name_prefix = os.path.splitext(args.json_file_name)[0]
     for task in tasks:
         if 'wait' in task:
             continue
         i += 1
-        XML_FILE_NAME = '..\\output_task_{}.xml'.format(i)
+        XML_FILE_NAME = '{}_{}.xml'.format(xml_file_name_prefix, i)
         with open(XML_FILE_NAME, 'w') as xml_file:
             xmltodict.unparse(task, xml_file, pretty=True)

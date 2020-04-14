@@ -63,16 +63,22 @@ class CalcBasicStat(Calc):
             final_stat_func = ma.mean
             description['@title'] = 'Average of ' + description['@title'].lower()
             description['@name'] += '_mean'
+            final_title = None
+            final_name = None
         elif calc_mode == 'timeMin':
             seg_stat_func = ma.min
             final_stat_func = ma.min
             description['@title'] = 'Minimum of ' + description['@title'].lower()
             description['@name'] += '_min'
+            final_title = None
+            final_name = None
         elif calc_mode == 'timeMax':
             seg_stat_func = ma.max
             final_stat_func = ma.max
             description['@title'] = 'Maximum of ' + description['@title'].lower()
             description['@name'] += '_max'
+            final_title = None
+            final_name = None
         elif calc_mode == 'timeMeanPrec':
             seg_stat_func = ma.sum
             final_stat_func = ma.mean
@@ -137,9 +143,9 @@ class CalcBasicStat(Calc):
                 full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
                 # Correct title and name
-                if final_title:
+                if final_title is not None:
                     description['@title'] = final_title
-                if final_name:
+                if final_name is not None:
                     description['@name'] = final_name
 
                 self._data_helper.put(output_uids[0], values=data_out, level=level, segment=full_range_segment,

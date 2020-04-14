@@ -291,9 +291,11 @@ def delete_vertex(vertex_key, processing_graph):
     '''
 
     vertex = processing_graph[vertex_key]  # Vertex to delete.
+    data_uplinks = [uplink for uplink in vertex['uplinks'] if 'PARAMETER' not in uplink['data_label']]
+    data_downlinks = [downlink for downlink in vertex['downlinks'] if 'PARAMETER' not in downlink['data_label']]
 
     # We know how to delete a vertex if it has only one input or only one output edge.
-    if len(vertex['uplinks']) > 1 and len(vertex['downlinks']) > 1:
+    if len(data_uplinks) > 1 and len(data_downlinks) > 1:
         raise ValueError("Vertex has several inputs and sevral outputs. And it should be deleted. Don't know how. Aborting...")
 
     # Move uplink and downlink connections of adjacent vertices past the vertex to be deleted.
@@ -301,12 +303,13 @@ def delete_vertex(vertex_key, processing_graph):
         data_label = uplink['data_label']
         link_to = next(link for link in uplink['vertex']['downlinks'] if link['vertex'] == vertex)
         uplink['vertex']['downlinks'].remove(link_to)
-        uplink['vertex']['downlinks'].extend(vertex['downlinks'])
-        for downlink in vertex['downlinks']:
-            downlink['data_label'] = data_label
-            link_to = next(link for link in downlink['vertex']['uplinks'] if link['vertex'] == vertex)
-            downlink['vertex']['uplinks'].remove(link_to)
-            downlink['vertex']['uplinks'].extend(vertex['uplinks'])
+        if 'PARAMETER' not in data_label:
+            uplink['vertex']['downlinks'].extend(vertex['downlinks'])
+            for downlink in vertex['downlinks']:
+                downlink['data_label'] = data_label
+                link_to = next(link for link in downlink['vertex']['uplinks'] if link['vertex'] == vertex)
+                downlink['vertex']['uplinks'].remove(link_to)
+                downlink['vertex']['uplinks'].extend(vertex['uplinks'])
 
     # Delete the vertex from the graph.
     del processing_graph[vertex_key]
@@ -461,22 +464,32 @@ def make_processing(json_task, session, meta):
 
     # Map MDDB tables.
     processor_tbl = meta.tables['processor']
+    processor_i18n_tbl = meta.tables['processor_i18n']
     edge_tbl = meta.tables['edge']
     vertex_tbl = meta.tables['vertex']
     from_vertex_tbl = aliased(vertex_tbl)
     to_vertex_tbl = aliased(vertex_tbl)
     data_variable_tbl = meta.tables['data_variable']
     computing_module_tbl = meta.tables['computing_module']
+    units_tbl = meta.tables['units']
+    units_i18n_tbl = meta.tables['units_i18n']
 
     # Get conveyor id.
-    qry = session.query(processor_tbl.c.conveyor_id)
+    qry = session.query(processor_tbl.c.conveyor_id,
+                        processor_i18n_tbl.c.name.label('processor_name'))
+    qry = qry.select_from(processor_tbl)
+    qry = qry.join(processor_i18n_tbl)
     qry = qry.filter(processor_tbl.c.id == json_proc['@processor_id'])
+    qry = qry.filter(processor_i18n_tbl.c.language_code == ENGLISH_LANG_CODE)
 
     try:
-        conveyor_id = qry.one()
+        result = qry.one()
     except NoResultFound:
         logger.error('No results found in MDDB table "processor" for id %s. No data?', json_proc['@processor_id'])
         raise
+
+    conveyor_id = result.conveyor_id
+    processor_name = result.processor_name
 
     # Get vertices.
     qry = session.query(vertex_tbl.c.id.label('vertex_id'),
@@ -507,15 +520,19 @@ def make_processing(json_task, session, meta):
                         edge_tbl.c.from_output.label('from_output'),
                         to_vertex_tbl.c.id.label('to_vertex_id'),
                         edge_tbl.c.to_input.label('to_input'),
-                        data_variable_tbl.c.label.label('data_label'))
+                        data_variable_tbl.c.label.label('data_label'),
+                        units_i18n_tbl.c.name.label('units_name'))
     qry = qry.select_from(edge_tbl)
     qry = qry.join(from_vertex_tbl, and_(edge_tbl.c.from_conveyor_id == from_vertex_tbl.c.conveyor_id,
                                          edge_tbl.c.from_vertex_id == from_vertex_tbl.c.id))
     qry = qry.join(to_vertex_tbl, and_(edge_tbl.c.to_conveyor_id == to_vertex_tbl.c.conveyor_id,
                                        edge_tbl.c.to_vertex_id == to_vertex_tbl.c.id))
     qry = qry.join(data_variable_tbl)
+    qry = qry.join(units_tbl)
+    qry = qry.join(units_i18n_tbl)
     qry = qry.filter(from_vertex_tbl.c.conveyor_id == conveyor_id)
     qry = qry.filter(to_vertex_tbl.c.conveyor_id == conveyor_id)
+    qry = qry.filter(units_i18n_tbl.c.language_code == ENGLISH_LANG_CODE)
 
     try:
         result = qry.all()
@@ -527,11 +544,13 @@ def make_processing(json_task, session, meta):
     for row in result:
         downlink = {'output': row.from_output,
                     'vertex': processing_graph[row.to_vertex_id],
-                    'data_label': row.data_label}
+                    'data_label': row.data_label,
+                    'data_units': row.units_name}
         processing_graph[row.from_vertex_id]['downlinks'].append(downlink)
         uplink = {'input': row.to_input,
                   'vertex': processing_graph[row.from_vertex_id],
-                  'data_label': row.data_label}
+                  'data_label': row.data_label,
+                  'data_units': row.units_name}
         processing_graph[row.to_vertex_id]['uplinks'].append(uplink)
 
     # Prepare options.
@@ -600,23 +619,15 @@ def make_processing(json_task, session, meta):
                 output_pos = downlink['output']-1
                 uid = 'P{}Output{}'.format(process_id, output_pos+1)
                 data_label = downlink['data_label']
-                if 'OUTPUT' in data_label and data_label not in destinations.keys():
-                    _, postfix = data_label.split('_')
+                data_units = downlink['data_units']
+                prefix, postfix = data_label.split('_')
+                if 'OUTPUT' in prefix and data_label not in destinations.keys():
                     if postfix == 'IMAGE':
                         destinations[data_label] = make_image(data_label, json_proc['result']['@graphics_type'])
                     if postfix == 'RAW':
                         destinations[data_label] = make_file(data_label, json_proc['result'])
-                if 'RESULT' in data_label and data_label not in data.keys():
-                    _, postfix = data_label.split('_')
-                    if postfix == 'TREND':
-                        title = 'Trend stub title'
-                        name = 'Trend of stub name'
-                        units = 'Stub units / 10yrs'
-                    else:
-                        title = 'Stub title'
-                        name = 'Stub name'
-                        units = 'Stub units'
-                    data[data_label] = make_data_array(data_label, title, name, units)
+                if 'RESULT' in prefix and data_label not in data.keys():
+                    data[data_label] = make_data_array(data_label, processor_name, data_label.lower(), data_units)
                 process['output'][output_pos] = {'@uid': uid, '@data': data_label}
             processing[process_id] = process
         for to_link in vertex['downlinks']:

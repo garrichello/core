@@ -44,8 +44,8 @@ class cvcCalcTrendTM(Calc):
 
         data_info = self._data_helper.get_data_info(input_uids[0])
         description = deepcopy(data_info['description'])
-        description['@title'] = 'Trend of ' + description['@title'].lower()
-        description['@name'] += '_trend'
+        description['@title'] = 'Trend of ' + description['@title']
+        #description['@name'] += '_trend'
         description['@units'] += '/10yr'
 
         for level in vertical_levels:

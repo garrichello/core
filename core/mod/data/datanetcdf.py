@@ -10,7 +10,7 @@ from netCDF4 import MFDataset, date2index, num2date, Dataset, MFTime
 import numpy as np
 import numpy.ma as ma
 
-from core.base.common import listify, unlistify
+from core.base.common import listify, unlistify, decapitalize
 from .data import Data, GRID_TYPE_REGULAR, GRID_TYPE_IRREGULAR
 
 LONGITUDE_UNITS = {'degrees_east', 'degree_east', 'degrees_E', 'degree_E',
@@ -593,7 +593,7 @@ class DataNetcdf(Data):
             data_var = root.variables.get(varname)
         # Set data attributes.
         data_var.units = all_options['description']['@units']
-        data_var.long_name = all_options['description']['@title']
+        data_var.long_name = ' '.join([all_options['description']['@title'], all_options['description']['@name']])
         # Write data variable.
         for level_idx in range(n_levels):
             data_var[:, level_idx, :, :] = ma.filled(values[level_idx, :, :, :], fill_value=values.fill_value)  # Write values.

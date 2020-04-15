@@ -628,7 +628,7 @@ def make_processing(json_task, session, meta):
                     if postfix == 'RAW':
                         destinations[data_label] = make_file(data_label, json_proc['result'])
                 if 'RESULT' in prefix and data_label not in data.keys():
-                    data[data_label] = make_data_array(data_label, processor_name, data_label.lower(), data_units)
+                    data[data_label] = make_data_array(data_label, processor_name, "", data_units)
                 process['output'][output_pos] = {'@uid': uid, '@data': data_label}
             processing[process_id] = process
         for to_link in vertex['downlinks']:

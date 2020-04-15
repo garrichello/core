@@ -151,6 +151,10 @@ class CalcExceedance(Calc):
 
         data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments.
 
+        input_description = self._data_helper.get_data_info(output_uids[0])['description']
+        output_description = {}
+        output_description['@title'] = feature.capitalize() + ' of ' + input_description['@title']
+
         for level in study_vertical_levels:
             all_segments_data = []
             for segment in study_time_segments:
@@ -171,18 +175,22 @@ class CalcExceedance(Calc):
                 # Perform calculation for the current time segment.
                 if feature == 'frequency':   # We can just average 'True's to get a fraction and multiply by 100%.
                     one_segment_data = ma.mean(comparison_mask, axis=0) * 100
+                    output_description['@units'] = '%'
 
                 if feature == 'intensity':
                     diff = ma.abs(study_values - normals_values)  # Calculate difference
                     diff.mask = ma.mask_or(diff.mask, ~comparison_mask, shrink=False)  # and mask out unnecessary values.
                     one_segment_data = ma.mean(diff, axis=0)
+                    output_description['@units'] = 'days'
 
                 if feature == 'duration':
                     one_segment_data = self._calc_duration(comparison_mask)
+                    output_description['@units'] = 'days'
 
                 if feature == 'total':
                     study_values.mask = ma.mask_or(study_values.mask, ~comparison_mask, shrink=False)
                     one_segment_data = ma.sum(study_values, axis=0)
+                    output_description = 'days'
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
@@ -191,7 +199,7 @@ class CalcExceedance(Calc):
                                           longitudes=study_data['@longitude_grid'],
                                           latitudes=study_data['@latitude_grid'],
                                           fill_value=study_data['@fill_value'],
-                                          meta=study_data['meta'])
+                                          meta=study_data['meta'], description=output_description)
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
@@ -207,8 +215,10 @@ class CalcExceedance(Calc):
                 full_range_segment['@ending'] = study_time_segments[-1]['@ending']  # and the end of the last one.
                 full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
+                output_description['@title'] = 'Maximum ' + output_description['@title']
+
                 self._data_helper.put(output_uids[0], values=data_out, level=level, segment=full_range_segment,
                                       longitudes=study_data['@longitude_grid'], latitudes=study_data['@latitude_grid'],
-                                      fill_value=study_data['@fill_value'], meta=study_data['meta'])
+                                      fill_value=study_data['@fill_value'], meta=study_data['meta'], description=output_description)
 
         self.logger.info('Finished!')

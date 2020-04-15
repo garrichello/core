@@ -165,3 +165,11 @@ def make_raw_filename(data_info, all_options):
     filename = data_info['data']['file']['@name']
 
     return filename
+
+def decapitalize(input_string):
+    """ Makes the first letter of a string small """
+    if input_string:
+        return input_string[0].lower() + input_string[1:]
+    else:
+        return input_string
+

@@ -86,6 +86,8 @@ class CalcCorrelation(Calc):
                 meta_sig = {**data_1['meta'], **data_2['meta']}  # Combine meta from both datasets.
                 meta_sig['legend_override'] = {1: 'Significant', 0: 'Not significant'}
                 meta_sig['varname'] = 'significance'  # Variable name in netCDF file
+                coef_description = {'@title': 'Correlation coefficient', '@units': '-'}
+                sig_description = {'@title': 'Correlation significance', '@units': '-'}
 
                 # Perform calculation for the current time segment.
                 corr_coef, significance = self._calc_correlation(values_1, values_2)
@@ -95,13 +97,13 @@ class CalcCorrelation(Calc):
                                       longitudes=data_1['@longitude_grid'],
                                       latitudes=data_1['@latitude_grid'],
                                       fill_value=data_1['@fill_value'],
-                                      meta=meta_corr_coef)
+                                      meta=meta_corr_coef, description=coef_description)
 
                 self._data_helper.put(output_uids[DATA_2_UID], values=significance,
                                       level=data_1_level, segment=data_1_segment,
                                       longitudes=data_1['@longitude_grid'],
                                       latitudes=data_1['@latitude_grid'],
                                       fill_value=True,  # Significant data are missing (thus transparent) data!
-                                      meta=meta_sig)
+                                      meta=meta_sig, description=sig_description)
 
         self.logger.info('Finished!')

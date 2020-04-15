@@ -567,12 +567,12 @@ class DataNetcdf(Data):
             # Try to find a correct time variable or add a new one.
             time_var = root.variables.get(time_var_name)
             new_time_var = [(cur_date - start_date).days for cur_date in time_grid]
-            if new_time_var != time_var:
+            if not (time_var[:] == new_time_var[:]).all():
                 time_num = 1
                 while True:
                     time_var_name = 'time{}'.format(time_num)
                     time_var = root.variables.get(time_var_name)
-                    if time_var is None or new_time_var == time_var:
+                    if time_var is None or (time_var[:] == new_time_var[:]).all():
                         break
                     time_num += 1
                 if time_var is None:

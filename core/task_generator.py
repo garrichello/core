@@ -15,9 +15,9 @@ from collections import defaultdict
 import argparse
 import xmltodict
 
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, distinct
 from sqlalchemy.orm import sessionmaker, aliased
-from sqlalchemy.sql.expression import and_
+from sqlalchemy.sql.expression import or_
 from sqlalchemy.orm.exc import NoResultFound
 
 ENGLISH_LANG_CODE = 409
@@ -493,13 +493,15 @@ def make_processing(json_task, session, meta):
     processor_name = result.processor_name
 
     # Get vertices.
-    qry = session.query(vertex_tbl.c.id.label('vertex_id'),
+    qry = session.query(distinct(vertex_tbl.c.id).label('vertex_id'),
                         computing_module_tbl.c.name.label('computing_module'),
                         vertex_tbl.c.condition_option_id.label('condition_option_id'),
                         vertex_tbl.c.condition_value_id.label('condition_value_id'))
     qry = qry.select_from(vertex_tbl)
-    qry = qry.join(computing_module_tbl)
-    qry = qry.filter(vertex_tbl.c.conveyor_id == conveyor_id)
+    qry = qry.join(edge_tbl, or_(edge_tbl.c.from_vertex_id == vertex_tbl.c.id,
+                                 edge_tbl.c.to_vertex_id == vertex_tbl.c.id))
+    qry = qry.join(computing_module_tbl, computing_module_tbl.c.id == vertex_tbl.c.computing_module_id)
+    qry = qry.filter(edge_tbl.c.conveyor_id == conveyor_id)
 
     try:
         result = qry.all()
@@ -524,15 +526,12 @@ def make_processing(json_task, session, meta):
                         data_variable_tbl.c.label.label('data_label'),
                         units_i18n_tbl.c.name.label('units_name'))
     qry = qry.select_from(edge_tbl)
-    qry = qry.join(from_vertex_tbl, and_(edge_tbl.c.from_conveyor_id == from_vertex_tbl.c.conveyor_id,
-                                         edge_tbl.c.from_vertex_id == from_vertex_tbl.c.id))
-    qry = qry.join(to_vertex_tbl, and_(edge_tbl.c.to_conveyor_id == to_vertex_tbl.c.conveyor_id,
-                                       edge_tbl.c.to_vertex_id == to_vertex_tbl.c.id))
+    qry = qry.join(from_vertex_tbl, edge_tbl.c.from_vertex_id == from_vertex_tbl.c.id)
+    qry = qry.join(to_vertex_tbl, edge_tbl.c.to_vertex_id == to_vertex_tbl.c.id)
     qry = qry.join(data_variable_tbl)
     qry = qry.join(units_tbl)
     qry = qry.join(units_i18n_tbl)
-    qry = qry.filter(from_vertex_tbl.c.conveyor_id == conveyor_id)
-    qry = qry.filter(to_vertex_tbl.c.conveyor_id == conveyor_id)
+    qry = qry.filter(edge_tbl.c.conveyor_id == conveyor_id)
     qry = qry.filter(units_i18n_tbl.c.language_code == ENGLISH_LANG_CODE)
 
     try:
@@ -571,8 +570,9 @@ def make_processing(json_task, session, meta):
         delete_vertex(v_num, processing_graph)
 
     data = {}
-    processing = {}
+    processing = []
     destinations = {}
+    passed_vertices = set()  # Vertices passed during BFS.
 
     # Search for the starting vertex of the graph.
     queue = []
@@ -591,11 +591,15 @@ def make_processing(json_task, session, meta):
     while queue:
         vertex = queue.pop()
         if vertex['module'] != 'START' and vertex['module'] != 'FINISH':  # Ignore start and finish vertices.
-            # Create new process description.
-            process_id = vertex['id'] - 1
-            if process_id in processing.keys() or ('OUTPUT_IMAGE' in [link['data_label'] for link in vertex['downlinks']] and
-                                                   nested_proc_id):
+            process_id = vertex['id'] - 1  # Construct process ID and check for a loop in the graph.
+            if process_id in passed_vertices:
+                logger.error('There is a loop in the graph. Aborting!')
+                raise ValueError('Loop in the graph!')
+            else:
+                passed_vertices.add(process_id)
+            if 'OUTPUT_IMAGE' in [link['data_label'] for link in vertex['downlinks']] and nested_proc_id:
                 continue
+            # Create new process description.
             process = {'@uid': 'Process_{}'.format(process_id),
                        '@class': vertex['module'],
                        'input': [None] * len(set([i['input'] for i in vertex['uplinks']])),
@@ -630,13 +634,13 @@ def make_processing(json_task, session, meta):
                 if 'RESULT' in prefix and data_label not in data.keys():
                     data[data_label] = make_data_array(data_label, processor_name, "", data_units)
                 process['output'][output_pos] = {'@uid': uid, '@data': data_label}
-            processing[process_id] = process
+            processing.append(process)
         for to_link in vertex['downlinks']:
-            queue.append(to_link['vertex'])
+            if 'PARAMETER' not in to_link['data_label']:
+                queue.append(to_link['vertex'])
 
     data = [val for val in data.values()]
     destinations = [val for val in destinations.values()]
-    processing = [processing[i] for i in range(1, max(processing.keys())+1) if i in processing.keys()]
 
     return data, destinations, processing
 

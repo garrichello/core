@@ -572,7 +572,7 @@ def make_processing(json_task, session, meta):
     data = {}
     processing = []
     destinations = {}
-    passed_vertices = set()  # Vertices passed during BFS.
+    passed = set()  # Passed input UIDs during BFS.
 
     # Search for the starting vertex of the graph.
     queue = []
@@ -591,12 +591,7 @@ def make_processing(json_task, session, meta):
     while queue:
         vertex = queue.pop()
         if vertex['module'] != 'START' and vertex['module'] != 'FINISH':  # Ignore start and finish vertices.
-            process_id = vertex['id'] - 1  # Construct process ID and check for a loop in the graph.
-            if process_id in passed_vertices:
-                logger.error('There is a loop in the graph. Aborting!')
-                raise ValueError('Loop in the graph!')
-            else:
-                passed_vertices.add(process_id)
+            process_id = vertex['id'] - 1  # Make process ID zero-based.
             if 'OUTPUT_IMAGE' in [link['data_label'] for link in vertex['downlinks']] and nested_proc_id:
                 continue
             # Create new process description.
@@ -606,8 +601,13 @@ def make_processing(json_task, session, meta):
                        'output': [None] * len(set([i['output'] for i in vertex['downlinks']]))}
             # Describe inputs.
             for uplink in vertex['uplinks']:
-                input_pos = uplink['input']-1
-                uid = 'P{}Input{}'.format(process_id, input_pos+1)
+                input_pos = uplink['input'] - 1  # Make input number zero-based.
+                uid = 'P{}Input{}'.format(process_id, input_pos+1)  # Input UID
+                if uid in passed:
+                    logger.error('There is a loop in the graph. Double use of input uid: {}. Aborting!'. format(uid))
+                    raise ValueError('Loop in the graph!')
+                else:
+                    passed.add(uid)
                 data_label = uplink['data_label']
                 if 'INPUT' in data_label:
                     _, postfix = data_label.split('_')
@@ -621,7 +621,7 @@ def make_processing(json_task, session, meta):
                 process['input'][input_pos] = {'@uid': uid, '@data': data_label}
             # Describe outputs.
             for downlink in vertex['downlinks']:
-                output_pos = downlink['output']-1
+                output_pos = downlink['output'] - 1  # Make output number zero-based.
                 uid = 'P{}Output{}'.format(process_id, output_pos+1)
                 data_label = downlink['data_label']
                 data_units = downlink['data_units']
@@ -636,7 +636,7 @@ def make_processing(json_task, session, meta):
                 process['output'][output_pos] = {'@uid': uid, '@data': data_label}
             processing.append(process)
         for to_link in vertex['downlinks']:
-            if 'PARAMETER' not in to_link['data_label']:
+            if 'PARAMETER' not in to_link['data_label'] and to_link['vertex'] not in queue:
                 queue.append(to_link['vertex'])
 
     data = [val for val in data.values()]

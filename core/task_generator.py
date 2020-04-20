@@ -604,7 +604,7 @@ def make_processing(json_task, session, meta):
                 input_pos = uplink['input'] - 1  # Make input number zero-based.
                 uid = 'P{}Input{}'.format(process_id, input_pos+1)  # Input UID
                 if uid in passed:
-                    logger.error('There is a loop in the graph. Double use of input uid: {}. Aborting!'. format(uid))
+                    logger.error('There is a loop in the graph. Double use of input uid: %s. Aborting!', uid)
                     raise ValueError('Loop in the graph!')
                 else:
                     passed.add(uid)

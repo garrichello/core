@@ -76,7 +76,7 @@ class DataNetcdf(Data):
         return (lats, latitude_variable.name, grid_type)
 
     def _get_levels(self, nc_root, level_name, level_variable_name):
-        if level_variable_name != NO_LEVEL_NAME:
+        if level_variable_name is not None:
             try:
                 level_variable = nc_root.variables[level_variable_name]  # pylint: disable=E1136
             except KeyError:

@@ -5,7 +5,7 @@
 from copy import copy, deepcopy
 import logging
 from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.exc import NoResultFound
 from .common import load_module, make_module_name, listify
 
@@ -186,7 +186,7 @@ class DataAccess():
         level_tbl = meta.tables['level']
         levels_group_tbl = meta.tables['levels_group']
         levels_group_has_level_tbl = meta.tables['levels_group_has_level']
-        levels_variable_tbl = meta.tables['levels_variable']
+        levels_variable_tbl = aliased(variable_tbl)
         root_dir_tbl = meta.tables['root_dir']
         units_tbl = meta.tables['units']
         units_i18n_tbl = meta.tables['units_i18n']

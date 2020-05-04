@@ -227,7 +227,7 @@ class DataAccess():
         #   JOIN units ON units_id = units.id
         #   JOIN variable ON variable_id = variable.id
         #   JOIN file ON file_id = file.id
-        #   JOIN levels_variable ON levels_variable_id = levels_variable.id
+        #   LEFT OUTER JOIN variable AS levels_variable ON levels_variable_id = levels_variable.id
         #   JOIN root_dir ON root_dir_id = root_dir.id
         #   JOIN collection ON dataset.collection_id = collection.id
         #   JOIN resolution ON dataset.resolution_id = resolution.id
@@ -237,8 +237,7 @@ class DataAccess():
         #   JOIN levels_group_has_level on levels_group.id = levels_group_has_level.levels_group_id
         #   JOIN level on levels_group_has_level.level_id = level.id
         #   JOIN time_step ON specific_parameter.time_step_id = time_step.id
-        #   JOIN file_type ON file.file_type_id = file_type.id
-        #   JOIN time_span ON file.time_span_id = time_span.id
+        #   JOIN file_type ON file_type_id = file_type.id
         #   JOIN collection_i18n ON collection_i18n.collection_id = collection.id
         #   JOIN parameter_i18n ON parameter_i18n.parameter_id = parameter.id
         #   JOIN units_i18n ON units_i18n.units_id = units.id

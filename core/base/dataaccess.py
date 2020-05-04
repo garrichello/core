@@ -274,7 +274,7 @@ class DataAccess():
         qry = qry.join(units_tbl)
         qry = qry.join(variable_tbl, variable_tbl.c.id == data_tbl.c.variable_id)
         qry = qry.join(file_tbl)
-        qry = qry.join(levels_variable_tbl, levels_variable_tbl.c.id == data_tbl.c.levels_variable_id)
+        qry = qry.outerjoin(levels_variable_tbl, levels_variable_tbl.c.id == data_tbl.c.levels_variable_id)
         qry = qry.join(root_dir_tbl)
         qry = qry.join(collection_tbl)
         qry = qry.join(resolution_tbl)

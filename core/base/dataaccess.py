@@ -279,7 +279,7 @@ class DataAccess():
         qry = qry.join(resolution_tbl)
         qry = qry.join(scenario_tbl)
         qry = qry.join(parameter_tbl)
-        qry = qry.join(levels_group_tbl)
+        qry = qry.join(levels_group_tbl, levels_group_tbl.c.id == specific_parameter_tbl.c.levels_group_id)
         qry = qry.join(levels_group_has_level_tbl)
         qry = qry.join(level_tbl)
         qry = qry.join(time_step_tbl)

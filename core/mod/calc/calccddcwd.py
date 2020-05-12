@@ -117,7 +117,7 @@ class CalcCDDCWD(Calc):
                                           longitudes=data['@longitude_grid'],
                                           latitudes=data['@latitude_grid'],
                                           fill_value=data['@fill_value'],
-                                          meta=data['meta'])
+                                          meta=data['meta'], description=description)
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:

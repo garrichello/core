@@ -8,6 +8,7 @@ output
 tools
 func_tests.sh
 virtualenv
+logs
 *.log
 templates_tests.sh
 core_config.ini

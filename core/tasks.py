@@ -9,11 +9,13 @@ import base64
 from configparser import ConfigParser
 import os
 import io
+import traceback
 
 from zipfile import ZipFile
 import logging
 import logging.handlers
-from celery import Celery, group
+from celery import Celery, group, states
+from celery.exceptions import Ignore
 from celery.signals import after_setup_logger
 from celery.app.log import TaskFormatter
 import xmltodict
@@ -132,12 +134,20 @@ def starter(self, json_task):
 
     logger.info('Task %s is finished.', self.request.id)
 
+    pretty_xml_tasks = [xmltodict.unparse(xml_task, pretty=True) for xml_task in xml_tasks]
+
     try:
         result_zip = result.get(disable_sync_subtasks=False, timeout=task_timeout)
-    except:
-        return {'data': None, 'task': json_task, 'xml': [xmltodict.unparse(xml_task, pretty=True) for xml_task in xml_tasks]}
+    except Exception as ex:
+        result_zip = None
+        self.update_state(state=states.FAILURE, meta={'exc_type': type(ex).__name__,
+                                                      'exc_message': traceback.format_exc(),
+                                                      'data': None,
+                                                      'task': json_task,
+                                                      'xml': pretty_xml_tasks})
+        raise Ignore()
 
-    return {'data': result_zip, 'task': json_task, 'xml': [xmltodict.unparse(xml_task, pretty=True) for xml_task in xml_tasks]}
+    return {'data': result_zip, 'task': json_task, 'xml': pretty_xml_tasks}
 
 if __name__ == '__main__':
     app.start()

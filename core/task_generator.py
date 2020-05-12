@@ -197,7 +197,7 @@ def get_data_info(proc_argument, session, meta):
     qry = qry.join(dataset_tbl)
     qry = qry.join(specific_parameter_tbl)
     qry = qry.join(units_tbl)
-    qry = qry.join(variable_tbl)
+    qry = qry.join(variable_tbl, variable_tbl.c.id == data_tbl.c.variable_id)
     qry = qry.join(collection_tbl)
     qry = qry.join(resolution_tbl)
     qry = qry.join(scenario_tbl)

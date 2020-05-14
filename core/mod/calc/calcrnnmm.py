@@ -87,8 +87,8 @@ class CalcRnnmm(Calc):
 
         # Set result units.
         result_description = {}
-        result_description['@title'] = 'Count of days with precipitation ≥ {} mm'.format(threshold)
-        result_description['@name'] = 'Count of days with precipitation ≥ {} mm'.format(threshold)
+        result_description['@title'] = 'Count of days with precipitation >= {} mm'.format(threshold)
+        result_description['@name'] = 'Count of days with precipitation >= {} mm'.format(threshold)
         result_description['@units'] = 'days'
 
         # Main loop

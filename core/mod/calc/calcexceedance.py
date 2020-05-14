@@ -152,9 +152,9 @@ class CalcExceedance(Calc):
         data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments.
 
         input_description = self._data_helper.get_data_info(output_uids[0])['description']
-        output_description = {}
+        output_description = {'@title': input_description['@title']}
         if feature != 'total':
-            output_description['@title'] = feature.capitalize() + ' of ' + input_description['@title']
+            output_description['@title'] = feature.capitalize() + ' of ' + output_description['@title']
 
         for level in study_vertical_levels:
             all_segments_data = []

@@ -98,11 +98,11 @@ class CalcRxnday(Calc):
         vertical_levels = self._data_helper.get_levels(input_uids[DATA_UID])
 
         data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments.
-        
+
         # Set result units.
         input_description = self._data_helper.get_data_info(input_uids[0])['description']
         result_description = {'@units': input_description['@units']}
-        
+
         # Main loop
         for level in vertical_levels:
             all_segments_data = []

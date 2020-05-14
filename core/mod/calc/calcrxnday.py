@@ -121,7 +121,7 @@ class CalcRxnday(Calc):
                                           longitudes=data['@longitude_grid'],
                                           latitudes=data['@latitude_grid'],
                                           fill_value=data['@fill_value'],
-                                          meta=data['meta'])
+                                          meta=data['meta'], description=result_description)
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
@@ -139,7 +139,7 @@ class CalcRxnday(Calc):
 
                 self._data_helper.put(output_uids[0], values=data_out, level=level, segment=full_range_segment,
                                       longitudes=data['@longitude_grid'], latitudes=data['@latitude_grid'],
-                                      fill_value=data['@fill_value'], meta=data['meta'])
+                                      fill_value=data['@fill_value'], meta=data['meta'], description=result_description)
 
 
         self.logger.info('Finished!')

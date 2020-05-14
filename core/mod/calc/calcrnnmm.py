@@ -85,6 +85,12 @@ class CalcRnnmm(Calc):
 
         data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments.
 
+        # Set result units.
+        result_description = {}
+        result_description['@title'] = 'Count of days with precipitation ≥ {} mm'.format(threshold)
+        result_description['@name'] = 'Count of days with precipitation ≥ {} mm'.format(threshold)
+        result_description['@units'] = 'days'
+
         # Main loop
         for level in vertical_levels:
             all_segments_data = []
@@ -93,10 +99,6 @@ class CalcRnnmm(Calc):
                 data = self._data_helper.get(input_uids[DATA_UID], segments=segment, levels=level)
                 values = data['data'][level][segment['@name']]['@values']
                 time_grid = data['data'][level][segment['@name']]['@time_grid']
-                description = data['data']['description']
-                description['@title'] = 'Count of days with precipitation ≥ {} mm'.format(threshold)
-                description['@name'] = 'Count of days with precipitation ≥ {} mm'.format(threshold)
-                description['@units'] = 'days'
 
                 one_segment_data = self.calc_rnnmm(values, time_grid, threshold)
 
@@ -107,7 +109,7 @@ class CalcRnnmm(Calc):
                                           longitudes=data['@longitude_grid'],
                                           latitudes=data['@latitude_grid'],
                                           fill_value=data['@fill_value'],
-                                          description=description, meta=data['meta'])
+                                          description=result_description, meta=data['meta'])
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
@@ -126,7 +128,7 @@ class CalcRnnmm(Calc):
                 self._data_helper.put(output_uids[0], values=data_out, level=level, segment=full_range_segment,
                                       longitudes=data['@longitude_grid'], latitudes=data['@latitude_grid'],
                                       fill_value=data['@fill_value'], meta=data['meta'],
-                                      description=description)
+                                      description=result_description)
 
 
         self.logger.info('Finished!')

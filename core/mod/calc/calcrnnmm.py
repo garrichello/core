@@ -86,9 +86,8 @@ class CalcRnnmm(Calc):
         data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments.
 
         # Set result units.
-        result_description = {}
+        result_description = deepcopy(self._data_helper.get_data_info(input_uids[0])['description'])
         result_description['@title'] = 'Count of days with precipitation >= {} mm'.format(threshold)
-        result_description['@name'] = 'Count of days with precipitation >= {} mm'.format(threshold)
         result_description['@units'] = 'days'
 
         # Main loop

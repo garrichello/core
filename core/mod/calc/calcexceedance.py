@@ -191,7 +191,7 @@ class CalcExceedance(Calc):
                 if feature == 'total':
                     study_values.mask = ma.mask_or(study_values.mask, ~comparison_mask, shrink=False)
                     one_segment_data = ma.sum(study_values, axis=0)
-                    output_description = 'days'
+                    output_description['@units'] = 'days'
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

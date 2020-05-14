@@ -153,7 +153,8 @@ class CalcExceedance(Calc):
 
         input_description = self._data_helper.get_data_info(output_uids[0])['description']
         output_description = {}
-        output_description['@title'] = feature.capitalize() + ' of ' + input_description['@title']
+        if feature != 'total':
+            output_description['@title'] = feature.capitalize() + ' of ' + input_description['@title']
 
         for level in study_vertical_levels:
             all_segments_data = []
@@ -190,7 +191,7 @@ class CalcExceedance(Calc):
                 if feature == 'total':
                     study_values.mask = ma.mask_or(study_values.mask, ~comparison_mask, shrink=False)
                     one_segment_data = ma.sum(study_values, axis=0)
-                    output_description['@units'] = 'days'
+                    output_description = 'days'
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.

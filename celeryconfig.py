@@ -33,6 +33,8 @@ task_create_missing_queues = True
 task_queues = (
     Queue('workers_queue', Exchange('default'), routing_key='worker.abak.scert.ru'),
     Queue('starter_queue', Exchange('default'), routing_key='starter.abak.scert.ru'),
+    Queue('workers_queue_dev', Exchange('default'), routing_key='worker.abak.scert.ru'),
+    Queue('starter_queue_dev', Exchange('default'), routing_key='starter.abak.scert.ru'),
 )
 
 # Define routes
@@ -44,6 +46,16 @@ task_routes = {
     },
     'core.tasks.worker': {
         'queue': 'workers_queue',
+        'exchange': 'default',
+        'routing_key': 'worker.abak.scert.ru'
+    }
+    'core.tasks.starter': {
+        'queue': 'starter_queue_dev',
+        'exchange': 'default',
+        'routing_key': 'starter.abak.scert.ru'
+    },
+    'core.tasks.worker': {
+        'queue': 'workers_queue_dev',
         'exchange': 'default',
         'routing_key': 'worker.abak.scert.ru'
     }

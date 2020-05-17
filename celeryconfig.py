@@ -48,7 +48,7 @@ task_routes = {
         'queue': 'workers_queue',
         'exchange': 'default',
         'routing_key': 'worker.abak.scert.ru'
-    }
+    },
     'core.tasks.starter': {
         'queue': 'starter_queue_dev',
         'exchange': 'default',
@@ -58,7 +58,7 @@ task_routes = {
         'queue': 'workers_queue_dev',
         'exchange': 'default',
         'routing_key': 'worker.abak.scert.ru'
-    }
+    },
 }
 
 worker_redirect_stdouts_level = 'INFO'

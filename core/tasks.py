@@ -28,7 +28,7 @@ core_config = ConfigParser()
 core_config.read(os.path.join(str(os.path.dirname(__file__)), 'core_config.ini'))
 
 app = Celery('core')  # Instantiate Celery application (it runs tasks).
-app.config_from_object('celeryconfig')  # Celery config is in celeryconfig.py file.
+#app.config_from_object('celeryconfig_dev')  # Celery config is in celeryconfig.py file.
 
 logger = logging.getLogger()
 

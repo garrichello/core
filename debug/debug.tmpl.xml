@@ -11,6 +11,7 @@
     <computing system="calculator" type="LOCAL" ip="127.0.0.1"/>
 <!-- Data segment. Order is not important. -->
 
+<<<<<<< HEAD
     <data uid='Data_1' type='dataset'> <!-- type: dataset, array -->
     	<description title='ERA5 reanalysis' name='Precipitation' units='mm'/>
 	    <dataset name='ERA5' resolution='0.25x0.25' time_step='1d' scenario='-'/>  <!-- ERAINT -->
@@ -20,6 +21,22 @@
     		<point lon='120' lat='50'/>
 	        <point lon='120' lat='70'/>
 	        <point lon='60' lat='70'/>
+=======
+    <data uid="Data_1" type="dataset"> <!-- type: dataset, array -->
+<<<<<<< HEAD
+    	<description title="ERA 5 Reanalysis" name="Air temperature" units="K"/>
+=======
+    	<description title="ERA 5 Reanalysis" name="Temperature" units="K"/>
+>>>>>>> devel
+	    <dataset name="ERA5" resolution="0.25x0.25" time_step="1m" scenario="-"/>  <!-- ERAINT -->
+    	<variable name="meant2m" tempk2c="no"/> <!-- TMP, air, 2T, TAV, precip-->
+	    <region units="degrees">
+	    <!-- <point lon=[/LU_LON/] lat=[/LU_LAT/]/> -->
+            <point lon="-180" lat="90"/>
+            <point lon="180" lat="90"/>
+            <point lon="180" lat="-90"/>
+            <point lon="-180" lat="-90"/>
+>>>>>>> devel-raa
     	</region>
     	<levels values='sfc'/>
 	    <time uid='Input_1' template='YYYYMMDDHH'>
@@ -37,10 +54,29 @@
     	<variable name='sumtp_normals' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
     </data>
     
+<<<<<<< HEAD
     <data uid='Data_4' type='dataset' parent='Data_1' product='normals'> <!-- type: dataset, array -->
 		<dataset scenario='Climate normals 1981-2010'/>
     	<variable name='meant2m_normals' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
 	    <levels values='2m'/>
+=======
+    <data uid="Result_1" type="array">
+<<<<<<< HEAD
+    	<description title="Climate normals for 1981-2010, ECMWF ERA5" name="Average temperature climate normals" units="mm"/>
+=======
+    	<description title="Climate normals for 1981-2010, ECMWF ERA5" name="Monthly average temperature climate normals" units="K"/>
+	    <time uid="Output_1" template="YYYYMMDDHH"> <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
+	    	<segment name="Seg1" beginning="1981010100" ending="2010123123"/>
+        </time>
+    </data>
+
+    <data uid="Result_2" type="array">
+    	<description title="Climate standard deviation for 1981-2010, ECMWF ERA5" name="Monthly average temperature climate standard deviation" units="K"/>
+>>>>>>> devel
+	    <time uid="Output_1" template="YYYYMMDDHH"> <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
+	    	<segment name="Seg1" beginning="1981010100" ending="2010123123"/>
+        </time>
+>>>>>>> devel-raa
     </data>
 
     <destination uid='Image_1' type='image'> <!-- type: 'image', 'raw' -->
@@ -89,6 +125,7 @@
 
 <!-- Code segment. Order is IMPORTANT! -->
 
+<<<<<<< HEAD
     <processing uid='Process_1' class='CalcHTC' module_path=''>
     	<input uid='P1Input1' data='Data_1'/>
     	<input uid='P1Input2' data='Data_2'/>
@@ -96,6 +133,16 @@
     	<input uid='P1Input4' data='Data_4'/> 
     	<input uid='P1Parameter' data ='ModuleParameters_1'/>
     	<output uid='P1Output1' data='Result_1'/>
+=======
+    <processing uid="Process_1" class="CalcNormals" module_path="">
+    	<input uid="P1Input1" data="Data_1"/>
+      <input uid='P1Parameter' data ='ModuleParameters_1'/>
+    	<output uid="P1Output1" data="Result_1"/>
+<<<<<<< HEAD
+=======
+      <output uid="P1Output2" data="Result_2"/>
+>>>>>>> devel
+>>>>>>> devel-raa
     </processing>
 
     <processing uid='Visualization_1' class='cvcOutput'>
@@ -104,10 +151,23 @@
     </processing>
 
     <processing uid="Output_1" class="cvcOutput">
+<<<<<<< HEAD
 	    <input uid="O1Data1" data="Result_1"/>
         <output uid="O1Destination" data="File_1"/>
+=======
+      <input uid="O1Data1" data="Result_1"/>
+<<<<<<< HEAD
+      <output uid="O1Destination1" data="File_1"/>
+>>>>>>> devel-raa
     </processing>
 
 <!-- End of code segment -->
+=======
+      <input uid="O1Data2" data="Result_2"/>
+      <output uid="O1Destination1" data="File_1"/>
+    </processing>
+
+ <!-- End of code segment -->
+>>>>>>> devel
 
 </task>

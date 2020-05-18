@@ -13,7 +13,7 @@
 
     <data uid='Data_1' type='dataset'> <!-- type: dataset, array -->
     	<description title='ERA5 reanalysis' name='Precipitation' units='mm'/>
-	    <dataset name='ERA5' resolution='0.25x0.25' time_step='1d' scenario='-'/>  <!-- ERAINT -->
+	    <dataset name='ERA5' resolution='0.25x0.25' time_step='1m' scenario='-'/>  <!-- ERAINT -->
     	    <variable name='sumtp' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
 	    <region units='degrees'>
 	        <point lon='60' lat='50'/> 
@@ -40,6 +40,17 @@
     <data uid='Data_4' type='dataset' parent='Data_1' product='normals'> <!-- type: dataset, array -->
 		<dataset scenario='Climate normals 1981-2010'/>
     	<variable name='meant2m_normals' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
+	    <levels values='2m'/>
+    </data>
+
+	<data uid='Data_5' type='dataset' parent='Data_1' product='normals'> <!-- type: dataset, array -->
+		<dataset scenario='Climate normals 1981-2010'/>
+    	<variable name='sumtp_std' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
+    </data>
+
+	<data uid='Data_6' type='dataset' parent='Data_1' product='normals'> <!-- type: dataset, array -->
+		<dataset scenario='Climate normals 1981-2010'/>
+    	<variable name='meant2m_std' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
 	    <levels values='2m'/>
     </data>
 
@@ -93,7 +104,9 @@
     	<input uid='P1Input1' data='Data_1'/>
     	<input uid='P1Input2' data='Data_2'/>
 		<input uid='P1Input3' data='Data_3'/>
-    	<input uid='P1Input4' data='Data_4'/> 
+    	<input uid='P1Input4' data='Data_4'/>
+		<input uid='P1Input5' data='Data_5'/>
+    	<input uid='P1Input6' data='Data_6'/>
     	<input uid='P1Parameter' data ='ModuleParameters_1'/>
     	<output uid='P1Output1' data='Result_1'/>
     </processing>

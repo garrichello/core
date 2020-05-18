@@ -21,8 +21,8 @@
         input_uids[1] -- monthly total precipitation values
         input_uids[2] -- monthly temperature climate normals
         input_uids[3] -- monthly total precipitation climate normals
-        input_uids[4] -- monthly temperature standard deviation
-        input_uids[5] -- monthly total precipitation standard deviation
+        input_uids[4] -- monthly temperature standard deviations
+        input_uids[5] -- monthly total precipitation standard deviations
         input_uids[6] -- module parameters:
             Mode -- string, allowed values:
                 'segment' -- for each segment
@@ -43,16 +43,18 @@ from core.base.dataaccess import DataAccess
 from core.base.common import kelvin_to_celsius
 from core.mod.calc.calc import Calc
 
-MAX_N_INPUT_ARGUMENTS = 5
-INPUT_PARAMETERS_INDEX = 4
+MAX_N_INPUT_ARGUMENTS = 7
+INPUT_PARAMETERS_INDEX = 6
 PRCP_DATA_UID = 0
 TEMP_DATA_UID = 1
 PRCP_DATA_NORMALS_UID = 2
 TEMP_DATA_NORMALS_UID = 3
+PRCP_DATA_STD_UID = 4
+TEMP_DATA_STD_UID = 5
 DEFAULT_VALUES = {'HTC': 'Selyaninov', 'Mode': 'data', 'Threshold': 10}
 
 class CalcHTC(Calc):
-    """ Provides calculation of a spatial field of the Selyaninov's hydrothermal coefficient values for time series of data.
+    """ Provides calculation of a spatial field of the Selyaninov's hydrothermal coefficient values or Ped's index values for time series of data.
 
     """
 
@@ -188,13 +190,17 @@ class CalcHTC(Calc):
 
         return result
 
-    def _calc_ped(self, prcp_values, temp_values, prcp_normals, temp_normals):
+    def _calc_ped(self, prcp_values, temp_values, prcp_normals, temp_normals, prcp_std, temp_std):
         """ Calculates Ped's index.
         Arguments:
-            prcp_values -- daily total precipitation values
-            temp_values -- daily mean temperature values
-            prcp_normals -- daily total precipitation normals
-            temp_normals -- daily mean temperature normals
+            prcp_values -- monthly total precipitation values
+            temp_values -- monthly mean temperature values
+
+            prcp_normals -- monthly total precipitation normals
+            temp_normals -- monthly mean temperature normals
+
+            prcp_std -- monthly total precipitation standard deviation
+            temp_std -- monthly mean temperature standard deviation
         Returns:
             result -- array of Ped's index values
         """  
@@ -264,17 +270,27 @@ class CalcHTC(Calc):
 
                 # if calc_htc == 'Ped' read data for normals
                 if calc_htc == 'Ped':
+                    # Read monthly precipitation and temperature normals
                     prcp_normals_data = self._data_helper.get(input_uids[PRCP_DATA_NORMALS_UID], segments=segment, levels=prcp_normals_level)
                     prcp_normals = prcp_normals_data['data'][prcp_normals_level][segment['@name']]['@values']
                     temp_normals_data = self._data_helper.get(input_uids[TEMP_DATA_NORMALS_UID], segments=segment, levels=temp_normals_level)
                     temp_normals = temp_normals_data['data'][temp_normals_level][segment['@name']]['@values']
+                    
+                    # Read monthly precipitation and temperature standard deviation
+                    prcp_std_data = self._data_helper.get(input_uids[PRCP_DATA_STD_UID], segments=segment, levels=prcp_normals_level)
+                    prcp_std = prcp_std_data['data'][prcp_normals_level][segment['@name']]['@values']
+                    temp_std_data = self._data_helper.get(input_uids[TEMP_DATA_STD_UID], segments=segment, levels=temp_normals_level)
+                    temp_std = temp_std_data['data'][temp_normals_level][segment['@name']]['@values']
 
                     # Convert degK to degC if needed
                     if temp_normals_data['data']['description']['@units'] == 'K':
                         temp_normals = kelvin_to_celsius(temp_normals)
                     
+                    if temp_std_data['data']['description']['@units'] == 'K':
+                        temp_std = kelvin_to_celsius(temp_std)
+                    
                     # Perform calculation for the current time segment.
-                    one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals)
+                    one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals, prcp_std, temp_std)
                 else:
                     # Perform calculation for the current time segment.
                     one_segment_values = self._calc_htc(prcp_values, temp_values, threshold)

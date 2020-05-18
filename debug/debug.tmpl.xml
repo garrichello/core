@@ -12,7 +12,11 @@
 <!-- Data segment. Order is not important. -->
 
     <data uid="Data_1" type="dataset"> <!-- type: dataset, array -->
+<<<<<<< HEAD
     	<description title="ERA 5 Reanalysis" name="Air temperature" units="K"/>
+=======
+    	<description title="ERA 5 Reanalysis" name="Temperature" units="K"/>
+>>>>>>> devel
 	    <dataset name="ERA5" resolution="0.25x0.25" time_step="1m" scenario="-"/>  <!-- ERAINT -->
     	<variable name="meant2m" tempk2c="no"/> <!-- TMP, air, 2T, TAV, precip-->
 	    <region units="degrees">
@@ -33,7 +37,18 @@
     </destination>
     
     <data uid="Result_1" type="array">
+<<<<<<< HEAD
     	<description title="Climate normals for 1981-2010, ECMWF ERA5" name="Average temperature climate normals" units="mm"/>
+=======
+    	<description title="Climate normals for 1981-2010, ECMWF ERA5" name="Monthly average temperature climate normals" units="K"/>
+	    <time uid="Output_1" template="YYYYMMDDHH"> <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
+	    	<segment name="Seg1" beginning="1981010100" ending="2010123123"/>
+        </time>
+    </data>
+
+    <data uid="Result_2" type="array">
+    	<description title="Climate standard deviation for 1981-2010, ECMWF ERA5" name="Monthly average temperature climate standard deviation" units="K"/>
+>>>>>>> devel
 	    <time uid="Output_1" template="YYYYMMDDHH"> <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
 	    	<segment name="Seg1" beginning="1981010100" ending="2010123123"/>
         </time>
@@ -51,13 +66,25 @@
     	<input uid="P1Input1" data="Data_1"/>
       <input uid='P1Parameter' data ='ModuleParameters_1'/>
     	<output uid="P1Output1" data="Result_1"/>
+<<<<<<< HEAD
+=======
+      <output uid="P1Output2" data="Result_2"/>
+>>>>>>> devel
     </processing>
     
     <processing uid="Output_1" class="cvcOutput">
       <input uid="O1Data1" data="Result_1"/>
+<<<<<<< HEAD
       <output uid="O1Destination1" data="File_1"/>
     </processing>
             
 <!-- End of code segment -->
+=======
+      <input uid="O1Data2" data="Result_2"/>
+      <output uid="O1Destination1" data="File_1"/>
+    </processing>
+
+ <!-- End of code segment -->
+>>>>>>> devel
 
 </task>

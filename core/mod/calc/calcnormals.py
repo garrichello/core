@@ -1,18 +1,23 @@
-"""Class CalcNormals provides methods for calculation of climate normals for the 30-year Base period.
+"""Class CalcNormals provides methods for calculation of climate normals and standard deviations for the 30-year Base period.
 """
 
 import datetime
 import numpy as np
+from copy import deepcopy
 
 from core.base.dataaccess import DataAccess
 from core.mod.calc.calc import Calc
 
 MAX_N_INPUT_ARGUMENTS = 2
 INPUT_PARAMETERS_INDEX = 1
+<<<<<<< HEAD
 DEFAULT_VALUES = {'Mode': 'data'}
+=======
+DEFAULT_VALUES = {'Mode': 'day'}
+>>>>>>> devel
 
 class CalcNormals(Calc):
-    """ Performs calculation of climate normals of values.
+    """ Performs calculation of climate normals and standard deviations of values.
 
     """
 
@@ -21,11 +26,16 @@ class CalcNormals(Calc):
         self._data_helper = data_helper
 
     def _calc_normals(self, uid, level, calc_mode):
+<<<<<<< HEAD
         """ Calculates climate normals at given vertical levels for a given time period.
+=======
+        """ Calculates climate normals and standard deviations at given vertical levels for a given time period.
+>>>>>>> devel
         Arguments:
             uid -- UID of input dataset.
         Returns:
             normals -- [time, lat, lon] masked array of climate normals.
+            standard_deviations -- [time, lat, lon] masked array of climate standard deviations.
         """
 
         # Get time segments and levels and data info.
@@ -37,7 +47,14 @@ class CalcNormals(Calc):
         years = [start_date.year + i for i in range(end_date.year - start_date.year + 1)]
         
         normals = {}
+<<<<<<< HEAD
         all_segments_data = []
+=======
+        all_segments_data_normals = []
+
+        standard_deviation = {}
+        all_segments_data_stds = []
+>>>>>>> devel
 
         if calc_mode == 'day':
             segment_start = datetime.datetime(1, start_date.month, start_date.day, start_date.hour)
@@ -63,9 +80,18 @@ class CalcNormals(Calc):
                     one_day['@name'] = 'Year {}'.format(year)
                     segments.append(one_day)
                 result = self._data_helper.get(uid, segments=segments, levels=level)
+<<<<<<< HEAD
                 data = np.ma.stack(
                     [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
                 all_segments_data.append(np.ma.mean(data, axis=0))
+=======
+                # Calculate daily normals
+                data = np.ma.stack(
+                    [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
+                all_segments_data_normals.append(np.ma.mean(data, axis=0))
+                # Calculate daily standard deviations
+                all_segments_data_stds.append(np.ma.std(data, axis=0))
+>>>>>>> devel
         
         elif calc_mode == 'month':
             months = [start_date.month + i for i in range(end_date.month - start_date.month + 1)] # Months of the segment.
@@ -82,30 +108,54 @@ class CalcNormals(Calc):
                     one_month['@name'] = 'Year {}'.format(year)
                     segments.append(one_month)
                 result = self._data_helper.get(uid, segments=segments, levels=level)
+<<<<<<< HEAD
                 data = np.ma.stack(
                     [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
                 all_segments_data.append(np.ma.mean(data, axis=0))
+=======
+                # Calculate monthly normals
+                data = np.ma.stack(
+                    [result['data'][level]['Year {}'.format(year)]['@values'] for year in years])
+                all_segments_data_normals.append(np.ma.mean(data, axis=0))
+                # Calculate monthly standard deviations
+                all_segments_data_stds.append(np.ma.std(data, axis=0))
+>>>>>>> devel
         else:
             self.logger.error('Error! Unknown calculation mode value: \'%s\'', calc_mode)
             raise ValueError 
 
+<<<<<<< HEAD
         normals_data = np.stack(all_segments_data)  # Stack to array.
+=======
+        normals_data = np.stack(all_segments_data_normals)  # Stack to array.
+        standard_deviation_data = np.stack(all_segments_data_stds)
+>>>>>>> devel
         mask_0 = result['data'][level]['Year {}'.format(years[0])]['@values'].mask  # lon-lat mask.
         mask_shape = [1] * (mask_0.ndim + 1)  # New shape of the mask.
         mask_shape[0] = len(segments_grid)  # Set it to be (n_days, 1, 1) or (n_days, 1).
         mask = np.tile(mask_0, mask_shape)  # Generate a mask to conform data dimensions.
         normals['data'] = np.ma.MaskedArray(normals_data, mask=mask, fill_value=result['@fill_value'])
+        standard_deviation['data'] = np.ma.MaskedArray(standard_deviation_data, mask=mask, fill_value=result['@fill_value'])
 
         normals['@base_period'] = time_segment
+<<<<<<< HEAD
         normals['@day_grid'] = segments_grid
+=======
+        normals['@time_grid'] = segments_grid
+>>>>>>> devel
         normals['@longitude_grid'] = result['@longitude_grid']
         normals['@latitude_grid'] = result['@latitude_grid']
         normals['@fill_value'] = result['@fill_value']
-        normals['meta'] = result['meta']
+        
+        normals['meta'] = deepcopy(result['meta'])
         normals['meta']['varname'] = data_info['variable']['@name'] + '_normals'
-        normals['meta']['time_long_name'] = 'Calendar day of the year'
+        normals['meta']['time_long_name'] = 'Calendar '+ calc_mode + ' of the year'
 
-        return normals
+        standard_deviation['meta'] = deepcopy(result['meta'])
+        standard_deviation['meta']['varname'] = data_info['variable']['@name'] + '_std'
+        standard_deviation['meta']['time_long_name'] = 'Calendar '+ calc_mode + ' of the year'
+
+        return normals, standard_deviation
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
@@ -130,12 +180,24 @@ class CalcNormals(Calc):
         output_uids = self._data_helper.output_uids()
         assert output_uids, 'Error! No output arguments!'
 
+<<<<<<< HEAD
         # Calculate normals
         normals = self._calc_normals(input_uids[0], level, calc_mode)
+=======
+        # Calculate normals and standard_deviation
+        normals, standard_deviation = self._calc_normals(input_uids[0], level, calc_mode)
+        
+>>>>>>> devel
         self._data_helper.put(output_uids[0], values=normals['data'],
                               segment=normals['@base_period'], level=level,
                               longitudes=normals['@longitude_grid'], latitudes=normals['@latitude_grid'],
-                              times=normals['@day_grid'], fill_value=normals['@fill_value'],
+                              times=normals['@time_grid'], fill_value=normals['@fill_value'],
                               meta=normals['meta'])
+
+        self._data_helper.put(output_uids[1], values=standard_deviation['data'],
+                              segment=normals['@base_period'], level=level,
+                              longitudes=normals['@longitude_grid'], latitudes=normals['@latitude_grid'],
+                              times=normals['@time_grid'], fill_value=normals['@fill_value'],
+                              meta=standard_deviation['meta'])
 
         self.logger.info('Finished!')

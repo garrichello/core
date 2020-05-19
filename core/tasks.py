@@ -30,33 +30,23 @@ core_config.read(os.path.join(str(os.path.dirname(__file__)), 'core_config.ini')
 app = Celery('core')  # Instantiate Celery application (it runs tasks).
 #app.config_from_object('celeryconfig_dev')  # Celery config is in celeryconfig.py file.
 
-logger = logging.getLogger()
-
-def write_xml_task(task, task_id, pos=0):
-    global_tmp_dir = core_config['RPC']['tmp_dir']
-
-    # Write prepared XML-task to a temporary directory.
-    xml_file_name = os.path.join(global_tmp_dir, '{}_task_{}.xml'.format(task_id, pos))
-    with open(xml_file_name, 'w') as xml_file:
-        xmltodict.unparse(task, xml_file, pretty=True)
+main_logger = logging.getLogger()
 
 @after_setup_logger.connect
-def setup_loggers(*args, **kwargs):
+def setup_loggers(logger, *args, **kwargs):
     """ Setup custom logging """
     file_log_format = '[%(asctime)s] - %(task_id)s - %(levelname)-8s (%(module)s::%(funcName)s) %(message)s'
     formatter = TaskFormatter(file_log_format, use_color=False)
 
-    error_log_file = os.path.join(core_config['RPC']['log_dir'], 'errors.log')
-#    print('ERROR LOG: ', error_log_file)
-    err_file_handler = logging.handlers.RotatingFileHandler(
-        error_log_file, maxBytes=1048576, backupCount=5, encoding='utf8', delay=1)
-    err_file_handler.setFormatter(formatter)
-    err_file_handler.setLevel(logging.ERROR)
-    logger.addHandler(err_file_handler)
+    if core_config['BASIC']['enable_core_log'] == 'yes':
+        error_log_file = os.path.join(core_config['BASIC']['log_dir'], 'errors.log')
+        err_file_handler = logging.handlers.RotatingFileHandler(
+            error_log_file, maxBytes=1048576, backupCount=5, encoding='utf8', delay=1)
+        err_file_handler.setFormatter(formatter)
+        err_file_handler.setLevel(logging.ERROR)
+        logger.addHandler(err_file_handler)
 
-    if core_config['RPC']['enable_core_log'] == 'yes':
-        core_log_file = os.path.join(core_config['RPC']['log_dir'], 'core.log')
-#        print('CORE LOG: ', core_log_file)
+        core_log_file = os.path.join(core_config['BASIC']['log_dir'], 'core.log')
         core_file_handler = logging.handlers.RotatingFileHandler(
             core_log_file, maxBytes=10485760, backupCount=5, encoding='utf8', delay=0)
         core_file_handler.setFormatter(formatter)
@@ -64,6 +54,8 @@ def setup_loggers(*args, **kwargs):
         logger.addHandler(core_file_handler)
     trace_logger = logging.getLogger('celery.app.trace')
     trace_logger.propagate = True
+    for handler in logger.handlers:
+        handler.setFormatter(formatter)
 
 @app.task(bind=True)
 def worker(self, result_files_list, task):
@@ -78,7 +70,7 @@ def worker(self, result_files_list, task):
         result_zip -- base64-encoded byte-array object representing a zip-archive with processing results
     """
 
-    logger.info('%s v.%s', core.__prog__, core.__version__)
+    main_logger.info('%s v.%s', core.__prog__, core.__version__)
 
     # Instantiate the Core!
     application = core.MainApp()
@@ -95,11 +87,11 @@ def worker(self, result_files_list, task):
 
     # Run the task processing by the Core!
     # Result is a zip-file as bytes.
-    logger.info('Starting task %s.', self.request.id)
+    main_logger.info('Starting task %s.', self.request.id)
 
     result_zip = application.run_task(task, self.request.id)
 
-    logger.info('Task %s is finished.', self.request.id)
+    main_logger.info('Task %s is finished.', self.request.id)
 
     return base64.b64encode(result_zip).decode('utf-8')
 
@@ -118,8 +110,6 @@ def starter(self, json_task):
 
     # Generate XML tasks from the JSON task.
     xml_tasks = task_generator(json_task, self.request.id, core_config['METADB'])
-    #for i, xml_task in enumerate(xml_tasks):
-    #    write_xml_task(xml_task, self.request.id, i)
 
     # Run the task processing by the Core! Using another task. A task in a task. :)
     # Result is a zip-file as bytes base64-encoded.
@@ -134,7 +124,7 @@ def starter(self, json_task):
         job = (group(subtasks) | worker.s(xml_tasks[-1]).set(routing_key='worker.abak.scert.ru'))
         result = job()
 
-    logger.info('Task %s is finished.', self.request.id)
+    main_logger.info('Task %s is finished.', self.request.id)
 
     pretty_xml_tasks = [xmltodict.unparse(xml_task, pretty=True) for xml_task in xml_tasks]
 

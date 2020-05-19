@@ -204,8 +204,11 @@ class CalcHTC(Calc):
         Returns:
             result -- array of Ped's index values
         """  
+        prcp_delta = prcp_values - prcp_normals
+        temp_delta = temp_values - temp_normals
 
-        return prcp_values    
+        result = temp_delta / temp_std - prcp_delta / prcp_std
+        return result    
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
@@ -268,7 +271,7 @@ class CalcHTC(Calc):
                 if temp_data['data']['description']['@units'] == 'K':
                     temp_values = kelvin_to_celsius(temp_values)
 
-                # if calc_htc == 'Ped' read data for normals
+                # if calc_htc == 'Ped' read data for normals and standard deviation
                 if calc_htc == 'Ped':
                     # Read monthly precipitation and temperature normals
                     prcp_normals_data = self._data_helper.get(input_uids[PRCP_DATA_NORMALS_UID], segments=segment, levels=prcp_normals_level)
@@ -286,8 +289,8 @@ class CalcHTC(Calc):
                     if temp_normals_data['data']['description']['@units'] == 'K':
                         temp_normals = kelvin_to_celsius(temp_normals)
                     
-                    if temp_std_data['data']['description']['@units'] == 'K':
-                        temp_std = kelvin_to_celsius(temp_std)
+                    #if temp_std_data['data']['description']['@units'] == 'K':
+                        #temp_std = kelvin_to_celsius(temp_std)
                     
                     # Perform calculation for the current time segment.
                     one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals, prcp_std, temp_std)

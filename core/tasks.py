@@ -128,6 +128,8 @@ def starter(self, json_task):
 
     pretty_xml_tasks = [xmltodict.unparse(xml_task, pretty=True) for xml_task in xml_tasks]
 
+    main_logger.info('Child task UUID: %s', result.id)
+
     try:
         result_zip = result.get(disable_sync_subtasks=False, timeout=task_timeout)
     except Exception as ex:

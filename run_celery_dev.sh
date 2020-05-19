@@ -1,2 +1,2 @@
-virtualenv/bin/celery worker --loglevel=INFO -E -n debugworker1@%h --config celeryconfig_dev
+virtualenv/bin/celery worker --logfile=logs/%n%I.log --loglevel=INFO -E -n debugworker@%h -c 2 --config celeryconfig_dev
 

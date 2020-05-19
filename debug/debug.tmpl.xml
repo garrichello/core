@@ -34,7 +34,7 @@
 
     <data uid='Data_3' type='dataset' parent='Data_1' product='normals'> <!-- type: dataset, array -->
     	<dataset scenario='Climate normals 1981-2010'/>  <!-- ERAINT -->
-    	<variable name='sumtp_normals' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
+    	<variable name='sumtp' tempk2c='no'/> <!-- TMP, air, 2T, TAV, precip-->
     </data>
     
     <data uid='Data_4' type='dataset' parent='Data_1' product='normals'> <!-- type: dataset, array -->

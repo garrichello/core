@@ -76,7 +76,7 @@ def worker(self, result_files_list, task):
     application = core.MainApp()
 
     if result_files_list is not None:
-        global_tmp_dir = core_config['RPC']['tmp_dir']
+        global_tmp_dir = core_config['BASIC']['tmp_dir']
         task_dir = os.path.join(global_tmp_dir, str(self.request.id))
         os.makedirs(task_dir, exist_ok=True)
         for result_zip_enc in result_files_list:

@@ -246,9 +246,9 @@ class CalcHTC(Calc):
         # For calc_htc == 'Ped' we calculate Ped index.
         # if calc_htc == 'Ped' read (create) time segments and levels for normals
         if calc_htc == 'Ped':
-            prcp_normals_level = self._data_helper.get_levels(input_uids[PRCP_DATA_NORMALS_UID])[0]  # There should be only one level - normals?.
-            temp_normals_level = self._data_helper.get_levels(input_uids[TEMP_DATA_NORMALS_UID])[0]
-            assert len(prcp_normals_level) == len(temp_normals_level), \
+            prcp_normals_levels = self._data_helper.get_levels(input_uids[PRCP_DATA_NORMALS_UID])  # There should be only one level - normals?.
+            temp_normals_levels = self._data_helper.get_levels(input_uids[TEMP_DATA_NORMALS_UID])
+            assert len(prcp_normals_levels) == len(temp_normals_levels), \
                 'Error! Number of vertical levels are not the same!'
             # Normals time segments should be set for year 1 (as set in a normals file)
             normals_time_segments = deepcopy(time_segments) 
@@ -274,16 +274,16 @@ class CalcHTC(Calc):
                 # if calc_htc == 'Ped' read data for normals and standard deviation
                 if calc_htc == 'Ped':
                     # Read monthly precipitation and temperature normals
-                    prcp_normals_data = self._data_helper.get(input_uids[PRCP_DATA_NORMALS_UID], segments=segment, levels=prcp_normals_level)
-                    prcp_normals = prcp_normals_data['data'][prcp_normals_level][segment['@name']]['@values']
-                    temp_normals_data = self._data_helper.get(input_uids[TEMP_DATA_NORMALS_UID], segments=segment, levels=temp_normals_level)
-                    temp_normals = temp_normals_data['data'][temp_normals_level][segment['@name']]['@values']
+                    prcp_normals_data = self._data_helper.get(input_uids[PRCP_DATA_NORMALS_UID], segments=segment, levels=prcp_normals_levels)
+                    prcp_normals = prcp_normals_data['data'][prcp_normals_levels][segment['@name']]['@values']
+                    temp_normals_data = self._data_helper.get(input_uids[TEMP_DATA_NORMALS_UID], segments=segment, levels=temp_normals_levels)
+                    temp_normals = temp_normals_data['data'][temp_normals_levels][segment['@name']]['@values']
                     
                     # Read monthly precipitation and temperature standard deviation
-                    prcp_std_data = self._data_helper.get(input_uids[PRCP_DATA_STD_UID], segments=segment, levels=prcp_normals_level)
-                    prcp_std = prcp_std_data['data'][prcp_normals_level][segment['@name']]['@values']
-                    temp_std_data = self._data_helper.get(input_uids[TEMP_DATA_STD_UID], segments=segment, levels=temp_normals_level)
-                    temp_std = temp_std_data['data'][temp_normals_level][segment['@name']]['@values']
+                    prcp_std_data = self._data_helper.get(input_uids[PRCP_DATA_STD_UID], segments=segment, levels=prcp_normals_levels)
+                    prcp_std = prcp_std_data['data'][prcp_normals_levels][segment['@name']]['@values']
+                    temp_std_data = self._data_helper.get(input_uids[TEMP_DATA_STD_UID], segments=segment, levels=temp_normals_levels)
+                    temp_std = temp_std_data['data'][temp_normals_levels][segment['@name']]['@values']
 
                     # Convert degK to degC if needed
                     if temp_normals_data['data']['description']['@units'] == 'K':

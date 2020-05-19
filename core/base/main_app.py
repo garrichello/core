@@ -86,7 +86,7 @@ class MainApp:
 
         # Make task dir
         original_cwd_dir = os.getcwd()  # Store current directory.
-        tmp_dir = self.config['RPC']['tmp_dir']
+        tmp_dir = self.config['BASIC']['tmp_dir']
         task_dir = os.path.join(tmp_dir, str(task_id))
         os.makedirs(task_dir, exist_ok=True)
         os.chdir(task_dir)  # Move to the task directory!
@@ -109,7 +109,7 @@ class MainApp:
             zip_buffer = zip_results()
 
         except:
-            log_dir = self.config['RPC']['log_dir']
+            log_dir = self.config['BASIC']['log_dir']
             err_task_file = os.path.join(original_cwd_dir, log_dir,
                                          'error_task_'+str(task_id)+'.xml')
             with open(err_task_file, 'w') as out_file:

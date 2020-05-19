@@ -95,6 +95,8 @@ def worker(self, result_files_list, task):
 
     # Run the task processing by the Core!
     # Result is a zip-file as bytes.
+    logger.info('Starting task %s.', self.request.id)
+
     result_zip = application.run_task(task, self.request.id)
 
     logger.info('Task %s is finished.', self.request.id)

@@ -14,7 +14,7 @@
     <data uid="Data_1" type="dataset"> <!-- type: dataset, array -->
     	<description title="ERA 5 Reanalysis" name="Air temperature" units="K"/>
 	    <dataset name="ERA5" resolution="0.25x0.25" time_step="1m" scenario="-"/>  <!-- ERAINT -->
-    	<variable name="t2m" tempk2c="no"/> <!-- TMP, air, 2T, TAV, precip-->
+    	<variable name="meant2m" tempk2c="no"/> <!-- TMP, air, 2T, TAV, precip-->
 	    <region units="degrees">
 	    <!-- <point lon=[/LU_LON/] lat=[/LU_LAT/]/> -->
             <point lon="-180" lat="90"/>

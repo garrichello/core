@@ -193,6 +193,7 @@ class DataAccess():
         parameter_tbl = meta.tables['parameter']
         parameter_i18n_tbl = meta.tables['parameter_i18n']
         specific_parameter_tbl = meta.tables['specific_parameter']
+        accumulation_mode_tbl = meta.tables['accumulation_mode']
 
         # Values for SQL-conditions
         dataset_name = argument['data']['dataset']['@name']
@@ -257,7 +258,7 @@ class DataAccess():
                             collection_i18n_tbl.columns['name'].label('collection_name'),
                             parameter_i18n_tbl.columns['name'].label('parameter_name'),
                             units_i18n_tbl.columns['name'].label('units_name'),
-                            parameter_tbl.columns['accumulation_mode'].label('acc_mode'),
+                            accumulation_mode_tbl.columns['name'].label('acc_mode'),
                             data_tbl.columns['scale'],
                             data_tbl.columns['offset'],
                             root_dir_tbl.columns['name'].label('root_dir'),
@@ -287,6 +288,7 @@ class DataAccess():
         qry = qry.join(collection_i18n_tbl)
         qry = qry.join(parameter_i18n_tbl)
         qry = qry.join(units_i18n_tbl)
+        qry = qry.join(accumulation_mode_tbl)
         qry = qry.filter(collection_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
         qry = qry.filter(parameter_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
         qry = qry.filter(units_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)

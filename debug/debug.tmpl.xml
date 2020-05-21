@@ -100,7 +100,7 @@
 
     <data uid='ModuleParameters_1' type='parameter'>
 		<param uid='HTC' type='string'>Ped</param> <!-- Ped, Selyaninov -->
-    	<param uid='Mode' type='string'>segment</param> <!-- data, day, segment, mean -->
+    	<param uid='Mode' type='string'>data</param> <!-- data, day, segment, mean -->
     	<param uid='Threshold' type='integer'>0</param> <!-- for instance, 5, 10, 25, 95 -->
     </data>
 

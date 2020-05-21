@@ -90,6 +90,10 @@
     	<description title='Ped index' name='S' units='-'/>
     </data>
 
+	<data uid='Result_2' type='array'>
+    	<description title='Mean Ped index' name='S' units='-'/>
+    </data>
+
     <data uid='ModuleParameters_1' type='parameter'>
 		<param uid='HTC' type='string'>Ped</param> <!-- Ped, Selyaninov -->
     	<param uid='Mode' type='string'>segment</param> <!-- data, day, segment, mean -->

@@ -281,9 +281,9 @@ class CalcHTC(Calc):
                     
                     # Read monthly precipitation and temperature standard deviation
                     prcp_std_data = self._data_helper.get(input_uids[PRCP_DATA_STD_UID], segments=normals_segment, levels=prcp_normals_level)
-                    prcp_std = prcp_std_data['data'][prcp_normals_levels][normals_segment['@name']]['@values']
+                    prcp_std = prcp_std_data['data'][prcp_normals_level][normals_segment['@name']]['@values']
                     temp_std_data = self._data_helper.get(input_uids[TEMP_DATA_STD_UID], segments=normals_segment, levels=temp_normals_level)
-                    temp_std = temp_std_data['data'][temp_normals_levels][normals_segment['@name']]['@values']
+                    temp_std = temp_std_data['data'][temp_normals_level][normals_segment['@name']]['@values']
 
                     # Convert degK to degC if needed
                     if temp_normals_data['data']['description']['@units'] == 'K':

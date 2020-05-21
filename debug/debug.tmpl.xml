@@ -92,8 +92,12 @@
 
     <data uid='ModuleParameters_1' type='parameter'>
 		<param uid='HTC' type='string'>Ped</param> <!-- Ped, Selyaninov -->
-    	<param uid='Mode' type='string'>data</param> <!-- data, day, segment, mean -->
+    	<param uid='Mode' type='string'>segment</param> <!-- data, day, segment, mean -->
     	<param uid='Threshold' type='integer'>0</param> <!-- for instance, 5, 10, 25, 95 -->
+    </data>
+
+	 <data uid="ModuleParameters_2" type="parameter">
+    	<param uid="timeMean" type="string">data</param> <!-- data, day, segment -->
     </data>
     
 <!-- End of data segment -->
@@ -111,13 +115,19 @@
     	<output uid='P1Output1' data='Result_1'/>
     </processing>
 
+	<processing uid="Process_2" class="cvcCalcTiMean" module_path="">
+    	<input uid="P1Input1" data="Result_1"/>
+    	<input uid="P1Parameter1" data="ModuleParameters_2"/>
+    	<output uid="P1Output1" data="Result_2"/>
+    </processing>
+
     <processing uid='Visualization_1' class='cvcOutput'>
-	    <input uid='V1Input1' data='Result_1'/>
+	    <input uid='V1Input1' data='Result_2'/>
 	    <output uid='V1Destination' data='Image_1'/>
     </processing>
 
     <processing uid="Output_1" class="cvcOutput">
-	    <input uid="O1Data1" data="Result_1"/>
+	    <input uid="O1Data1" data="Result_2"/>
         <output uid="O1Destination" data="File_1"/>
     </processing>
 

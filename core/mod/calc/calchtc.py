@@ -288,10 +288,7 @@ class CalcHTC(Calc):
                     # Convert degK to degC if needed
                     if temp_normals_data['data']['description']['@units'] == 'K':
                         temp_normals = kelvin_to_celsius(temp_normals)
-                    
-                    if temp_std_data['data']['description']['@units'] == 'K':
-                        temp_std = kelvin_to_celsius(temp_std)
-                    
+                                    
                     # Perform calculation for the current time segment.
                     one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals, prcp_std, temp_std)
                 else:

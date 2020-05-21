@@ -88,6 +88,10 @@
 
     <data uid='Result_1' type='array'>
     	<description title='Ped index' name='S' units='-'/>
+		<time uid="Output_1" template="YYYYMMDDHH">
+	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
+			<segment name='Seg1' beginning='1980010100' ending='1980123123'/>
+		</time>
     </data>
 
 	<data uid='Result_2' type='array'>

@@ -43,8 +43,8 @@ from core.base.dataaccess import DataAccess
 from core.base.common import kelvin_to_celsius
 from core.mod.calc.calc import Calc
 
-MAX_N_INPUT_ARGUMENTS = 7
-INPUT_PARAMETERS_INDEX = 6
+#MAX_N_INPUT_ARGUMENTS = 7
+#INPUT_PARAMETERS_INDEX = 6 
 PRCP_DATA_UID = 0
 TEMP_DATA_UID = 1
 PRCP_DATA_NORMALS_UID = 2
@@ -194,13 +194,13 @@ class CalcHTC(Calc):
         """ Calculates Ped's index.
         Arguments:
             prcp_values -- monthly total precipitation values
-            temp_values -- monthly mean temperature values
+            temp_values -- monthly mean air temperature values
 
-            prcp_normals -- monthly total precipitation normals
-            temp_normals -- monthly mean temperature normals
+            prcp_normals -- climate normal of monthly total precipitation
+            temp_normals -- climate normal of monthly mean air temperature
 
-            prcp_std -- monthly total precipitation standard deviation
-            temp_std -- monthly mean temperature standard deviation
+            prcp_std -- standard deviation of monthly total precipitation from climate normal
+            temp_std -- standard deviation of monthly mean air temperature from climate normal
         Returns:
             result -- array of Ped's index values
         """  
@@ -221,8 +221,8 @@ class CalcHTC(Calc):
 
         # Get parameters
         parameters = None
-        if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
-            parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
+        #if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
+        parameters = self._data_helper.get(input_uids[-1])
         calc_htc = self._get_parameter('HTC', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
         threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)

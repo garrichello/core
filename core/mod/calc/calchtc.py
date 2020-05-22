@@ -260,10 +260,13 @@ class CalcHTC(Calc):
      
         for prcp_level, temp_level, prcp_normals_level, temp_normals_level in zip(prcp_levels, temp_levels, prcp_normals_levels, temp_normals_levels):
             all_segments_values = []
+            all_time_grids = []
             for segment, normals_segment in zip(time_segments, normals_time_segments):
                 # Read data
                 prcp_data = self._data_helper.get(input_uids[PRCP_DATA_UID], segments=segment, levels=prcp_level)
                 prcp_values = prcp_data['data'][prcp_level][segment['@name']]['@values']
+                # take this time grid as it coincides with the desired result for calc_mode = 'segment'
+                one_time_grid = prcp_data['data'][prcp_level][segment['@name']]['@time_grid'] 
                 temp_data = self._data_helper.get(input_uids[TEMP_DATA_UID], segments=segment, levels=temp_level)
                 temp_values = temp_data['data'][temp_level][segment['@name']]['@values']
 
@@ -298,13 +301,14 @@ class CalcHTC(Calc):
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
                 if calc_mode == 'segment':
-                    self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment,
+                    self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment, times = one_time_grid,
                                           longitudes=prcp_data['@longitude_grid'],
                                           latitudes=prcp_data['@latitude_grid'],
                                           fill_value=prcp_data['@fill_value'],
                                           meta=prcp_data['meta'])
                 elif calc_mode == 'data':
                     all_segments_values.append(one_segment_values)
+                    all_time_grids.append(one_time_grid)
                 else:
                     self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
                     raise ValueError
@@ -312,13 +316,14 @@ class CalcHTC(Calc):
             # For data-wise analysis analyse segments analyses :)
             if calc_mode == 'data':
                 values_out = data_func(ma.stack(all_segments_values), axis=0)
-
+                result_time_grid = data_func(ma.stack(all_time_grids))
+                                
                 # Make a global segment covering all input time segments
                 full_range_segment = deepcopy(time_segments[0])  # Take the beginning of the first segment...
                 full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
                 full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
-                self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment,
+                self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment, times = result_time_grid,
                                       longitudes=prcp_data['@longitude_grid'], latitudes=prcp_data['@latitude_grid'],
                                       fill_value=prcp_data['@fill_value'], meta=prcp_data['meta'])
 

@@ -316,7 +316,8 @@ class CalcHTC(Calc):
             # For data-wise analysis analyse segments analyses :)
             if calc_mode == 'data':
                 values_out = data_func(ma.stack(all_segments_values), axis=0)
-                result_time_grid = data_func(ma.stack(all_time_grids))
+                middle_idx = round(len(all_time_grids) / 2)
+                result_time_grid = all_time_grids[middle_idx]
                                 
                 # Make a global segment covering all input time segments
                 full_range_segment = deepcopy(time_segments[0])  # Take the beginning of the first segment...

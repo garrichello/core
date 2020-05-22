@@ -1,5 +1,6 @@
-""" CalcHTC implements calculation of a spatial field of the Selyaninov's hydrothermal coefficient [Selyaninov, 1928] or Ped drought index [Ped, 1975].
-    
+""" CalcHTC implements calculation of a spatial field of the Selyaninov's hydrothermal coefficient [Selyaninov, 1928]
+or Ped drought index [Ped, 1975].
+
     If parameter 'HTC' equal 'Selyaninov':
     Input arguments:
         input_uids[0] -- daily total precipitation values
@@ -9,7 +10,7 @@
                 'segment' -- for each segment
                 'data' -- mean over all segments
             Threshold -- integer, threshold temperature (usually, 10 degC)
-    
+
     Output arguments:
         output_uids[0] -- Selyaninov's hydrothermal coefficient, data array of size:
             [segments, lats, lons] -- for Mode == 'segment'
@@ -28,7 +29,7 @@
                 'segment' -- for each segment
                 'data' -- mean over all segments
             Threshold -- none
-    
+
     Output arguments:
         output_uids[0] -- Ped's index, data array of size:
             [segments, lats, lons] -- for Mode == 'segment'
@@ -44,7 +45,7 @@ from core.base.common import kelvin_to_celsius
 from core.mod.calc.calc import Calc
 
 #MAX_N_INPUT_ARGUMENTS = 7
-#INPUT_PARAMETERS_INDEX = 6 
+INPUT_PARAMETERS_INDEX = -1
 PRCP_DATA_UID = 0
 TEMP_DATA_UID = 1
 PRCP_DATA_NORMALS_UID = 2
@@ -203,12 +204,12 @@ class CalcHTC(Calc):
             temp_std -- standard deviation of monthly mean air temperature from climate normal
         Returns:
             result -- array of Ped's index values
-        """  
+        """
         prcp_delta = prcp_values - prcp_normals
         temp_delta = temp_values - temp_normals
 
         result = temp_delta / temp_std - prcp_delta / prcp_std
-        return result    
+        return result
 
     def run(self):
         """ Main method of the class. Reads data arrays, process them and returns results. """
@@ -222,7 +223,7 @@ class CalcHTC(Calc):
         # Get parameters
         parameters = None
         #if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
-        parameters = self._data_helper.get(input_uids[-1])
+        parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
         calc_htc = self._get_parameter('HTC', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
         threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
@@ -251,13 +252,13 @@ class CalcHTC(Calc):
             assert len(prcp_normals_levels) == len(temp_normals_levels), \
                 'Error! Number of vertical levels are not the same!'
             # Normals time segments should be set for year 1 (as set in a normals file)
-            normals_time_segments = deepcopy(time_segments) 
+            normals_time_segments = deepcopy(time_segments)
             for segment in normals_time_segments:
                 segment['@beginning'] = '0001' + segment['@beginning'][4:]
                 segment['@ending'] = '0001' + segment['@ending'][4:]
- 
+
         data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
-     
+
         for prcp_level, temp_level, prcp_normals_level, temp_normals_level in zip(prcp_levels, temp_levels, prcp_normals_levels, temp_normals_levels):
             all_segments_values = []
             all_time_grids = []
@@ -266,7 +267,7 @@ class CalcHTC(Calc):
                 prcp_data = self._data_helper.get(input_uids[PRCP_DATA_UID], segments=segment, levels=prcp_level)
                 prcp_values = prcp_data['data'][prcp_level][segment['@name']]['@values']
                 # take this time grid as it coincides with the desired result for calc_mode = 'segment'
-                one_time_grid = prcp_data['data'][prcp_level][segment['@name']]['@time_grid'] 
+                one_time_grid = prcp_data['data'][prcp_level][segment['@name']]['@time_grid']
                 temp_data = self._data_helper.get(input_uids[TEMP_DATA_UID], segments=segment, levels=temp_level)
                 temp_values = temp_data['data'][temp_level][segment['@name']]['@values']
 
@@ -281,7 +282,7 @@ class CalcHTC(Calc):
                     prcp_normals = prcp_normals_data['data'][prcp_normals_level][normals_segment['@name']]['@values']
                     temp_normals_data = self._data_helper.get(input_uids[TEMP_DATA_NORMALS_UID], segments=normals_segment, levels=temp_normals_level)
                     temp_normals = temp_normals_data['data'][temp_normals_level][normals_segment['@name']]['@values']
-                    
+
                     # Read monthly precipitation and temperature standard deviation
                     prcp_std_data = self._data_helper.get(input_uids[PRCP_DATA_STD_UID], segments=normals_segment, levels=prcp_normals_level)
                     prcp_std = prcp_std_data['data'][prcp_normals_level][normals_segment['@name']]['@values']
@@ -291,7 +292,7 @@ class CalcHTC(Calc):
                     # Convert degK to degC if needed
                     if temp_normals_data['data']['description']['@units'] == 'K':
                         temp_normals = kelvin_to_celsius(temp_normals)
-                                    
+
                     # Perform calculation for the current time segment.
                     one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals, prcp_std, temp_std)
                 else:
@@ -301,7 +302,7 @@ class CalcHTC(Calc):
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
                 if calc_mode == 'segment':
-                    self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment, times = one_time_grid,
+                    self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment, times=one_time_grid,
                                           longitudes=prcp_data['@longitude_grid'],
                                           latitudes=prcp_data['@latitude_grid'],
                                           fill_value=prcp_data['@fill_value'],
@@ -318,13 +319,13 @@ class CalcHTC(Calc):
                 values_out = data_func(ma.stack(all_segments_values), axis=0)
                 middle_idx = round((len(all_time_grids) - 1) / 2)
                 result_time_grid = all_time_grids[middle_idx]
-                                
+
                 # Make a global segment covering all input time segments
                 full_range_segment = deepcopy(time_segments[0])  # Take the beginning of the first segment...
                 full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
                 full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
-                self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment, times = result_time_grid,
+                self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment, times=result_time_grid,
                                       longitudes=prcp_data['@longitude_grid'], latitudes=prcp_data['@latitude_grid'],
                                       fill_value=prcp_data['@fill_value'], meta=prcp_data['meta'])
 

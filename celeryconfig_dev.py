@@ -31,20 +31,20 @@ task_track_started = True
 # Define queues
 task_create_missing_queues = True
 task_queues = (
-    Queue('workers_queue', Exchange('default'), routing_key='worker.abak.scert.ru'),
-    Queue('starter_queue', Exchange('default'), routing_key='starter.abak.scert.ru'),
+    Queue('workers_queue_dev', Exchange('devel'), routing_key='worker.abak.scert.ru'),
+    Queue('starter_queue_dev', Exchange('devel'), routing_key='starter.abak.scert.ru'),
 )
 
 # Define routes
 task_routes = {
     'core.tasks.starter': {
-        'queue': 'starter_queue',
-        'exchange': 'default',
+        'queue': 'starter_queue_dev',
+        'exchange': 'devel',
         'routing_key': 'starter.abak.scert.ru'
     },
     'core.tasks.worker': {
-        'queue': 'workers_queue',
-        'exchange': 'default',
+        'queue': 'workers_queue_dev',
+        'exchange': 'devel',
         'routing_key': 'worker.abak.scert.ru'
     },
 }

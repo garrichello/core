@@ -54,7 +54,7 @@ class CalcThresholdDays(Calc):
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
         condition = self._get_parameter('Condition', parameters, DEFAULT_VALUES)
-        threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
+        threshold = float(self._get_parameter('Threshold', parameters, DEFAULT_VALUES))
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
         self.logger.info('Calculation condition: %s', condition)
@@ -79,6 +79,9 @@ class CalcThresholdDays(Calc):
 
         data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments.
 
+        # Set result units.
+        result_description = {'@units': 'days'}
+
         for level in study_vertical_levels:
             all_segments_data = []
             for segment in study_time_segments:
@@ -99,7 +102,7 @@ class CalcThresholdDays(Calc):
                                           longitudes=study_data['@longitude_grid'],
                                           latitudes=study_data['@latitude_grid'],
                                           fill_value=study_data['@fill_value'],
-                                          meta=study_data['meta'])
+                                          meta=study_data['meta'], description=result_description)
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
@@ -117,6 +120,7 @@ class CalcThresholdDays(Calc):
 
                 self._data_helper.put(output_uids[0], values=data_out, level=level, segment=full_range_segment,
                                       longitudes=study_data['@longitude_grid'], latitudes=study_data['@latitude_grid'],
-                                      fill_value=study_data['@fill_value'], meta=study_data['meta'])
+                                      fill_value=study_data['@fill_value'], meta=study_data['meta'],
+                                      description=result_description)
 
         self.logger.info('Finished!')

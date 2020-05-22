@@ -59,6 +59,10 @@ class CalcDTR(Calc):
         time_segments = self._data_helper.get_segments(input_uids[MAX_DATA_UID])
         vertical_levels = self._data_helper.get_levels(input_uids[MAX_DATA_UID])
 
+        # Set result units.
+        input_description = self._data_helper.get_data_info(input_uids[0])['description']
+        result_description = {'@units': input_description['@units']}
+
         data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
 
         for level in vertical_levels:
@@ -83,7 +87,7 @@ class CalcDTR(Calc):
                                           longitudes=max_data['@longitude_grid'],
                                           latitudes=max_data['@latitude_grid'],
                                           fill_value=max_data['@fill_value'],
-                                          meta=max_data['meta'])
+                                          meta=max_data['meta'], description=result_description)
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
@@ -101,6 +105,7 @@ class CalcDTR(Calc):
 
                 self._data_helper.put(output_uids[0], values=data_out, level=level, segment=full_range_segment,
                                       longitudes=max_data['@longitude_grid'], latitudes=max_data['@latitude_grid'],
-                                      fill_value=max_data['@fill_value'], meta=max_data['meta'])
+                                      fill_value=max_data['@fill_value'], meta=max_data['meta'],
+                                      description=result_description)
 
         self.logger.info('Finished!')

@@ -83,7 +83,7 @@ class CalcRxnday(Calc):
         parameters = None
         if len(input_uids) == MAX_N_INPUT_ARGUMENTS:  # If parameters are given.
             parameters = self._data_helper.get(input_uids[INPUT_PARAMETERS_INDEX])
-        threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
+        threshold = float(self._get_parameter('Threshold', parameters, DEFAULT_VALUES))
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
 
         self.logger.info('Threshold: %s', threshold)
@@ -98,6 +98,10 @@ class CalcRxnday(Calc):
         vertical_levels = self._data_helper.get_levels(input_uids[DATA_UID])
 
         data_func = ma.max  # For calc_mode == 'data' we calculate max over all segments.
+
+        # Set result units.
+        input_description = self._data_helper.get_data_info(input_uids[0])['description']
+        result_description = {'@units': input_description['@units']}
 
         # Main loop
         for level in vertical_levels:
@@ -117,7 +121,7 @@ class CalcRxnday(Calc):
                                           longitudes=data['@longitude_grid'],
                                           latitudes=data['@latitude_grid'],
                                           fill_value=data['@fill_value'],
-                                          meta=data['meta'])
+                                          meta=data['meta'], description=result_description)
                 elif calc_mode == 'data':
                     all_segments_data.append(one_segment_data)
                 else:
@@ -135,7 +139,7 @@ class CalcRxnday(Calc):
 
                 self._data_helper.put(output_uids[0], values=data_out, level=level, segment=full_range_segment,
                                       longitudes=data['@longitude_grid'], latitudes=data['@latitude_grid'],
-                                      fill_value=data['@fill_value'], meta=data['meta'])
+                                      fill_value=data['@fill_value'], meta=data['meta'], description=result_description)
 
 
         self.logger.info('Finished!')

@@ -51,19 +51,29 @@ class CalcBasicStat(Calc):
         time_segments = self._data_helper.get_segments(input_uids[0])
         vertical_levels = self._data_helper.get_levels(input_uids[0])
 
+        # Get input data info and pass through units to the result description.
+        data_info = self._data_helper.get_data_info(input_uids[0])
+        input_description = data_info['description']
+        result_description = {'@name': input_description['@name'],
+                              '@units': input_description['@units']}
+
         # Make desired statistical function shortcut for segment and final processing .
         if calc_mode == 'timeMean':
             seg_stat_func = ma.mean
             final_stat_func = ma.mean
+            final_title = 'Average of ' + input_description['@title']
         elif calc_mode == 'timeMin':
             seg_stat_func = ma.min
             final_stat_func = ma.min
+            final_title = 'Minimum of ' + input_description['@title']
         elif calc_mode == 'timeMax':
             seg_stat_func = ma.max
             final_stat_func = ma.max
+            final_title = 'Maximum of ' + input_description['@title']
         elif calc_mode == 'timeMeanPrec':
             seg_stat_func = ma.sum
             final_stat_func = ma.mean
+            final_title = 'Average sum of ' + input_description['@title']
 
         for level in vertical_levels:
             all_segments_data = []
@@ -90,17 +100,24 @@ class CalcBasicStat(Calc):
 
                     one_segment_data = ma.stack(one_segment_data)
 
-                # Calulate time statistics for a current time segment
+                # Calculate time statistics for a current time segment
                 if (parameters[calc_mode] == 'data') or (parameters[calc_mode] == 'segment'):
-                    one_segment_data = seg_stat_func(result['data'][level][segment['@name']]['@values'], axis=0)
-                    one_segment_time_grid.append(result['data'][level][segment['@name']]['@time_grid'][0])
+                    if len(result['data'][level][segment['@name']]['@time_grid']) > 1:
+                        one_segment_data = seg_stat_func(result['data'][level][segment['@name']]['@values'], axis=0)
+                    else:
+                        one_segment_data = result['data'][level][segment['@name']]['@values']
+                    mid_time = result['data'][level][segment['@name']]['@time_grid'][0] + \
+                               (result['data'][level][segment['@name']]['@time_grid'][-1] - \
+                                result['data'][level][segment['@name']]['@time_grid'][0]) / 2
+                    one_segment_time_grid.append(mid_time)
 
                 # For segment-wise averaging send to the output current time segment results
                 # or store them otherwise.
                 if (parameters[calc_mode] == 'day') or (parameters[calc_mode] == 'segment'):
                     self._data_helper.put(output_uids[0], values=one_segment_data, level=level, segment=segment,
                                           longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                          times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'])
+                                          times=one_segment_time_grid, fill_value=result['@fill_value'], meta=result['meta'],
+                                          description=result_description)
                 elif parameters[calc_mode] == 'data':
                     all_segments_data.append(one_segment_data)
 
@@ -113,8 +130,13 @@ class CalcBasicStat(Calc):
                 full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
                 full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
+                # Correct title and name
+                if final_title is not None:
+                    result_description['@title'] = final_title
+
                 self._data_helper.put(output_uids[0], values=data_out, level=level, segment=full_range_segment,
                                       longitudes=result['@longitude_grid'], latitudes=result['@latitude_grid'],
-                                      fill_value=result['@fill_value'], meta=result['meta'])
+                                      fill_value=result['@fill_value'], meta=result['meta'],
+                                      description=result_description)
 
         self.logger.info('Finished!')

@@ -39,6 +39,10 @@ class cvcOutput:
             all_meta = []
 
         for in_uid in input_uids:
+            input_info = self._data_helper.get_data_info(in_uid)
+            if input_info['@type'] == 'parameter':
+                continue
+
             time_segments = self._data_helper.get_segments(in_uid)
             vertical_levels = self._data_helper.get_levels(in_uid)
 

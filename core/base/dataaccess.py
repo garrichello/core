@@ -2,10 +2,10 @@
     DataAccess
 """
 
-from copy import copy
+from copy import copy, deepcopy
 import logging
 from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.exc import NoResultFound
 from .common import load_module, make_module_name, listify
 
@@ -174,23 +174,26 @@ class DataAccess():
 
         # Tables in a metadata database
         collection_tbl = meta.tables['collection']
-        collection_tr_tbl = meta.tables['collection_tr']
+        collection_i18n_tbl = meta.tables['collection_i18n']
         scenario_tbl = meta.tables['scenario']
-        resolution_tbl = meta.tables['res']
-        time_step_tbl = meta.tables['tstep']
-        dataset_tbl = meta.tables['ds']
-        file_type_tbl = meta.tables['filetype']
+        resolution_tbl = meta.tables['resolution']
+        time_step_tbl = meta.tables['time_step']
+        dataset_tbl = meta.tables['dataset']
+        file_type_tbl = meta.tables['file_type']
         data_tbl = meta.tables['data']
         file_tbl = meta.tables['file']
-        variable_tbl = meta.tables['var']
-        levels_tbl = meta.tables['lvs']
-        levels_variable_tbl = meta.tables['lvs_var']
-        dataset_root_tbl = meta.tables['dsroot']
-        time_span_tbl = meta.tables['timespan']
+        variable_tbl = meta.tables['variable']
+        level_tbl = meta.tables['level']
+        levels_group_tbl = meta.tables['levels_group']
+        levels_group_has_level_tbl = meta.tables['levels_group_has_level']
+        levels_variable_tbl = aliased(variable_tbl)
+        root_dir_tbl = meta.tables['root_dir']
         units_tbl = meta.tables['units']
-        units_tr_tbl = meta.tables['units_tr']
-        par_tbl = meta.tables['par']
-        par_tr_tbl = meta.tables['par_tr']
+        units_i18n_tbl = meta.tables['units_i18n']
+        parameter_tbl = meta.tables['parameter']
+        parameter_i18n_tbl = meta.tables['parameter_i18n']
+        specific_parameter_tbl = meta.tables['specific_parameter']
+        accumulation_mode_tbl = meta.tables['accumulation_mode']
 
         # Values for SQL-conditions
         dataset_name = argument['data']['dataset']['@name']
@@ -200,87 +203,127 @@ class DataAccess():
         variable_name = argument['data']['variable']['@name']
         levels_names = [level_name.strip() for level_name in argument['data']['levels']['@values'].split(';')]
 
-        # Get some info about the dataset.
-        try:
-            dataset_tbl_info = \
-                session.query(dataset_tbl.columns['id'],
-                              file_type_tbl.columns['name'].label('file_type_name'),
-                              scenario_tbl.columns['subpath0'],
-                              resolution_tbl.columns['subpath1'],
-                              time_step_tbl.columns['subpath2'],
-                              time_span_tbl.columns['name'].label('file_time_span'),
-                              collection_tr_tbl.columns['name'].label('collection_name'),
-                              dataset_root_tbl.columns['rootpath']).select_from(dataset_tbl).join(
-                                  collection_tbl).join(collection_tr_tbl).join(scenario_tbl).join(resolution_tbl).join(
-                                      time_step_tbl).join(file_type_tbl).join(dataset_root_tbl).join(time_span_tbl).filter(
-                                          collection_tbl.columns['name'] == dataset_name).filter(
-                                              scenario_tbl.columns['name'] == scenario_name).filter(
-                                                  resolution_tbl.columns['name'] == resolution_name).filter(
-                                                      time_step_tbl.columns['name'] == time_step_name).filter(
-                                                          collection_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).one()
-        except NoResultFound:
-            self.logger.error('No records found in MDDB for collection: %s, scenario: %s, resolution: %s, time step: %s',
-                              dataset_name, scenario_name, resolution_name, time_step_name)
-            raise
+        # Single SQL to get everything:
+        # SELECT file_type.name AS file_type_name,
+        #        collection_i18n.name AS collection_name,
+        #        parameter_i18n.name AS parameter_name,
+        #        units_i18n.name AS units_name,
+        #        parameter.accumulation_mode AS acc_mode,
+        #        data.scale AS scale,
+        #        data.offset AS offset,
+        #        root_dir.name AS rootpath,
+        #        scenario.subpath0,
+        #        resolution.subpath1,
+        #        time_step.subpath2,
+        #        file.name_pattern AS file_name_template,
+        #        level.label as level_name,
+        #        levels_variable.name AS level_variable_name
+        #   FROM data
+        #   JOIN dataset ON dataset_collection_id = dataset.collection_id
+        #    AND dataset_resolution_id = dataset.resolution_id
+        #    AND dataset_scenario_id = dataset.scenario_id
+        #   JOIN specific_parameter ON specific_parameter_parameter_id = specific_parameter.parameter_id
+        #    AND specific_parameter_levels_group_id = specific_parameter.levels_group_id
+        #    AND specific_parameter_time_step_id = specific_parameter.time_step_id
+        #   JOIN units ON units_id = units.id
+        #   JOIN variable ON variable_id = variable.id
+        #   JOIN file ON file_id = file.id
+        #   LEFT OUTER JOIN variable AS levels_variable ON levels_variable_id = levels_variable.id
+        #   JOIN root_dir ON root_dir_id = root_dir.id
+        #   JOIN collection ON dataset.collection_id = collection.id
+        #   JOIN resolution ON dataset.resolution_id = resolution.id
+        #   JOIN scenario ON dataset.scenario_id = scenario.id
+        #   JOIN parameter ON specific_parameter.parameter_id = parameter.id
+        #   JOIN levels_group ON specific_parameter.levels_group_id = levels_group.id
+        #   JOIN levels_group_has_level on levels_group.id = levels_group_has_level.levels_group_id
+        #   JOIN level on levels_group_has_level.level_id = level.id
+        #   JOIN time_step ON specific_parameter.time_step_id = time_step.id
+        #   JOIN file_type ON file_type_id = file_type.id
+        #   JOIN collection_i18n ON collection_i18n.collection_id = collection.id
+        #   JOIN parameter_i18n ON parameter_i18n.parameter_id = parameter.id
+        #   JOIN units_i18n ON units_i18n.units_id = units.id
+        #  WHERE collection_i18n.language_code = ENGLISH_LANG_CODE
+        #    AND parameter_i18n.language_code = ENGLISH_LANG_CODE
+        #    AND units_i18n.language_code = ENGLISH_LANG_CODE
+        #    AND collection.label = dataset_name
+        #    AND scenario.name = scenario_name
+        #    AND resolution.name = resolution_name
+        #    AND time_step.label = time_step_name
+        #    AND variable.name = variable_name
+        #    AND level.label = level_name_pattern
 
-        info['@data_type'] = dataset_tbl_info.file_type_name
-        info['@file_time_span'] = dataset_tbl_info.file_time_span
-
-        # Get units and full name of the variable
-        try:
-            var_tbl_info = \
-                session.query(units_tr_tbl.columns['name'].label('units_name'),
-                              par_tr_tbl.columns['name'].label('parameter_name'),
-                              par_tbl.columns['acc_mode'].label('acc_mode')).select_from(
-                                  data_tbl).join(variable_tbl).join(units_tbl).join(units_tr_tbl).join(par_tbl).join(
-                                      par_tr_tbl).filter(variable_tbl.columns['name'] == variable_name).filter(
-                                          units_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(
-                                              par_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).filter(
-                                                  data_tbl.columns['ds_id'] == dataset_tbl_info.id).distinct().one()
-        except NoResultFound:
-            self.logger.error('No records found in MDDB for variable %s', variable_name)
-            raise
-
-        info['data']['description']['@title'] = dataset_tbl_info.collection_name
-        info['data']['description']['@name'] = var_tbl_info.parameter_name
-        info['data']['description']['@units'] = var_tbl_info.units_name
-        info['data']['description']['@acc_mode'] = var_tbl_info.acc_mode
+        # Get info from MDDB.
+        # Prepare a common query.
+        qry = session.query(file_type_tbl.columns['name'].label('file_type_name'),
+                            collection_i18n_tbl.columns['name'].label('collection_name'),
+                            parameter_i18n_tbl.columns['name'].label('parameter_name'),
+                            units_i18n_tbl.columns['name'].label('units_name'),
+                            accumulation_mode_tbl.columns['name'].label('acc_mode'),
+                            data_tbl.columns['scale'],
+                            data_tbl.columns['offset'],
+                            root_dir_tbl.columns['name'].label('root_dir'),
+                            scenario_tbl.columns['subpath0'],
+                            resolution_tbl.columns['subpath1'],
+                            time_step_tbl.columns['subpath2'],
+                            file_tbl.columns['name_pattern'].label('file_name_template'),
+                            levels_variable_tbl.columns['name'].label('level_variable_name')
+                            )
+        qry = qry.select_from(data_tbl)
+        qry = qry.join(dataset_tbl)
+        qry = qry.join(specific_parameter_tbl)
+        qry = qry.join(units_tbl)
+        qry = qry.join(variable_tbl, variable_tbl.c.id == data_tbl.c.variable_id)
+        qry = qry.join(file_tbl)
+        qry = qry.outerjoin(levels_variable_tbl, levels_variable_tbl.c.id == data_tbl.c.levels_variable_id)
+        qry = qry.join(root_dir_tbl)
+        qry = qry.join(collection_tbl)
+        qry = qry.join(resolution_tbl)
+        qry = qry.join(scenario_tbl)
+        qry = qry.join(parameter_tbl)
+        qry = qry.join(levels_group_tbl, levels_group_tbl.c.id == specific_parameter_tbl.c.levels_group_id)
+        qry = qry.join(levels_group_has_level_tbl)
+        qry = qry.join(level_tbl)
+        qry = qry.join(time_step_tbl)
+        qry = qry.join(file_type_tbl)
+        qry = qry.join(collection_i18n_tbl)
+        qry = qry.join(parameter_i18n_tbl)
+        qry = qry.join(units_i18n_tbl)
+        qry = qry.join(accumulation_mode_tbl)
+        qry = qry.filter(collection_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
+        qry = qry.filter(parameter_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
+        qry = qry.filter(units_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
+        qry = qry.filter(collection_tbl.columns['label'] == dataset_name)
+        qry = qry.filter(scenario_tbl.columns['name'] == scenario_name)
+        qry = qry.filter(resolution_tbl.columns['name'] == resolution_name)
+        qry = qry.filter(time_step_tbl.columns['label'] == time_step_name)
+        qry = qry.filter(variable_tbl.columns['name'] == variable_name)
 
         # Each vertical level is processed separately because corresponding arrays can be stored in different files
         for level_name in levels_names:
             info['data']['levels'][level_name] = {}
 
-            level_name_pattern = '%:{0}:%'.format(level_name) # Pattern for LIKE in the following SQL-request
-            # Get some info about the data array and file names template
+            # Get some info
             try:
-                data_tbl_info = \
-                    session.query(data_tbl.columns['scale'],
-                                  data_tbl.columns['offset'],
-                                  file_tbl.columns['name'].label('file_name_template'),
-                                  file_tbl.columns['timestart'],
-                                  file_tbl.columns['timeend'],
-                                  levels_variable_tbl.columns['name'].label('level_variable_name'),
-                                  units_tr_tbl.columns['name'].label('units_name')).join(dataset_tbl).join(
-                                      variable_tbl).join(levels_tbl).join(file_tbl).join(levels_variable_tbl).join(
-                                          units_tbl).join(units_tr_tbl).filter(
-                                              dataset_tbl.columns['id'] == dataset_tbl_info.id).filter(
-                                                  variable_tbl.columns['name'] == variable_name).filter(
-                                                      levels_tbl.columns['name'].like(level_name_pattern)).filter(
-                                                          units_tr_tbl.columns['lang_code'] == ENGLISH_LANG_CODE).one()
+                data_info = qry.filter(level_tbl.columns['label'] == level_name).one()
+
             except NoResultFound:
                 self.logger.error('No records found in MDDB for collection: %s, scenario: %s, resolution: %s, time step: %s, variable: %s, level: %s',
                                   dataset_name, scenario_name, resolution_name, time_step_name, variable_name, level_name)
                 raise
 
-            info['data']['levels'][level_name]['@scale'] = data_tbl_info.scale
-            info['data']['levels'][level_name]['@offset'] = data_tbl_info.offset
-            file_name_template = '{0}{1}{2}{3}{4}'.format(dataset_tbl_info.rootpath, dataset_tbl_info.subpath0,
-                                                          dataset_tbl_info.subpath1, dataset_tbl_info.subpath2,
-                                                          data_tbl_info.file_name_template)
+            info['data']['levels'][level_name]['@scale'] = data_info.scale
+            info['data']['levels'][level_name]['@offset'] = data_info.offset
+            file_name_template = '{0}{1}{2}{3}{4}'.format(data_info.root_dir, data_info.subpath0,
+                                                          data_info.subpath1, data_info.subpath2,
+                                                          data_info.file_name_template)
             info['data']['levels'][level_name]['@file_name_template'] = file_name_template
-            info['data']['levels'][level_name]['@time_start'] = data_tbl_info.timestart
-            info['data']['levels'][level_name]['@time_end'] = data_tbl_info.timeend
-            info['data']['levels'][level_name]['@level_variable_name'] = data_tbl_info.level_variable_name
+            info['data']['levels'][level_name]['@level_variable_name'] = data_info.level_variable_name
+
+        info['@data_type'] = data_info.file_type_name
+        info['data']['description']['@title'] = data_info.collection_name
+        info['data']['description']['@name'] = data_info.parameter_name
+        info['data']['description']['@units'] = data_info.units_name
+        info['data']['description']['@acc_mode'] = data_info.acc_mode
 
         return info
 
@@ -315,7 +358,10 @@ class DataAccess():
             except ValueError:
                 self.logger.error('No such input UID: %s', uid)
                 raise
-            segments = self._inputs[input_idx]['data']['time']['segment']
+            if 'time' in self._inputs[input_idx]['data'].keys():  # Parameters do not have time, so need to check.
+                segments = self._inputs[input_idx]['data']['time']['segment']
+            else:
+                segments = None
         else:
             segments = None
         return listify(segments)
@@ -332,10 +378,13 @@ class DataAccess():
             except ValueError:
                 self.logger.error('No such input UID: %s', uid)
                 raise
-            if isinstance(self._inputs[input_idx]['data']['levels']['@values'], set):
-                levels = list(self._inputs[input_idx]['data']['levels']['@values'])
+            if 'levels' in self._inputs[input_idx]['data'].keys():  # Parameters do not have levels, so need to check.
+                if isinstance(self._inputs[input_idx]['data']['levels']['@values'], set):
+                    levels = list(self._inputs[input_idx]['data']['levels']['@values'])
+                else:
+                    levels = [level_name.strip() for level_name in self._inputs[input_idx]['data']['levels']['@values'].split(';')]
             else:
-                levels = [level_name.strip() for level_name in self._inputs[input_idx]['data']['levels']['@values'].split(';')]
+                levels = None
         else:
             levels = None
         return levels
@@ -389,8 +438,8 @@ class DataAccess():
         options['latitudes'] = copy(latitudes)
         if fill_value is not None:
             values.fill_value = fill_value
-        options['description'] = copy(description)
-        options['meta'] = copy(meta)
+        options['description'] = deepcopy(description)
+        options['meta'] = deepcopy(meta)
         self._data_objects[uid].write(values, options)
 
     def output_uids(self):

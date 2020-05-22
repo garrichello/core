@@ -8,9 +8,13 @@ output
 tools
 func_tests.sh
 virtualenv
+logs
 *.log
 templates_tests.sh
 core_config.ini
 debug.sh
 debug
 remote_debug.py
+tmp
+debug
+core/core_config.ini

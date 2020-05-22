@@ -68,6 +68,13 @@ class TimeMeanTest(unittest.TestCase):
             levels = None
         return levels
 
+    def _get_data_info(self, uid):
+        if uid == "P1Input1":
+            data = SAMPLE_INPUT['data']
+        if uid == "p1Output":
+            data = None
+        return data
+
     def test_can_instantiate_mean_module(self):
         data_helper = DataAccess(None, None, None)
         time_mean_module = cvcCalcTiMean_prec(data_helper)
@@ -84,6 +91,7 @@ class TimeMeanTest(unittest.TestCase):
         data_helper.get_segments = MagicMock(side_effect=self._get_segments)
         data_helper.get_levels = MagicMock(side_effect=self._get_levels)
         data_helper.put = MagicMock(return_value=None)
+        data_helper.get_data_info = MagicMock(side_effect=self._get_data_info)
 
         time_mean_module = cvcCalcTiMean_prec(data_helper)
         time_mean_module.run()

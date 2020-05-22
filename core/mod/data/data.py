@@ -17,7 +17,7 @@ class Data:
     def __init__(self, data_info):
         self.logger = logging.getLogger()
         self._data_info = data_info
-        self._read_result = {}   # Data arrays, grids and some additional information read in a child class.
+        self._read_result = {'@type': 'data'}   # Data arrays, grids and some additional information read in a child class.
         self._read_result['data'] = {}  # Contains data arrays read at each vertical level.
         self._data_by_segment = {}  # Data for each time segment for each vertical level.
 
@@ -100,8 +100,8 @@ class Data:
             latitude_grid -- latitude grid (1- or 2-D ndarray)
             grid_type -- grid type: regular/irregular/station (string) - obsoleted, will be removed in future releases
             dimensions -- names of dimensions (list of strings)
-            fill_value -- fill value in a masked array (float)
-            description -- data description (string)
+            fill_value -- fill value in a masked array
+            description -- data description
             meta -- additional metadata, currently used for passing names of weather stations (dictionary)
         """
 

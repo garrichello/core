@@ -11,7 +11,7 @@ from core.base.common import listify
 from .data import Data, GRID_TYPE_REGULAR
 from .mfhdf import MFDataset, date2index
 
-NO_LEVEL_NAME = 'none'
+NO_LEVEL_NAME = '-'
 CLASS_UNITS = ['class number']
 WILDCARDS = {'year': '????', 'mm': '??', 'year1': '????', 'year2': '????', 'year1s-4': '????', 'year2s-4': '????', 'doy': '???'}
 

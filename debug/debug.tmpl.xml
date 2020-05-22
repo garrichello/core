@@ -125,19 +125,19 @@
     	<output uid='P1Output1' data='Result_1'/>
     </processing>
 
-	<processing uid="Process_2" class="cvcCalcTiMean" module_path="">
+<!--	<processing uid="Process_2" class="cvcCalcTiMean" module_path="">
     	<input uid="P1Input1" data="Result_1"/>
     	<input uid="P1Parameter1" data="ModuleParameters_2"/>
     	<output uid="P1Output1" data="Result_2"/>
-    </processing>
+    </processing> -->
 
     <processing uid='Visualization_1' class='cvcOutput'>
-	    <input uid='V1Input1' data='Result_2'/>
+	    <input uid='V1Input1' data='Result_1'/>
 	    <output uid='V1Destination' data='Image_1'/>
     </processing>
 
     <processing uid="Output_1" class="cvcOutput">
-	    <input uid="O1Data1" data="Result_2"/>
+	    <input uid="O1Data1" data="Result_1"/>
         <output uid="O1Destination" data="File_1"/>
     </processing>
 

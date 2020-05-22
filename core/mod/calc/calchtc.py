@@ -1,13 +1,13 @@
-""" CalcHTC implements calculation of a spatial field of the Selyaninov's hydrothermal coefficient [Selyaninov, 1928].
+""" CalcHTC implements calculation of a spatial field of the Selyaninov's hydrothermal coefficient [Selyaninov, 1928] or Ped drought index [Ped, 1975].
     
     If parameter 'HTC' equal 'Selyaninov':
     Input arguments:
-        input_uids[0] -- daily temperature values
-        input_uids[1] -- daily total precipitation values
+        input_uids[0] -- daily total precipitation values
+        input_uids[1] -- daily temperature values
         input_uids[2] -- module parameters:
             Mode -- string, allowed values:
                 'segment' -- for each segment
-                'data' -- maximum over all segments
+                'data' -- mean over all segments
             Threshold -- integer, threshold temperature (usually, 10 degC)
     
     Output arguments:
@@ -17,16 +17,16 @@
 
     If parameter 'HTC' equal 'Ped':
     Input arguments:
-        input_uids[0] -- monthly temperature values
-        input_uids[1] -- monthly total precipitation values
-        input_uids[2] -- monthly temperature climate normals
-        input_uids[3] -- monthly total precipitation climate normals
-        input_uids[4] -- monthly temperature standard deviations
-        input_uids[5] -- monthly total precipitation standard deviations
+        input_uids[0] -- monthly total precipitation values
+        input_uids[1] -- monthly air temperature values
+        input_uids[2] -- climate normal of monthly total precipitation
+        input_uids[3] -- climate normal of monthly mean air temperature
+        input_uids[4] -- standard deviation of monthly total precipitation from climate normal
+        input_uids[5] -- standard deviation of monthly mean air temperature from climate normal
         input_uids[6] -- module parameters:
             Mode -- string, allowed values:
                 'segment' -- for each segment
-                'data' -- maximum over all segments
+                'data' -- mean over all segments
             Threshold -- none
     
     Output arguments:

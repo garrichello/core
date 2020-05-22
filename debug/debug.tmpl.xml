@@ -23,7 +23,8 @@
     	</region>
     	<levels values='sfc'/>
 	    <time uid='Input_1' template='YYYYMMDDHH'>
-    		<segment name='Seg2' beginning='1980010100' ending='1980123123'/>
+    		<segment name='Seg1' beginning='1980010100' ending='1980123123'/>
+			<segment name='Seg2' beginning='1981010100' ending='1981123123'/>
     	</time>
     </data>
     
@@ -91,6 +92,7 @@
 		<time uid="Output_1" template="YYYYMMDDHH">
 	    <!-- <segment name='' beginning=[/START_DATE/] ending=[/END_DATE/]/> -->
 			<segment name='Seg1' beginning='1980010100' ending='1980123123'/>
+			<segment name='Seg2' beginning='1981010100' ending='1981123123'/>
 		</time>
     </data>
 

@@ -246,7 +246,6 @@ class CalcHTC(Calc):
         data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
 
         # For calc_htc == 'Ped' we calculate Ped index.
-        # if calc_htc == 'Ped' read (create) time segments and levels for normals
         if calc_htc == 'Ped':
             prcp_normals_levels = self._data_helper.get_levels(input_uids[PRCP_DATA_NORMALS_UID])  # There should be only one level - normals?.
             temp_normals_levels = self._data_helper.get_levels(input_uids[TEMP_DATA_NORMALS_UID])
@@ -257,25 +256,23 @@ class CalcHTC(Calc):
             for segment in normals_time_segments:
                 segment['@beginning'] = '0001' + segment['@beginning'][4:]
                 segment['@ending'] = '0001' + segment['@ending'][4:]
- 
-        for prcp_level, temp_level, prcp_normals_level, temp_normals_level in zip(prcp_levels, temp_levels, prcp_normals_levels, temp_normals_levels):
-            all_segments_values = []
-            all_time_grids = []
-            for segment, normals_segment in zip(time_segments, normals_time_segments):
-                # Read data
-                prcp_data = self._data_helper.get(input_uids[PRCP_DATA_UID], segments=segment, levels=prcp_level)
-                prcp_values = prcp_data['data'][prcp_level][segment['@name']]['@values']
-                # take this time grid as it coincides with the desired result for calc_mode = 'segment'
-                one_time_grid = prcp_data['data'][prcp_level][segment['@name']]['@time_grid'] 
-                temp_data = self._data_helper.get(input_uids[TEMP_DATA_UID], segments=segment, levels=temp_level)
-                temp_values = temp_data['data'][temp_level][segment['@name']]['@values']
+            
+            for prcp_level, temp_level, prcp_normals_level, temp_normals_level in zip(prcp_levels, temp_levels, prcp_normals_levels, temp_normals_levels):
+                all_segments_values = []
+                all_time_grids = []
+                for segment, normals_segment in zip(time_segments, normals_time_segments):
+                    # Read data
+                    prcp_data = self._data_helper.get(input_uids[PRCP_DATA_UID], segments=segment, levels=prcp_level)
+                    prcp_values = prcp_data['data'][prcp_level][segment['@name']]['@values']
+                    # take this time grid as it coincides with the desired result for calc_mode = 'segment'
+                    one_time_grid = prcp_data['data'][prcp_level][segment['@name']]['@time_grid'] 
+                    temp_data = self._data_helper.get(input_uids[TEMP_DATA_UID], segments=segment, levels=temp_level)
+                    temp_values = temp_data['data'][temp_level][segment['@name']]['@values']
 
-                # Convert degK to degC if needed
-                if temp_data['data']['description']['@units'] == 'K':
-                    temp_values = kelvin_to_celsius(temp_values)
+                    # Convert degK to degC if needed
+                    if temp_data['data']['description']['@units'] == 'K':
+                        temp_values = kelvin_to_celsius(temp_values)
 
-                # if calc_htc == 'Ped' read data for normals and standard deviation
-                if calc_htc == 'Ped':
                     # Read monthly precipitation and temperature normals
                     prcp_normals_data = self._data_helper.get(input_uids[PRCP_DATA_NORMALS_UID], segments=normals_segment, levels=prcp_normals_level)
                     prcp_normals = prcp_normals_data['data'][prcp_normals_level][normals_segment['@name']]['@values']
@@ -294,38 +291,88 @@ class CalcHTC(Calc):
                                     
                     # Perform calculation for the current time segment.
                     one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals, prcp_std, temp_std)
-                else:
-                    # Perform calculation for the current time segment.
-                    one_segment_values = self._calc_htc(prcp_values, temp_values, threshold)
+                    
 
-                # For segment-wise averaging send to the output current time segment results
-                # or store them otherwise.
-                if calc_mode == 'segment':
-                    self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment, times = one_time_grid,
+                    # For segment-wise averaging send to the output current time segment results
+                    # or store them otherwise.
+                    if calc_mode == 'segment':
+                        self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment, times = one_time_grid,
                                           longitudes=prcp_data['@longitude_grid'],
                                           latitudes=prcp_data['@latitude_grid'],
                                           fill_value=prcp_data['@fill_value'],
                                           meta=prcp_data['meta'])
-                elif calc_mode == 'data':
-                    all_segments_values.append(one_segment_values)
-                    all_time_grids.append(one_time_grid)
-                else:
-                    self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
-                    raise ValueError
+                    elif calc_mode == 'data':
+                        all_segments_values.append(one_segment_values)
+                        all_time_grids.append(one_time_grid)
+                    else:
+                        self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
+                        raise ValueError
 
-            # For data-wise analysis analyse segments analyses :)
-            if calc_mode == 'data':
-                values_out = data_func(ma.stack(all_segments_values), axis=0)
-                middle_idx = round((len(all_time_grids) - 1) / 2)
-                result_time_grid = all_time_grids[middle_idx]
+                # For data-wise analysis analyse segments analyses :)
+                if calc_mode == 'data':
+                    values_out = data_func(ma.stack(all_segments_values), axis=0)
+                    middle_idx = round((len(all_time_grids) - 1) / 2)
+                    result_time_grid = all_time_grids[middle_idx]
                                 
-                # Make a global segment covering all input time segments
-                full_range_segment = deepcopy(time_segments[0])  # Take the beginning of the first segment...
-                full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
-                full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
+                    # Make a global segment covering all input time segments
+                    full_range_segment = deepcopy(time_segments[0])  # Take the beginning of the first segment...
+                    full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
+                    full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
-                self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment, times = result_time_grid,
+                    self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment, times = result_time_grid,
+                                      longitudes=prcp_data['@longitude_grid'], latitudes=prcp_data['@latitude_grid'],
+                                      fill_value=prcp_data['@fill_value'], meta=prcp_data['meta'])
+
+        # For calc_htc == 'Selyaninov' we calculate Hydrothermal coefficient of Selyaninov.
+        else:
+            for prcp_level, temp_level in zip(prcp_levels, temp_levels):
+                all_segments_values = []
+                all_time_grids = []
+                for segment in time_segments:
+                    # Read data
+                    prcp_data = self._data_helper.get(input_uids[PRCP_DATA_UID], segments=segment, levels=prcp_level)
+                    prcp_values = prcp_data['data'][prcp_level][segment['@name']]['@values']
+                    # take this time grid as it coincides with the desired result for calc_mode = 'segment'
+                    one_time_grid = prcp_data['data'][prcp_level][segment['@name']]['@time_grid'] 
+                    temp_data = self._data_helper.get(input_uids[TEMP_DATA_UID], segments=segment, levels=temp_level)
+                    temp_values = temp_data['data'][temp_level][segment['@name']]['@values']
+
+                    # Convert degK to degC if needed
+                    if temp_data['data']['description']['@units'] == 'K':
+                        temp_values = kelvin_to_celsius(temp_values)
+
+                    # Perform calculation for the current time segment.
+                    one_segment_values = self._calc_htc(prcp_values, temp_values, threshold)                  
+
+                    # For segment-wise averaging send to the output current time segment results
+                    # or store them otherwise.
+                    if calc_mode == 'segment':
+                        self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment, times = one_time_grid,
+                                          longitudes=prcp_data['@longitude_grid'],
+                                          latitudes=prcp_data['@latitude_grid'],
+                                          fill_value=prcp_data['@fill_value'],
+                                          meta=prcp_data['meta'])
+                    elif calc_mode == 'data':
+                        all_segments_values.append(one_segment_values)
+                        all_time_grids.append(one_time_grid)
+                    else:
+                        self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
+                        raise ValueError
+
+                # For data-wise analysis analyse segments analyses :)
+                if calc_mode == 'data':
+                    values_out = data_func(ma.stack(all_segments_values), axis=0)
+                    middle_idx = round((len(all_time_grids) - 1) / 2)
+                    result_time_grid = all_time_grids[middle_idx]
+                                
+                    # Make a global segment covering all input time segments
+                    full_range_segment = deepcopy(time_segments[0])  # Take the beginning of the first segment...
+                    full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
+                    full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
+
+                    self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment, times = result_time_grid,
                                       longitudes=prcp_data['@longitude_grid'], latitudes=prcp_data['@latitude_grid'],
                                       fill_value=prcp_data['@fill_value'], meta=prcp_data['meta'])
 
         self.logger.info('Finished!')
+

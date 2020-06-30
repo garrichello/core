@@ -226,7 +226,7 @@ class CalcHTC(Calc):
         calc_htc = self._get_parameter('HTC', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
         if calc_htc == 'Selyaninov':
-            threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
+            threshold = int(self._get_parameter('Threshold', parameters, DEFAULT_VALUES))
             self.logger.info('Threshold: %s', threshold)
 
         self.logger.info('Hydrothermal coefficient: %s', calc_htc)

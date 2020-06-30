@@ -243,6 +243,8 @@ class CalcHTC(Calc):
         assert len(prcp_levels) == len(temp_levels), \
             'Error! Number of vertical levels are not the same!'
 
+        data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
+
         # For calc_htc == 'Ped' we calculate Ped index.
         # if calc_htc == 'Ped' read (create) time segments and levels for normals
         if calc_htc == 'Ped':
@@ -256,8 +258,6 @@ class CalcHTC(Calc):
                 segment['@beginning'] = '0001' + segment['@beginning'][4:]
                 segment['@ending'] = '0001' + segment['@ending'][4:]
  
-        data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.
-     
         for prcp_level, temp_level, prcp_normals_level, temp_normals_level in zip(prcp_levels, temp_levels, prcp_normals_levels, temp_normals_levels):
             all_segments_values = []
             all_time_grids = []

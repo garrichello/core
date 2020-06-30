@@ -225,12 +225,13 @@ class CalcHTC(Calc):
         parameters = self._data_helper.get(input_uids[-1])
         calc_htc = self._get_parameter('HTC', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
-        threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
+        if calc_htc = 'Selyaninov':
+            threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
+            self.logger.info('Threshold: %s', threshold)
 
         self.logger.info('Hydrothermal coefficient: %s', calc_htc)
         self.logger.info('Calculation mode: %s', calc_mode)
-        self.logger.info('Threshold: %s', threshold)
-
+        
         # Get outputs
         output_uids = self._data_helper.output_uids()
         assert output_uids, 'No output arguments!'

@@ -225,7 +225,7 @@ class CalcHTC(Calc):
         parameters = self._data_helper.get(input_uids[-1])
         calc_htc = self._get_parameter('HTC', parameters, DEFAULT_VALUES)
         calc_mode = self._get_parameter('Mode', parameters, DEFAULT_VALUES)
-        if calc_htc = 'Selyaninov':
+        if calc_htc == 'Selyaninov':
             threshold = self._get_parameter('Threshold', parameters, DEFAULT_VALUES)
             self.logger.info('Threshold: %s', threshold)
 

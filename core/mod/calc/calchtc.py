@@ -266,7 +266,7 @@ class CalcHTC(Calc):
                     prcp_data = self._data_helper.get(input_uids[PRCP_DATA_UID], segments=segment, levels=prcp_level)
                     prcp_values = prcp_data['data'][prcp_level][segment['@name']]['@values']
                     # take this time grid as it coincides with the desired result for calc_mode = 'segment'
-                    one_time_grid = prcp_data['data'][prcp_level][segment['@name']]['@time_grid'] 
+                    one_time_grids = prcp_data['data'][prcp_level][segment['@name']]['@time_grid'] 
                     temp_data = self._data_helper.get(input_uids[TEMP_DATA_UID], segments=segment, levels=temp_level)
                     temp_values = temp_data['data'][temp_level][segment['@name']]['@values']
 
@@ -295,9 +295,10 @@ class CalcHTC(Calc):
                     
                     if one_time_grid.shape[0] == 1:
                         one_segment_values = one_segment_values.squeeze(axis = 0)
+                        one_time_grid = one_time_grids
                     else:
-                        middle_idx = round((len(one_time_grid) - 1) / 2)
-                        one_time_grid = one_time_grid[middle_idx]
+                        middle_idx = round((len(one_time_grids) - 1) / 2)
+                        one_time_grid = one_time_grids[middle_idx]
                         one_segment_values = data_func(one_segment_values, axis = 0)
 
                     # For segment-wise averaging send to the output current time segment results

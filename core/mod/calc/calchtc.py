@@ -313,9 +313,9 @@ class CalcHTC(Calc):
                 if calc_mode == 'data':
                     values_out = data_func(ma.stack(all_segments_values), axis=0)
                     middle_idx_seg = round((len(all_time_grids) - 1) / 2)
-                    all_time_grid = all_time_grids[middle_idx_seg]
-                    middle_idx = round((len(all_time_grid) - 1) / 2)
-                    result_time_grid = [all_time_grid[middle_idx]]
+                    result_time_grid = all_time_grids[middle_idx_seg]
+                    #middle_idx = round((len(all_time_grid) - 1) / 2)
+                    #result_time_grid = [all_time_grid[middle_idx]]
                                 
                     # Make a global segment covering all input time segments
                     full_range_segment = deepcopy(time_segments[0])  # Take the beginning of the first segment...

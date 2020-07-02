@@ -294,23 +294,23 @@ class CalcHTC(Calc):
                     one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals, prcp_std, temp_std)
                     
                     if one_time_grids.shape[0] == 1:
-                        one_segment_values = one_segment_values.squeeze(axis = 0)
+                        one_segment_value = one_segment_values.squeeze(axis = 0)
                         one_time_grid = one_time_grids
                     else:
                         middle_idx = round((len(one_time_grids) - 1) / 2)
                         one_time_grid = [one_time_grids[middle_idx]]
-                        one_segment_values = data_func(one_segment_values, axis = 0)
+                        one_segment_value = data_func(one_segment_values, axis = 0)
 
                     # For segment-wise averaging send to the output current time segment results
                     # or store them otherwise.
                     if calc_mode == 'segment':
-                        self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment, times = one_time_grid,
+                        self._data_helper.put(output_uids[0], values=one_segment_value, level=prcp_level, segment=segment, times = one_time_grid,
                                           longitudes=prcp_data['@longitude_grid'],
                                           latitudes=prcp_data['@latitude_grid'],
                                           fill_value=prcp_data['@fill_value'],
                                           meta=prcp_data['meta'])
                     elif calc_mode == 'data':
-                        all_segments_values.append(one_segment_values)
+                        all_segments_values.append(one_segment_value)
                         all_time_grids.append(one_time_grid)
                     else:
                         self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)

@@ -298,7 +298,7 @@ class CalcHTC(Calc):
                         one_time_grid = one_time_grids
                     else:
                         middle_idx = round((len(one_time_grids) - 1) / 2)
-                        one_time_grid = one_time_grids[middle_idx]
+                        one_time_grid = [one_time_grids[middle_idx]]
                         one_segment_values = data_func(one_segment_values, axis = 0)
 
                     # For segment-wise averaging send to the output current time segment results

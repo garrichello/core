@@ -293,7 +293,7 @@ class CalcHTC(Calc):
                     # Perform calculation for the current time segment.
                     one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals, prcp_std, temp_std)
                     
-                    if one_time_grid.shape[0] == 1:
+                    if one_time_grids.shape[0] == 1:
                         one_segment_values = one_segment_values.squeeze(axis = 0)
                         one_time_grid = one_time_grids
                     else:

@@ -292,6 +292,7 @@ class CalcHTC(Calc):
                                     
                     # Perform calculation for the current time segment.
                     one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals, prcp_std, temp_std)
+                    
 
                     # For segment-wise averaging send to the output current time segment results
                     # or store them otherwise.
@@ -305,7 +306,7 @@ class CalcHTC(Calc):
                         all_segments_values.append(one_segment_values)
                         all_time_grids.append(one_time_grid)
                     else:
-                        elf.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
+                        self.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
                         raise ValueError
 
                 # For data-wise analysis analyse segments analyses :)

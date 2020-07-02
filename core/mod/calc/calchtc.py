@@ -292,37 +292,36 @@ class CalcHTC(Calc):
                                     
                     # Perform calculation for the current time segment.
                     one_segment_values = self._calc_ped(prcp_values, temp_values, prcp_normals, temp_normals, prcp_std, temp_std)
-                    
 
                     # For segment-wise averaging send to the output current time segment results
                     # or store them otherwise.
-                    #if calc_mode == 'segment':
-                        #self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment, times = one_time_grid,
-                                          #longitudes=prcp_data['@longitude_grid'],
-                                          #latitudes=prcp_data['@latitude_grid'],
-                                          #fill_value=prcp_data['@fill_value'],
-                                          #meta=prcp_data['meta'])
-                    #elif calc_mode == 'data':
-                    all_segments_values.append(one_segment_values)
-                    all_time_grids.append(one_time_grid)
-                    #else:
-                        #elf.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
-                        #raise ValueError
+                    if calc_mode == 'segment':
+                        self._data_helper.put(output_uids[0], values=one_segment_values, level=prcp_level, segment=segment, times = one_time_grid,
+                                          longitudes=prcp_data['@longitude_grid'],
+                                          latitudes=prcp_data['@latitude_grid'],
+                                          fill_value=prcp_data['@fill_value'],
+                                          meta=prcp_data['meta'])
+                    elif calc_mode == 'data':
+                        all_segments_values.append(one_segment_values)
+                        all_time_grids.append(one_time_grid)
+                    else:
+                        elf.logger.error('Error! Unknown calculation mode: \'%s\'', calc_mode)
+                        raise ValueError
 
                 # For data-wise analysis analyse segments analyses :)
-                #if calc_mode == 'data':
-                    #values_out = data_func(ma.stack(all_segments_values), axis=0)
-                    #middle_idx_seg = round((len(all_time_grids) - 1) / 2)
-                    #all_time_grid = all_time_grids[middle_idx_seg]
-                    #middle_idx = round((len(all_time_grid) - 1) / 2)
-                    #result_time_grid = [all_time_grid[middle_idx]]
+                if calc_mode == 'data':
+                    values_out = data_func(ma.stack(all_segments_values), axis=0)
+                    middle_idx_seg = round((len(all_time_grids) - 1) / 2)
+                    all_time_grid = all_time_grids[middle_idx_seg]
+                    middle_idx = round((len(all_time_grid) - 1) / 2)
+                    result_time_grid = [all_time_grid[middle_idx]]
                                 
                     # Make a global segment covering all input time segments
-                    #full_range_segment = deepcopy(time_segments[0])  # Take the beginning of the first segment...
-                    #full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
-                    #full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
+                    full_range_segment = deepcopy(time_segments[0])  # Take the beginning of the first segment...
+                    full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
+                    full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
-                self._data_helper.put(output_uids[0], values=all_segments_values, level=prcp_level, segment=time_segments, times = all_time_grids,
+                self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment, times = result_time_grid,
                                       longitudes=prcp_data['@longitude_grid'], latitudes=prcp_data['@latitude_grid'],
                                       fill_value=prcp_data['@fill_value'], meta=prcp_data['meta'])
 

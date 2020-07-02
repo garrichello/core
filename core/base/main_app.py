@@ -92,12 +92,12 @@ class MainApp:
         os.chdir(task_dir)  # Move to the task directory!
 
         # Change location of output files.
-        for destination in self._task['task']['destination']:
-            file_name = os.path.basename(destination['file']['@name'])
-            destination['file']['@name'] = file_name
-            if destination['@type'] == 'image':
-                sld_name = os.path.basename(destination['graphics']['legend']['file']['@name'])
-                destination['graphics']['legend']['file']['@name'] = sld_name
+#        for destination in self._task['task']['destination']:
+#            file_name = os.path.basename(destination['file']['@name'])
+#            destination['file']['@name'] = file_name
+#            if destination['@type'] == 'image':
+#                sld_name = os.path.basename(destination['graphics']['legend']['file']['@name'])
+#                destination['graphics']['legend']['file']['@name'] = sld_name
 
         # Make a copy of the original task
         original_task = deepcopy(task)
@@ -148,37 +148,37 @@ class MainApp:
 
         self.logger.info('Done!')
 
-    def _dict_append(self, source, destination):
-        if isinstance(source, dict):
-            for k, v in source.items():
-                if k not in destination.keys():
-                    destination[k] = deepcopy(v)
-                else:
-                    self._dict_append(source[k], destination[k])
+#    def _dict_append(self, source, destination):
+#        if isinstance(source, dict):
+#            for k, v in source.items():
+#                if k not in destination.keys():
+#                    destination[k] = deepcopy(v)
+#                else:
+#                    self._dict_append(source[k], destination[k])
 
-    def _inherit_properties(self, task, parent_uid, child_uid):
-        """Allows to inherit properties of a parent data element conserving existing properties of a child.
-
-        Arguments:
-            task -- current task dictionary
-            parent_uid -- parent data UID
-            child_uid -- child data UID
-
-        Returns:
-            'data' dictionary with properties of the parent data overridden with existing properties of a child.
-        """
-        child_idx = self._data_uid_list.index(child_uid)
-        try:
-            parent_idx = self._data_uid_list.index(parent_uid) # Search for a parent 'data' element.
-        except ValueError:
-            self.logger.error('Can\'t find parent data UID \'%s\' in child data \'%s\'', parent_uid, child_uid)
-        child_data = task['data'][child_idx]
-        parent_data = task['data'][parent_idx]
-        self._dict_append(parent_data, child_data)
-        if child_data.get('@product'):
-            child_data['variable']['@name'] += '_' + child_data.get('@product')  # Suffix for the base variable name.
-
-        return child_data
+#    def _inherit_properties(self, task, parent_uid, child_uid):
+#        """Allows to inherit properties of a parent data element conserving existing properties of a child.
+#
+#        Arguments:
+#            task -- current task dictionary
+#            parent_uid -- parent data UID
+#            child_uid -- child data UID
+#
+#        Returns:
+#            'data' dictionary with properties of the parent data overridden with existing properties of a child.
+#        """
+#        child_idx = self._data_uid_list.index(child_uid)
+#        try:
+#            parent_idx = self._data_uid_list.index(parent_uid) # Search for a parent 'data' element.
+#        except ValueError:
+#            self.logger.error('Can\'t find parent data UID \'%s\' in child data \'%s\'', parent_uid, child_uid)
+#        child_data = task['data'][child_idx]
+#        parent_data = task['data'][parent_idx]
+#        self._dict_append(parent_data, child_data)
+#        if child_data.get('@product'):
+#            child_data['variable']['@name'] += '_' + child_data.get('@product')  # Suffix for the base variable name.
+#
+#        return child_data
 
     def _prepare_proc_arguments(self, task, proc_uid, proc_args):
         """Adds a new 'data' element into the argument's dictionary
@@ -197,19 +197,19 @@ class MainApp:
             argument_uid = arg['@data'] # UID of the data/destination argument.
             if argument_uid in self._data_uid_list:
                 data_idx = self._data_uid_list.index(argument_uid) # Search for a 'data' element.
-                parent_uid = task['data'][data_idx].get('@parent')  # UID of the parent data (which properties it should inherit).
-                if parent_uid:
-                    arg['data'] = self._inherit_properties(task, parent_uid, argument_uid)
-                else:
-                    arg['data'] = task['data'][data_idx]  # Add a new dictionary item with a description.
-                arg_description = arg['data'].get('description')  # Get arguments description.
-                source_uid = None
-                if arg_description:
-                    source_uid = arg_description.get('@source')  # Check if the arguments description has 'source' attribute.
-                if source_uid:
-                    source_idx = self._data_uid_list.index(source_uid)
-                    arg['data']['description']['@name'] = task['data'][source_idx]['description']['@name']  # Get name from source UID.
-                    arg['data']['description']['@units'] = task['data'][source_idx]['description']['@units']  # Get units from source UID.
+#                parent_uid = task['data'][data_idx].get('@parent')  # UID of the parent data (which properties it should inherit).
+#                if parent_uid:
+#                    arg['data'] = self._inherit_properties(task, parent_uid, argument_uid)
+#                else:
+                arg['data'] = task['data'][data_idx]  # Add a new dictionary item with a description.
+#                arg_description = arg['data'].get('description')  # Get arguments description.
+#                source_uid = None
+#                if arg_description:
+#                    source_uid = arg_description.get('@source')  # Check if the arguments description has 'source' attribute.
+#                if source_uid:
+#                    source_idx = self._data_uid_list.index(source_uid)
+#                    arg['data']['description']['@name'] = task['data'][source_idx]['description']['@name']  # Get name from source UID.
+#                    arg['data']['description']['@units'] = task['data'][source_idx]['description']['@units']  # Get units from source UID.
             elif argument_uid in self._destination_uid_list:
                 data_idx = self._destination_uid_list.index(argument_uid) # Search for a 'destination' element.
                 arg['data'] = task['destination'][data_idx] # Add a new dictionary item with a description.

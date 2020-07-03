@@ -329,7 +329,7 @@ class CalcHTC(Calc):
                     full_range_segment['@ending'] = time_segments[-1]['@ending']  # and the end of the last one.
                     full_range_segment['@name'] = 'GlobalSeg'  # Give it a new name.
 
-                self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment, times = result_time_grid,
+                    self._data_helper.put(output_uids[0], values=values_out, level=prcp_level, segment=full_range_segment, times = result_time_grid,
                                       longitudes=prcp_data['@longitude_grid'], latitudes=prcp_data['@latitude_grid'],
                                       fill_value=prcp_data['@fill_value'], meta=prcp_data['meta'])
 

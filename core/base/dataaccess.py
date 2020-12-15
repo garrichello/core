@@ -7,9 +7,10 @@ import logging
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import and_
 from .common import load_module, make_module_name, listify
 
-ENGLISH_LANG_CODE = '409'
+ENGLISH_LANG_CODE = 'en'
 
 class DataAccess():
     """Class-helper for accessing data.
@@ -194,6 +195,7 @@ class DataAccess():
         parameter_i18n_tbl = meta.tables['parameter_i18n']
         specific_parameter_tbl = meta.tables['specific_parameter']
         accumulation_mode_tbl = meta.tables['accumulation_mode']
+        language_tbl = meta.tables['language']
 
         # Values for SQL-conditions
         dataset_name = argument['data']['dataset']['@name']
@@ -208,7 +210,7 @@ class DataAccess():
         #        collection_i18n.name AS collection_name,
         #        parameter_i18n.name AS parameter_name,
         #        units_i18n.name AS units_name,
-        #        parameter.accumulation_mode AS acc_mode,
+        #        accumulation_mode.name AS acc_mode,
         #        data.scale AS scale,
         #        data.offset AS offset,
         #        root_dir.name AS rootpath,
@@ -219,12 +221,8 @@ class DataAccess():
         #        level.label as level_name,
         #        levels_variable.name AS level_variable_name
         #   FROM data
-        #   JOIN dataset ON dataset_collection_id = dataset.collection_id
-        #    AND dataset_resolution_id = dataset.resolution_id
-        #    AND dataset_scenario_id = dataset.scenario_id
-        #   JOIN specific_parameter ON specific_parameter_parameter_id = specific_parameter.parameter_id
-        #    AND specific_parameter_levels_group_id = specific_parameter.levels_group_id
-        #    AND specific_parameter_time_step_id = specific_parameter.time_step_id
+        #   JOIN dataset ON dataset_id = dataset.id
+        #   JOIN specific_parameter ON specific_parameter_id = specific_parameter.id
         #   JOIN units ON units_id = units.id
         #   JOIN variable ON variable_id = variable.id
         #   JOIN file ON file_id = file.id
@@ -234,6 +232,7 @@ class DataAccess():
         #   JOIN resolution ON dataset.resolution_id = resolution.id
         #   JOIN scenario ON dataset.scenario_id = scenario.id
         #   JOIN parameter ON specific_parameter.parameter_id = parameter.id
+        #   JOIN accumulation_mode ON parameter.accumulation_mode_id = accumulation_mode.id
         #   JOIN levels_group ON specific_parameter.levels_group_id = levels_group.id
         #   JOIN levels_group_has_level on levels_group.id = levels_group_has_level.levels_group_id
         #   JOIN level on levels_group_has_level.level_id = level.id
@@ -242,15 +241,16 @@ class DataAccess():
         #   JOIN collection_i18n ON collection_i18n.collection_id = collection.id
         #   JOIN parameter_i18n ON parameter_i18n.parameter_id = parameter.id
         #   JOIN units_i18n ON units_i18n.units_id = units.id
-        #  WHERE collection_i18n.language_code = ENGLISH_LANG_CODE
-        #    AND parameter_i18n.language_code = ENGLISH_LANG_CODE
-        #    AND units_i18n.language_code = ENGLISH_LANG_CODE
-        #    AND collection.label = dataset_name
-        #    AND scenario.name = scenario_name
-        #    AND resolution.name = resolution_name
-        #    AND time_step.label = time_step_name
-        #    AND variable.name = variable_name
-        #    AND level.label = level_name_pattern
+        #   JOIN language ON collection_i18n.language_id = language.id AND
+		#				     parameter_i18n.language_id = language.id AND
+        #                    units_i18n.language_id = language.id
+        #  WHERE language.code = ENGLISH_LANG_CODE  # 'en'
+        #    AND collection.label = dataset_name  # 'ERA5'
+        #    AND scenario.name = scenario_name  # '-'
+        #    AND resolution.name = resolution_name  # '0.25x0.25'
+        #    AND time_step.label = time_step_name  # '1h'
+        #    AND variable.name = variable_name  # 't2m'
+        #    AND level.label = level_name_pattern  # '2m'
 
         # Get info from MDDB.
         # Prepare a common query.
@@ -289,9 +289,11 @@ class DataAccess():
         qry = qry.join(parameter_i18n_tbl)
         qry = qry.join(units_i18n_tbl)
         qry = qry.join(accumulation_mode_tbl)
-        qry = qry.filter(collection_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
-        qry = qry.filter(parameter_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
-        qry = qry.filter(units_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
+        qry = qry.join(language_tbl,
+                       and_(collection_i18n_tbl.c.language_id == language_tbl.c.id,
+                            and_(parameter_i18n_tbl.c.language_id == language_tbl.c.id,
+                                 units_i18n_tbl.c.language_id == language_tbl.c.id)))
+        qry = qry.filter(language_tbl.columns['code'] == ENGLISH_LANG_CODE)
         qry = qry.filter(collection_tbl.columns['label'] == dataset_name)
         qry = qry.filter(scenario_tbl.columns['name'] == scenario_name)
         qry = qry.filter(resolution_tbl.columns['name'] == resolution_name)

@@ -17,10 +17,10 @@ import xmltodict
 
 from sqlalchemy import create_engine, MetaData, distinct
 from sqlalchemy.orm import sessionmaker, aliased
-from sqlalchemy.sql.expression import or_
+from sqlalchemy.sql.expression import or_, and_
 from sqlalchemy.orm.exc import NoResultFound
 
-ENGLISH_LANG_CODE = 409
+ENGLISH_LANG_CODE = 'en'
 TIME_PERIOD_TYPES = {'PERIOD_GIVEN', 'PERIOD_DAY', 'PERIOD_MONTH', 'PERIOD_SEASON', 'PERIOD_YEAR'}
 logger = logging.getLogger()
 
@@ -136,12 +136,8 @@ def get_data_info(proc_argument, session, meta):
     #        scenario.name AS scenario_name,
     #        variable.name AS variable_name
     #   FROM data
-    #   JOIN dataset ON dataset_collection_id = dataset.collection_id
-    #    AND dataset_resolution_id = dataset.resolution_id
-    #    AND dataset_scenario_id = dataset.scenario_id
-    #   JOIN specific_parameter ON specific_parameter_parameter_id = specific_parameter.parameter_id
-    #    AND specific_parameter_levels_group_id = specific_parameter.levels_group_id
-    #    AND specific_parameter_time_step_id = specific_parameter.time_step_id
+    #   JOIN dataset ON dataset_id = dataset.id
+    #   JOIN specific_parameter ON specific_parameter_id = specific_parameter.id
     #   JOIN units ON units_id = units.id
     #   JOIN variable ON variable_id = variable.id
     #   JOIN collection ON dataset.collection_id = collection.id
@@ -155,9 +151,10 @@ def get_data_info(proc_argument, session, meta):
     #   JOIN collection_i18n ON collection_i18n.collection_id = collection.id
     #   JOIN parameter_i18n ON parameter_i18n.parameter_id = parameter.id
     #   JOIN units_i18n ON units_i18n.units_id = units.id
-    #  WHERE collection_i18n.language_code = 409
-    #    AND parameter_i18n.language_code = 409
-    #	 AND units_i18n.language_code = 409
+    #   JOIN language ON collection_i18n.language_id = language.id AND
+	#					 parameter_i18n.language_id = language.id AND
+    #                    units_i18n.language_id = language.id
+    #  WHERE language.code = 'en'
     #    AND collection.id = 13
     #    AND parameter.id = 1
     #    AND resolution.id = 2
@@ -181,6 +178,7 @@ def get_data_info(proc_argument, session, meta):
     parameter_tbl = meta.tables['parameter']
     parameter_i18n_tbl = meta.tables['parameter_i18n']
     specific_parameter_tbl = meta.tables['specific_parameter']
+    language_tbl = meta.tables['language']
 
     # Get info from MDDB.
     # Prepare a common query.
@@ -191,7 +189,7 @@ def get_data_info(proc_argument, session, meta):
                         resolution_tbl.columns['name'].label('resolution_name'),
                         time_step_tbl.columns['label'].label('time_step_label'),
                         scenario_tbl.columns['name'].label('scenario_name'),
-                        variable_tbl.columns['name'].label('variable_name')
+                        variable_tbl.columns['name'].label('variable_name'),
                         )
     qry = qry.select_from(data_tbl)
     qry = qry.join(dataset_tbl)
@@ -209,9 +207,11 @@ def get_data_info(proc_argument, session, meta):
     qry = qry.join(collection_i18n_tbl)
     qry = qry.join(parameter_i18n_tbl)
     qry = qry.join(units_i18n_tbl)
-    qry = qry.filter(collection_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
-    qry = qry.filter(parameter_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
-    qry = qry.filter(units_i18n_tbl.columns['language_code'] == ENGLISH_LANG_CODE)
+    qry = qry.join(language_tbl,
+                   and_(collection_i18n_tbl.c.language_id == language_tbl.c.id,
+                        and_(parameter_i18n_tbl.c.language_id == language_tbl.c.id,
+                             units_i18n_tbl.c.language_id == language_tbl.c.id)))
+    qry = qry.filter(language_tbl.columns['code'] == ENGLISH_LANG_CODE)
     qry = qry.filter(collection_tbl.columns['id'] == proc_argument['data']['@collection_id'])
     qry = qry.filter(parameter_tbl.columns['id'] == proc_argument['data']['@parameter_id'])
     qry = qry.filter(resolution_tbl.columns['id'] == proc_argument['data']['@resolution_id'])
@@ -474,14 +474,17 @@ def make_processing(json_task, session, meta):
     computing_module_tbl = meta.tables['computing_module']
     units_tbl = meta.tables['units']
     units_i18n_tbl = meta.tables['units_i18n']
+    language_tbl = meta.tables['language']
+    option_tbl = meta.tables['option']
 
     # Get conveyor id.
     qry = session.query(processor_tbl.c.conveyor_id,
                         processor_i18n_tbl.c.name.label('processor_name'))
     qry = qry.select_from(processor_tbl)
     qry = qry.join(processor_i18n_tbl)
+    qry = qry.join(language_tbl)
     qry = qry.filter(processor_tbl.c.id == json_proc['@processor_id'])
-    qry = qry.filter(processor_i18n_tbl.c.language_code == ENGLISH_LANG_CODE)
+    qry = qry.filter(language_tbl.c.code == ENGLISH_LANG_CODE)
 
     try:
         result = qry.one()
@@ -531,8 +534,9 @@ def make_processing(json_task, session, meta):
     qry = qry.join(data_variable_tbl)
     qry = qry.join(units_tbl)
     qry = qry.join(units_i18n_tbl)
+    qry = qry.join(language_tbl)
     qry = qry.filter(edge_tbl.c.conveyor_id == conveyor_id)
-    qry = qry.filter(units_i18n_tbl.c.language_code == ENGLISH_LANG_CODE)
+    qry = qry.filter(language_tbl.c.code == ENGLISH_LANG_CODE)
 
     try:
         result = qry.all()
@@ -562,7 +566,8 @@ def make_processing(json_task, session, meta):
     # Find conditional vertices that should be deleted.
     vertices_to_delete = []
     for v_num, vertex in processing_graph.items():
-        if vertex['condition'] != (None, None) and vertex['condition'] not in options:
+        option_label = session.query(option_tbl.c.label).filter(option_tbl.c.id == vertex['condition'][0]).scalar()
+        if option_label and vertex['condition'] not in options:
             vertices_to_delete.append(v_num)
 
     # Delete vertices which condition is not met.

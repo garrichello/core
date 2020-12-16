@@ -126,10 +126,8 @@ class DataHdfeos(Data):
                 raise ValueError
 
             # Determine index of the current vertical level to read data variable.
-            if level_variable_name is not None:
+            if level_variable_name is not NO_LEVEL_NAME:
                 variable_indices[level_variable_name] = [level_variable.tolist().index(level_name)]
-            else:
-                level_variable_name = NO_LEVEL_NAME
 
             # Get time variable
             time_variable = hdf_root.get_time_variable()

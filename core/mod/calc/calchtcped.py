@@ -28,7 +28,7 @@ from core.base.common import kelvin_to_celsius
 from core.mod.calc.calc import Calc
 
 #MAX_N_INPUT_ARGUMENTS = 7
-#INPUT_PARAMETERS_INDEX = 6 
+#INPUT_PARAMETERS_INDEX = 6
 PRCP_DATA_UID = 0
 TEMP_DATA_UID = 1
 PRCP_DATA_NORMALS_UID = 2

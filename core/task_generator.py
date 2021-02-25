@@ -23,6 +23,7 @@ from sqlalchemy.orm.exc import NoResultFound
 ENGLISH_LANG_CODE = 'en'
 TIME_PERIOD_TYPES = {'PERIOD_GIVEN', 'PERIOD_DAY', 'PERIOD_MONTH', 'PERIOD_SEASON', 'PERIOD_YEAR'}
 logger = logging.getLogger()
+NO_OPTION_NAME = '-'
 
 def make_time_segments(time_period, session, meta):
     ''' Creates a list of time segments as XML structure based on JSON structure.
@@ -567,7 +568,7 @@ def make_processing(json_task, session, meta):
     vertices_to_delete = []
     for v_num, vertex in processing_graph.items():
         option_label = session.query(option_tbl.c.label).filter(option_tbl.c.id == vertex['condition'][0]).scalar()
-        if option_label and vertex['condition'] not in options:
+        if option_label != NO_OPTION_NAME and vertex['condition'] not in options:
             vertices_to_delete.append(v_num)
 
     # Delete vertices which condition is not met.

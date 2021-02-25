@@ -615,14 +615,14 @@ def make_processing(json_task, session, meta):
                     passed.add(uid)
                 data_label = uplink['data_label']
                 if 'INPUT' in data_label:
-                    _, postfix = data_label.split('_')
+                    _, postfix, pos = data_label.split('_')
                     if postfix == 'PARAMETERS':
                         uid = 'P{}Parameters1'.format(process_id)
                         data_label = 'ModuleParameters_1'  # Disabled for a while: '{}'.format(process_id)
                         if data_label not in data.keys():  # Add modules parameters.
                             data[data_label] = make_parameters(json_proc['option'], session, meta)
                     else:
-                        data_label = 'Data_{}'.format(postfix)
+                        data_label = 'Data_{}'.format(pos)
                 process['input'][input_pos] = {'@uid': uid, '@data': data_label}
             # Describe outputs.
             for downlink in vertex['downlinks']:

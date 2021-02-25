@@ -60,7 +60,7 @@ class CalcDTR(Calc):
         vertical_levels = self._data_helper.get_levels(input_uids[MAX_DATA_UID])
 
         # Set result units.
-        input_description = self._data_helper.get_data_info(input_uids[0])['description']
+        input_description = self._data_helper.get_data_info(input_uids[MAX_DATA_UID])['description']
         result_description = {'@units': input_description['@units']}
 
         data_func = ma.mean  # For calc_mode == 'data' we calculate mean over all segments.

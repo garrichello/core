@@ -477,6 +477,7 @@ def make_processing(json_task, session, meta):
     units_i18n_tbl = meta.tables['units_i18n']
     language_tbl = meta.tables['language']
     option_tbl = meta.tables['option']
+    combination_tbl = meta.tables['combination']
 
     # Get conveyor id.
     qry = session.query(processor_tbl.c.conveyor_id,
@@ -499,12 +500,13 @@ def make_processing(json_task, session, meta):
     # Get vertices.
     qry = session.query(distinct(vertex_tbl.c.id).label('vertex_id'),
                         computing_module_tbl.c.name.label('computing_module'),
-                        vertex_tbl.c.condition_option_id.label('condition_option_id'),
-                        vertex_tbl.c.condition_value_id.label('condition_value_id'))
+                        combination_tbl.c.option_id.label('condition_option_id'),
+                        combination_tbl.c.option_value_id.label('condition_value_id'))
     qry = qry.select_from(vertex_tbl)
     qry = qry.join(edge_tbl, or_(edge_tbl.c.from_vertex_id == vertex_tbl.c.id,
                                  edge_tbl.c.to_vertex_id == vertex_tbl.c.id))
     qry = qry.join(computing_module_tbl, computing_module_tbl.c.id == vertex_tbl.c.computing_module_id)
+    qry = qry.join(combination_tbl, combination_tbl.c.id == vertex_tbl.c.condition_combination_id)
     qry = qry.filter(edge_tbl.c.conveyor_id == conveyor_id)
 
     try:
